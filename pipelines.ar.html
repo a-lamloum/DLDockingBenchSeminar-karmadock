@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="pipelines.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>2. مسارات العمل الثلاثة | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="pipelines.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="pipelines.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html" aria-current="page">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="2-the-three-pipelines"><bdi dir="ltr">2.</bdi> مسارات العمل الثلاثة</h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<div class="table-scroll"><table><thead><tr>
+<th>المسار</th>
+<th>ما هو؟</th>
+<th>الأوزان</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><bdi dir="ltr">P1</bdi> — خط الأساس</strong></td>
+<td>استدلال فقط باستخدام <code dir="ltr">karmadock_screening.pkl</code> المنشور</td>
+<td>من المشروع الأصلي داخل الصورة</td>
+</tr>
+<tr>
+<td><strong><bdi dir="ltr">P2</bdi> — تدريب من الصفر</strong></td>
+<td>بروتوكول الورقة ذي المرحلتين (<bdi dir="ltr">2-stage</bdi>)، مدرّب على <code dir="ltr">proto_train</code> (<bdi dir="ltr">712</bdi>)</td>
+<td><span class="unbundled"><code dir="ltr">model/p2_scratch_karmadock_team002.pkl</code> <span class="annotation">(متاح في المستودع وغير مضمّن في الموقع)</span></span></td>
+</tr>
+<tr>
+<td><strong><bdi dir="ltr">P3</bdi> — ضبط دقيق</strong> <em>(إضافي)</em></td>
+<td>ضبط الأوزان المنشورة على <code dir="ltr">proto_train</code> (<bdi dir="ltr">712</bdi>)</td>
+<td><span class="unbundled"><code dir="ltr">model/p3_finetune_karmadock_team002.pkl</code> <span class="annotation">(متاح في المستودع وغير مضمّن في الموقع)</span></span></td>
+</tr>
+</tbody></table></div>
+<p><em>الضبط الدقيق (<bdi dir="ltr">P3</bdi>) إضافة غير مطلوبة في جوهر المهمة، وما زال قيد التطوير.</em></p>
+<h3 id="workflow">سير العمل</h3>
+<p><strong>① التدريب — ينتج نقطتي تحقق <bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3:</bdi></strong></p>
+<figure class="workflow"><a href="assets/images/workflow_training.png"><img src="assets/images/workflow_training.png" alt="سير عمل التدريب" width="580"></a></figure>
+<p><em>تُعالج <code dir="ltr">proto_train</code> (<bdi dir="ltr">712</bdi>) إلى رسوم بيانية، ثم يبدأ التدريب. يحدد <code dir="ltr">--init_model</code> المسار: يبدأ </em><em><bdi dir="ltr">P2</bdi></em><em> من الصفر (المرحلة <bdi dir="ltr">1</bdi> لتسجيل <bdi dir="ltr">MDN</bdi>، ثم المرحلة <bdi dir="ltr">2</bdi> مع <bdi dir="ltr">RMSD</bdi> للإرساء)، بينما يضبط </em><em><bdi dir="ltr">P3</bdi></em><em> الأوزان المنشورة. تحتفظ <code dir="ltr">Early_stopper</code> بأفضل حقبة بوصفها نقطة التحقق.</em></p>
+<p><strong>② الاستدلال والتقييم:</strong></p>
+<figure class="workflow"><a href="assets/images/workflow_inference.png"><img src="assets/images/workflow_inference.png" alt="سير عمل الاستدلال والتقييم" width="700"></a></figure>
+<p><em>يُشغّل المسار مرة لكل من <bdi dir="ltr">P1</bdi> و<bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3:</bdi> تُعالج <code dir="ltr">proto_test</code> (<bdi dir="ltr">136</bdi>)، ثم تُرسى الربيطات وتُمنح درجات بالأوزان المختارة، وتُصدّر متغيرات الوضعية <bdi dir="ltr">3</bdi> (الخام و<bdi dir="ltr">FF</bdi> والمحاذاة)، ثم تُقيّم بواسطة <code dir="ltr">evaluation.py</code> الرسمي باستخدام <bdi dir="ltr">RMSD</bdi> المصحح للتناظر وأفضل وضعية <bdi dir="ltr">top-1.</bdi></em></p>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">كيف تختلف المسارات <bdi dir="ltr">P1</bdi> و<bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3</bdi> من حيث مصدر الأوزان؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يستخدم <bdi dir="ltr">P1</bdi> الأوزان المنشورة من دون تدريب، ويُدرّب <bdi dir="ltr">P2</bdi> من الصفر بالبروتوكول ذي المرحلتين، بينما يضبط <bdi dir="ltr">P3</bdi> الأوزان المنشورة دقيقًا.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">ما الذي يحدد ما إذا كان سير التدريب سينتج <bdi dir="ltr">P2</bdi> أم <bdi dir="ltr">P3</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يحدد خيار التهيئة المسار؛ يبدأ <bdi dir="ltr">P2</bdi> من الصفر، بينما يمرر <bdi dir="ltr">P3</bdi> النموذج المنشور عبر <code dir="ltr">--init_model</code> ثم يضبطه دقيقًا.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">لماذا يصدّر الاستدلال ثلاثة متغيرات للوضعية قبل التقييم؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يتيح ذلك مقارنة التنبؤ الخام، واسترخاء حقل القوة، والمحاذاة إلى الإطار المرجعي كلًا على حدة باستخدام المقيّم الرسمي نفسه.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-3"><a href="#workflow">سير العمل</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

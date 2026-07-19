@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="walkthrough-seminar-csv.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>شرح `scripts/seminar_csv.py` | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="walkthrough-seminar-csv.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-seminar-csv.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html" aria-current="page">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsseminarcsvpy">شرح <code dir="ltr">scripts/seminar_csv.py</code></h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="purpose">الغرض</h2>
+<p>تعطي هذه الوحدة المنظومة تعريفًا واحدًا <strong>لمعرّف المركّب</strong>: الاسم المستقر لزوج واحد من جيب البروتين والربيطة. تخفي الفرق بين مخطط <bdi dir="ltr">CSV</bdi> الأولي الذي يحتوي أسماء الملفات، ومخطط البيانات الكاملة الذي يحتوي أربعة حقول وصفية يجب بناء الأسماء منها.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">لماذا يجب أن تشترك مكوّنات خط الأنابيب كلها في تعريف واحد لمعرّف المعقّد؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يجب أن تتفق المحوّلات وأدلة البنى والمدرّبات مع جذوع ملفات الرسوم <code dir="ltr">.dgl</code>، وإلا أشارت إلى معقّدات مختلفة أو مفقودة.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">ما اختلاف المخطط الذي تخفيه هذه الوحدة عن مستدعيها؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>توفّر ملفات <bdi dir="ltr">CSV</bdi> للنموذج الأولي أسماء ملفات الربيطة والبروتين مباشرة، بينما توفّر ملفات البيانات الكاملة أربعة حقول وصفية تُبنى منها المعرّفات وأسماء الملفات المنقحة.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">لماذا يحافظ الخرج على ترتيب الظهور الأول؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>ليعطي ترتيبًا حتميًا لمجموعة البيانات مع دمج الصفوف المكررة في سجل معقّد واحد.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">موقعه في المنظومة</h2>
+<p>يستورد المحولان <code dir="ltr">complex_records</code>، ويستورد المدرّبان <code dir="ltr">complex_ids</code>. المدخل مسار <bdi dir="ltr">CSV</bdi>، والمخرجات أزواج مرتبة من <code dir="ltr">(complex_id, ligand_filename, protein_filename)</code> أو المعرّفات وحدها، ويجب أن تطابق تمامًا جذوع ملفات الرسم <code dir="ltr">.dgl</code> في <bdi dir="ltr">KarmaDock.</bdi></p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">لماذا يستورد كلا المحوّلين <code dir="ltr">complex_records</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأنهما يحتاجان تفسيرًا واحدًا للمعرّف واسم ملف الربيطة واسم ملف البروتين عند إعادة تنظيم المدخلات أو التنبؤات.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">لماذا تستخدم المدرّبات <code dir="ltr">complex_ids</code> بدل تحليل حقول <bdi dir="ltr">CSV</bdi> بصورة مستقلة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تسقط <code dir="ltr">complex_ids</code> السجلات المشتركة مباشرة إلى جذوع الرسوم، فتمنع اختيار التدريب من الانحراف عن التحويل.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">ما العلاقة التي يجب أن تربط المعرّف المعاد بمخرجات المعالجة المسبقة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يجب أن يساوي المعرّف تمامًا جذر ملف الرسم <code dir="ltr">.dgl</code> المحفوظ المقابل، كي يعثر عليه ترشيح التوفر وتحميل مجموعة البيانات.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">شرح الشيفرة</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">import</span> pandas <span class="tok-keyword">as</span> pd
+
+ID_COLUMNS = [<span class="tok-string">&quot;PDBID&quot;</span>, <span class="tok-string">&quot;Ligand Name&quot;</span>, <span class="tok-string">&quot;Ligand Chain&quot;</span>, <span class="tok-string">&quot;Ligand Residue Number&quot;</span>]</code></pre></div>
+<p>يثبت الثابت الحقول وترتيبها معًا. سيغير تغيير ترتيبها المسارات وأسماء الرسوم.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> _strip_suffix(ligand_filename):
+    <span class="tok-keyword">return</span> ligand_filename.replace(<span class="tok-string">&quot;_ligand_refined.sdf&quot;</span>, <span class="tok-string">&quot;&quot;</span>).replace(<span class="tok-string">&quot;_ligand.sdf&quot;</span>, <span class="tok-string">&quot;&quot;</span>)</code></pre></div>
+<p>يستخرج هذا المساعد الخاص المعرّف من أسماء الربيطة المنقحة أو الأقصر. لا يقيد <code dir="ltr">replace</code> المطابقة بنهاية الاسم، مع أن المدخل الصحيح يستخدمها كلواحق.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> _rows_to_triples(df):
+    <span class="tok-string">&quot;&quot;&quot;Yield (complex_id, ligand_filename, protein_filename) per CSV row, either schema.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> <span class="tok-string">&quot;ligand_file_name&quot;</span> <span class="tok-keyword">in</span> df.columns:
+        <span class="tok-keyword">for</span> lig, prot <span class="tok-keyword">in</span> zip(df[<span class="tok-string">&quot;ligand_file_name&quot;</span>], df[<span class="tok-string">&quot;protein_file_name&quot;</span>]):
+            <span class="tok-keyword">yield</span> _strip_suffix(lig), lig, prot
+    <span class="tok-keyword">else</span>:
+        <span class="tok-keyword">for</span> parts <span class="tok-keyword">in</span> zip(*[df[c] <span class="tok-keyword">for</span> c <span class="tok-keyword">in</span> ID_COLUMNS]):
+            cid = <span class="tok-string">&quot;_&quot;</span>.join(parts)
+            <span class="tok-keyword">yield</span> cid, f&quot;{cid}_ligand_refined.sdf&quot;, f&quot;{cid}_protein_refined.pdb&quot;</code></pre></div>
+<p>يختار هذا المولد المخطط الأولي بوجود <code dir="ltr">ligand_file_name</code>؛ وإلا يحوّل أعمدة البيانات الوصفية الأربعة إلى صفوف، ويصلها بشرطات سفلية، ويبني أسماء الملفات المنقحة. تمنع مركزة الفرع اختلاف اشتقاق المعرّفات بين التحويل والتدريب.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> complex_records(csv_path):
+    <span class="tok-string">&quot;&quot;&quot;Unique (complex_id, ligand_filename, protein_filename), in first-seen order.&quot;&quot;&quot;</span>
+    df = pd.read_csv(csv_path, dtype=str)
+    seen, records = set(), []
+    <span class="tok-keyword">for</span> cid, lig, prot <span class="tok-keyword">in</span> _rows_to_triples(df):
+        <span class="tok-keyword">if</span> cid <span class="tok-keyword">not</span> <span class="tok-keyword">in</span> seen:
+            seen.add(cid)
+            records.append((cid, lig, prot))
+    <span class="tok-keyword">return</span> records</code></pre></div>
+<p>يمنع <code dir="ltr">dtype=str</code> تحوّل رقم بقايا مثل <code dir="ltr">210</code> إلى <code dir="ltr">210.0</code>. تتيح المجموعة فحص التكرار بسرعة، بينما تحفظ القائمة ترتيب الظهور الأول؛ ويُرجع المركّب المكرر مرة واحدة عمدًا.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> complex_ids(csv_path):
+    <span class="tok-string">&quot;&quot;&quot;The unique complex ids (== .dgl graph stems), in first-seen order.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">return</span> [cid <span class="tok-keyword">for</span> cid, _lig, _prot <span class="tok-keyword">in</span> complex_records(csv_path)]</code></pre></div>
+<p>يسقط هذا كل ثلاثية إلى جذر الرسم. المتغيرات ذات الشرطة السفلية غير مستخدمة عمدًا.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">كيف تقرر <code dir="ltr">_rows_to_triples</code> فرع المخطط الذي ستستخدمه؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يختار وجود <code dir="ltr">ligand_file_name</code> فرع أسماء ملفات النموذج الأولي؛ وإلا تتوقع الحقول الوصفية الأربعة المرتبة كلها.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">لماذا تُستدعى <bdi dir="ltr">pandas</bdi> مع <code dir="ltr">dtype=str</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لمنع مكوّنات المعرّف، مثل رقم البقايا <code dir="ltr">210</code>، من التحول إلى <code dir="ltr">210.0</code> بما يغيّر أسماء الملفات ومعرّفات الرسوم.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">كيف يخدم كل من مجموعة <code dir="ltr">seen</code> وقائمة <code dir="ltr">records</code> غرضًا مختلفًا؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تجعل المجموعة كشف التكرار فعالًا، بينما تحفظ القائمة ترتيب أول ظهور والثلاثية الكاملة.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">تنبيهات وملاحظات</h2>
+<ul>
+<li>يفحص اختيار المخطط <code dir="ltr">ligand_file_name</code> فقط؛ ويفشل المخطط الجزئي لاحقًا بخطأ عمود مفقود.</li>
+<li>يستخدم <bdi dir="ltr">CSV</bdi> الخاص بـ<bdi dir="ltr">PoseBusters</bdi> المرفق <code dir="ltr">ligand_file</code>، لا أيًا من المخططين المعروفين، ولذلك لا يتوافق حاليًا مع هذا المساعد.</li>
+<li>تستخدم <code dir="ltr">_strip_suffix</code> الاستبدال بدل إزالة لاحقة نهائية صارمة.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">لماذا يفشل مخطط نموذج أولي جزئي بصورة أقل وضوحًا من فحص مخطط مجهول كامل؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن الفرع يفحص <code dir="ltr">ligand_file_name</code> فقط، ثم يصل إلى <code dir="ltr">protein_file_name</code> مباشرة وقد يرفع خطأ عمود مفقود.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">لماذا لا يتوافق ملف <bdi dir="ltr">CSV</bdi> الخاص بـ<bdi dir="ltr">PoseBusters</bdi> والمضمّن في المستودع مع الدالة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأنه يستخدم <code dir="ltr">ligand_file</code> بدل <code dir="ltr">ligand_file_name</code> ولا يوفّر أعمدة البيانات الوصفية الأربعة التي يتوقعها فرع الرجوع.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">ما الخطر في استخدام <code dir="ltr">replace</code> داخل <code dir="ltr">_strip_suffix</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يزيل النص المطابق أينما ظهر، لا عند نهاية اسم الملف فقط، مع أن المدخلات الصالحة يُتوقع أن تستخدم تلك النصوص كلواحق فقط.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#purpose">الغرض</a></li><li class="toc-level-2"><a href="#how-it-fits-in">موقعه في المنظومة</a></li><li class="toc-level-2"><a href="#walkthrough">شرح الشيفرة</a></li><li class="toc-level-2"><a href="#gotchas--notes">تنبيهات وملاحظات</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

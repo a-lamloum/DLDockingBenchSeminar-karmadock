@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="walkthrough-evaluate.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>`scripts/evaluate.sh` | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="walkthrough-evaluate.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-evaluate.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html" aria-current="page">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsevaluatesh"><code dir="ltr">scripts/evaluate.sh</code></h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="purpose">الغرض</h2>
+<p>هذا هو مشغّل التقييم الدفعي للنموذج الأولي. يقيّم كل دليل نتائج متاح من حاصل ضرب <bdi dir="ltr">P1/P2/P3</bdi> في الخام/<bdi dir="ltr">FF/</bdi>المحاذى باستخدام واجهة مجموعة <code dir="ltr">proto_test</code> نفسها، ثم ينسخ ملف <bdi dir="ltr">CSV</bdi> الخام لـ<bdi dir="ltr">P2</bdi> إلى اسم النتيجة الرئيس في المستودع.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">لماذا يقيّم الغلاف مصفوفة <bdi dir="ltr">3×3</bdi> بدل استدعاء المقيّم مرة واحدة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يطبق مقيّم البيانات نفسه على ثلاثة مسارات نماذج وثلاثة متغيرات وضعيات كي تكون ملفات <bdi dir="ltr">CSV</bdi> الخاصة بـ<bdi dir="ltr">RMSD</bdi> قابلة للمقارنة مباشرة.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">لماذا يُنسخ ملف <bdi dir="ltr">CSV</bdi> الخام لـ<bdi dir="ltr">P2</bdi> إلى <code dir="ltr">proto_test_evaluation.csv</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>هذا الاسم المتعارف عليه هو النتيجة الرئيسة للمستودع، بينما يبقى ملف <bdi dir="ltr">P2</bdi> المصدر ذو الاسم الصريح متاحًا لتتبع المنشأ.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">لماذا يغيب توليد الوضعيات عمدًا عن البرنامج؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>التقييم مرحلة مستقلة قابلة لإعادة الإنتاج تستهلك نتائج موجودة ويمكن تكرارها دون إعادة الإرساء المكلف.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">موقعه في المنظومة</h2>
+<p>يستدعيه <code dir="ltr">condor/evaluate.sub</code> بعد مهام الاستدلال الثلاث للنموذج الأولي. ويتوقع <code dir="ltr">evaluation/evaluation.py</code> و<code dir="ltr">proto_test.csv</code> والبنى المرجعية وأشجار الوضعيات تحت <code dir="ltr">results/</code>. ويكتب <code dir="ltr">results/&lt;pipeline&gt;_&lt;variant&gt;_evaluation.csv</code>، ويمكن أن يكتب <code dir="ltr">results/proto_test_evaluation.csv</code>. لا توجد وسائط موضعية ولا متغيرات بيئة مخصصة.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">ما الذي يجب أن تنتجه مهام الاستدلال قبل أن يستخدم <code dir="ltr">condor/evaluate.sub</code> هذا الغلاف؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يجب أن تنشئ أدلة الوضعيات الخام أو <bdi dir="ltr">FF</bdi> أو المحاذاة المتاحة لـ<bdi dir="ltr">P1</bdi> و<bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3</bdi> تحت <code dir="ltr">results/</code>.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">لماذا يفحص الغلاف مواقع بأسلوب المستودع وأخرى مسطحة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>قد يحافظ تجهيز <bdi dir="ltr">HTCondor</bdi> على أشجار الأدلة أو يضع المدخلات المنقولة عند جذر الصندوق، وكلا التخطيطين صالح.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">ما المخرجات التي يمكن أن تغيب من دون إفشال الغلاف كله؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تُتجاوز ملفات <bdi dir="ltr">CSV</bdi> لأدلة الوضعيات المفقودة، كما تُتجاوز النسخة الرئيسة إذا لم توجد نتائج <bdi dir="ltr">P2</bdi> الخام.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">شرح الشيفرة</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># evaluate.sh — the scoring step (separate from docking).
+</span><span class="tok-comment"># ...
+</span>set -euo pipefail
+
+ROOT=<span class="tok-string">&quot;$PWD&quot;</span>
+EVALPY=<span class="tok-string">&quot;$ROOT/evaluation/evaluation.py&quot;</span></code></pre></div>
+<p>يجعل نمط <bdi dir="ltr">Bash</bdi> الصارم المسارات المفقودة وعمليات التقييم الفاشلة توقف المهمة. وبخلاف أغلفة التدريب والاستدلال، لا يستخدم <code dir="ltr">set -x</code>، لذلك لا تظهر إلا الرسائل الصريحة وسجلات المقيّم. يفترض البرنامج أن الدليل الحالي هو المستودع أو جذر المهمة المسطح.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">first_existing () {   <span class="tok-comment"># &lt;test-flag -f|-d&gt; &lt;candidate&gt;...
+</span>    local flag=$<span class="tok-number">1</span>; shift
+    local p; <span class="tok-keyword">for</span> p <span class="tok-keyword">in</span> <span class="tok-string">&quot;$@&quot;</span>; <span class="tok-keyword">do</span> [ <span class="tok-string">&quot;$flag&quot;</span> <span class="tok-string">&quot;$p&quot;</span> ] &amp;&amp; { echo <span class="tok-string">&quot;$p&quot;</span>; return; }; <span class="tok-keyword">done</span>
+}
+CSV=$(first_existing -f <span class="tok-string">&quot;$ROOT/data/proto_test.csv&quot;</span> <span class="tok-string">&quot;$ROOT/proto_test.csv&quot;</span>)
+REF=$(first_existing -d <span class="tok-string">&quot;$ROOT/data/prototype_model_data/proto_test&quot;</span> <span class="tok-string">&quot;$ROOT/data/proto_test&quot;</span> <span class="tok-string">&quot;$ROOT/proto_test&quot;</span>)
+
+[ -n <span class="tok-string">&quot;$CSV&quot;</span> ]    || { echo <span class="tok-string">&quot;ERROR: proto_test.csv not found (looked in data/ and CWD)&quot;</span>; exit <span class="tok-number">1</span>; }
+[ -n <span class="tok-string">&quot;$REF&quot;</span> ]    || { echo <span class="tok-string">&quot;ERROR: proto_test reference dir not found — unzip data/prototype_model_data.zip -d data/prototype_model_data&quot;</span>; exit <span class="tok-number">1</span>; }
+[ -f <span class="tok-string">&quot;$EVALPY&quot;</span> ] || { echo <span class="tok-string">&quot;ERROR: missing $EVALPY&quot;</span>; exit <span class="tok-number">1</span>; }</code></pre></div>
+<p>قد يحافظ <bdi dir="ltr">HTCondor</bdi> على أشجار الأدلة أو يسطّح العناصر المنقولة بحسب سياق التجهيز، لذلك تفحص <code dir="ltr">first_existing</code> عدة مواقع صالحة. وسيطها الأول عامل اختبار، <code dir="ltr">-f</code> للملف أو <code dir="ltr">-d</code> للدليل، وتترك <code dir="ltr">shift</code> المرشحات فقط. تحوّل الحراسات الثلاث نتيجة البحث الفارغة إلى رسالة خطأ قاتلة وواضحة.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">eval_one () {   <span class="tok-comment"># &lt;poses_dir&gt; &lt;out_csv&gt;
+</span>    local poses=$<span class="tok-number">1</span> out=$<span class="tok-number">2</span>
+    local E; E=<span class="tok-string">&quot;$(mktemp -d)&quot;</span>
+    mkdir -p <span class="tok-string">&quot;$E/data&quot;</span> <span class="tok-string">&quot;$E/results&quot;</span>
+    ln -sf <span class="tok-string">&quot;$CSV&quot;</span>   <span class="tok-string">&quot;$E/data/proto_test.csv&quot;</span>
+    ln -sf <span class="tok-string">&quot;$REF&quot;</span>   <span class="tok-string">&quot;$E/data/proto_test&quot;</span>
+    ln -sf <span class="tok-string">&quot;$poses&quot;</span> <span class="tok-string">&quot;$E/results/proto_test&quot;</span>
+    ( cd <span class="tok-string">&quot;$E&quot;</span> &amp;&amp; python3 <span class="tok-string">&quot;$EVALPY&quot;</span> --dataset proto_test --no_pb_valid --output_csv <span class="tok-string">&quot;$out&quot;</span> )
+    rm -rf <span class="tok-string">&quot;$E&quot;</span>
+}</code></pre></div>
+<p>لدى <code dir="ltr">evaluation.py</code> جذور نسبية ثابتة، <code dir="ltr">data/</code> و<code dir="ltr">results/</code>، ويشتق المسارات من اسم مجموعة البيانات. بدل نقل البيانات، تبني الدالة عرضًا مؤقتًا بروابط رمزية كي يظهر أي دليل وضعيات باسم <code dir="ltr">results/proto_test</code>. يقصر <code dir="ltr">--no_pb_valid</code> هذه المقارنة الدفعيّة عمدًا على <bdi dir="ltr">RMSD</bdi> ويتجنب فحوص <bdi dir="ltr">PoseBusters</bdi> المكلفة. ولا يغيّر أمر <code dir="ltr">cd</code> المحاط بقوسين دليل المستدعي.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">for</span> tag <span class="tok-keyword">in</span> p1_baseline p2_scratch p3_finetune; <span class="tok-keyword">do</span>
+  <span class="tok-keyword">for</span> variant <span class="tok-keyword">in</span> <span class="tok-string">&quot;:uncorrected&quot;</span> <span class="tok-string">&quot;_ff:ff&quot;</span> <span class="tok-string">&quot;_align:align&quot;</span>; <span class="tok-keyword">do</span>
+    suffix=<span class="tok-string">&quot;${variant%%:*}&quot;</span>; label=<span class="tok-string">&quot;${variant##*:}&quot;</span>
+    poses=<span class="tok-string">&quot;$ROOT/results/$tag/proto_test${suffix}&quot;</span>
+    <span class="tok-keyword">if</span> [ ! -d <span class="tok-string">&quot;$poses&quot;</span> ]; <span class="tok-keyword">then</span> echo <span class="tok-string">&quot;skip $tag/$label (no poses at ${poses#$ROOT/})&quot;</span>; continue; <span class="tok-keyword">fi</span>
+    eval_one <span class="tok-string">&quot;$poses&quot;</span> <span class="tok-string">&quot;$ROOT/results/${tag}_${label}_evaluation.csv&quot;</span>
+    echo <span class="tok-string">&quot;wrote results/${tag}_${label}_evaluation.csv&quot;</span>
+  <span class="tok-keyword">done</span>
+<span class="tok-keyword">done</span></code></pre></div>
+<p>تعرّف الحلقتان المتداخلتان مصفوفة <bdi dir="ltr">3×3.</bdi> يُقسّم كل رمز <code dir="ltr">suffix:label</code> بتوسيع معاملات <bdi dir="ltr">Bash</bdi>؛ تزيل <code dir="ltr">%%:*</code> النقطتين وكل ما بعدهما، بينما تزيل <code dir="ltr">##*:</code> كل شيء حتى آخر نقطتين. تُتجاوز متغيرات الوضعيات المفقودة بدل إفشال المصفوفة كلها.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">if</span> [ -f <span class="tok-string">&quot;$ROOT/results/p2_scratch_uncorrected_evaluation.csv&quot;</span> ]; <span class="tok-keyword">then</span>
+  cp <span class="tok-string">&quot;$ROOT/results/p2_scratch_uncorrected_evaluation.csv&quot;</span> <span class="tok-string">&quot;$ROOT/results/proto_test_evaluation.csv&quot;</span>
+  echo <span class="tok-string">&quot;wrote results/proto_test_evaluation.csv (= P2 from-scratch, uncorrected)&quot;</span>
+<span class="tok-keyword">fi</span></code></pre></div>
+<p>تنشئ النسخة النهائية اسم النتيجة الافتراضي المتعارف عليه مع الاحتفاظ بملف <bdi dir="ltr">CSV</bdi> المصدر ذي الوسم الصريح.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">لماذا تنشئ <code dir="ltr">eval_one</code> دليلًا مؤقتًا من الروابط الرمزية؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يتوقع مقيّم <bdi dir="ltr">Python</bdi> مساري <code dir="ltr">data/proto_test</code> و<code dir="ltr">results/proto_test</code> النسبيين الثابتين، فتعرض الروابط أي شجرة وضعيات مختارة عبر تلك الواجهة دون نقل البيانات.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">كيف ينتج رمز الحلقة <code dir="ltr">suffix:label</code> مسار دليل واسم ملف خرج معًا؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يستخرج توسيع معاملات <bdi dir="ltr">Bash</bdi> اللاحقة قبل النقطتين لـ<code dir="ltr">proto_test${suffix}</code> والوسم بعدهما لاسم ملف <bdi dir="ltr">CSV</bdi> الخاص بالتقييم.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">لماذا يُستخدم <code dir="ltr">--no_pb_valid</code> لهذه المقارنة الدفعيّة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يبقي المصفوفة مركزة على <bdi dir="ltr">RMSD</bdi> ويتجنب تكرار فحوص <bdi dir="ltr">PoseBusters</bdi> المكلفة لكل مسار ومتغير معالجة لاحقة.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">محاذير وملاحظات</h2>
+<ul>
+<li>لا تُحذف الأدلة المؤقتة إلا في نهاية <code dir="ltr">eval_one</code> الناجحة؛ ولا يوجد <bdi dir="ltr">trap</bdi>، لذلك قد يترك التقييم المنقطع أو الفاشل دليلًا في منطقة النظام المؤقتة.</li>
+<li>يعطّل هذا الغلاف <bdi dir="ltr">PoseBusters</bdi> دائمًا مع أنه مفعّل افتراضيًا في مقيّم <bdi dir="ltr">Python.</bdi></li>
+<li>يعرض الغلاف البيانات للمقيّم دائمًا باسم <code dir="ltr">proto_test</code> حتى عند المرور بمسارات نماذج مختلفة؛ وهذا صحيح لأن البنى واحدة ولا تتغير إلا التنبؤات.</li>
+<li>تستبدل إعادة التشغيل ملفات <bdi dir="ltr">CSV</bdi> الحالية للتقييم والنسخة الرئيسة.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">لماذا قد يترك التقييم الفاشل ملفات مؤقتة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لا يحدث التنظيف إلا بعد أمر مقيّم ناجح، ولا يوجد <bdi dir="ltr">trap</bdi> يغطي الانقطاع أو الفشل داخل <code dir="ltr">eval_one</code>.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">لماذا يكون عرض كل مسار باسم مجموعة البيانات <code dir="ltr">proto_test</code> صحيحًا؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تبقى البنى المرجعية ومجموعة <bdi dir="ltr">CSV</bdi> نفسها؛ ولا تتغير إلا التنبؤات المختارة عبر الرابط الرمزي المؤقت للنتائج.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">ماذا يحدث لملفات <bdi dir="ltr">CSV</bdi> الحالية عند إعادة تشغيل الغلاف؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تستبدل التقييمات الناجحة ملفات نتائجها المسماة، ويستبدل ملف <bdi dir="ltr">P2</bdi> الخام النسخة الرئيسة المتعارف عليها.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#purpose">الغرض</a></li><li class="toc-level-2"><a href="#how-it-fits-in">موقعه في المنظومة</a></li><li class="toc-level-2"><a href="#walkthrough">شرح الشيفرة</a></li><li class="toc-level-2"><a href="#gotchas--notes">محاذير وملاحظات</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

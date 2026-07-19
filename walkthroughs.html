@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthroughs.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Code walkthroughs | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthroughs.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthroughs.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html" aria-current="page">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="code-walkthroughs">Code walkthroughs</h1>
+<p>These notes are a teaching companion to the repository&#x27;s executable code. They assume Python and basic machine-learning knowledge, but introduce molecular-docking, distributed-training, and HTCondor concepts where the code uses them. Each walkthrough quotes source and explains what it does, how it works, and why it exists.</p>
+<h2 id="how-these-files-fit-together">How these files fit together</h2>
+<p>The end-to-end flow is:</p>
+<ol>
+<li><strong>Convert the input layout.</strong> <code dir="ltr">seminar_csv.py</code> normalizes the supported CSV schemas. <code dir="ltr">convert_seminar_to_karmadock.py</code> copies each ligand/protein pair into upstream KarmaDock&#x27;s naming convention.</li>
+<li><strong>Preprocess and train.</strong> Shell drivers call upstream <code dir="ltr">pre_processing.py</code> and <code dir="ltr">generate_graph.py</code>, then this repository&#x27;s <code dir="ltr">train.py</code> (single process) or <code dir="ltr">train_ddp.py</code> (one process per GPU). Training can start randomly with the two-stage scoring-then-docking protocol or fine-tune released weights.</li>
+<li><strong>Infer.</strong> <code dir="ltr">run_infer.sh</code> preprocesses a test set and calls upstream <code dir="ltr">ligand_docking.py</code> to produce raw, force-field-minimized, and aligned poses.</li>
+<li><strong>Convert predictions back.</strong> <code dir="ltr">convert_karmadock_to_seminar.py</code> ranks repeats by MDN score and writes <code dir="ltr">&lt;id&gt;_pred.sdf</code> files in evaluator order.</li>
+<li><strong>Evaluate.</strong> <code dir="ltr">evaluation.py</code> computes symmetry-corrected heavy-atom RMSD and optional PoseBusters checks. <code dir="ltr">evaluate.sh</code> applies it to all prototype pipeline/pose variants.</li>
+</ol>
+<p>The <code dir="ltr">run_*.sh</code> files are reproducible orchestration layers around those Python programs. The files in <code dir="ltr">condor/</code> sit above the shell wrappers: they select the Docker image, stage inputs/outputs, reserve resources, pass arguments/environment variables, and route logs.</p>
+<section class="quiz" aria-labelledby="quiz-how-these-files-fit-together-title">
+<h3 class="quiz-title" id="quiz-how-these-files-fit-together-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-these-files-fit-together-q1">
+<p class="quiz-question">Why does the pipeline need one converter before KarmaDock and another converter after docking?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The first converter changes seminar inputs into KarmaDock&#x27;s naming and directory layout, while the second ranks KarmaDock repeats and restores the one-file-per-complex evaluator layout.</p></div>
+</details>
+</li>
+<li id="quiz-how-these-files-fit-together-q2">
+<p class="quiz-question">How do <code dir="ltr">train.py</code> and <code dir="ltr">train_ddp.py</code> occupy different roles without changing the upstream KarmaDock model?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Both call the upstream model and losses, but <code dir="ltr">train.py</code> runs one process while <code dir="ltr">train_ddp.py</code> distributes disjoint complex stripes across one process per GPU and synchronizes gradients and metrics.</p></div>
+</details>
+</li>
+<li id="quiz-how-these-files-fit-together-q3">
+<p class="quiz-question">Why are the files in <code dir="ltr">condor/</code> described as sitting above the <code dir="ltr">run_*.sh</code> wrappers?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The submit files choose resources, container, staging, arguments, outputs, and logs, then invoke shell wrappers that orchestrate the actual conversion, training, inference, or evaluation programs.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough-index">Walkthrough index</h2>
+<div class="table-scroll"><table><thead><tr>
+<th>Source file</th>
+<th>Walkthrough</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">scripts/train.py</code></td>
+<td><a class="content-link" href="walkthrough-train.html">Single-process training</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/train_ddp.py</code></td>
+<td><a class="content-link" href="walkthrough-train-ddp.html">Distributed training</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/seminar_csv.py</code></td>
+<td><a class="content-link" href="walkthrough-seminar-csv.html">CSV-schema normalization</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/convert_seminar_to_karmadock.py</code></td>
+<td><a class="content-link" href="walkthrough-convert-seminar-to-karmadock.html">Input-layout conversion</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/convert_karmadock_to_seminar.py</code></td>
+<td><a class="content-link" href="walkthrough-convert-karmadock-to-seminar.html">Prediction-layout conversion</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">evaluation/evaluation.py</code></td>
+<td><a class="content-link" href="walkthrough-evaluation.html">RMSD and PoseBusters evaluation</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/run_train.sh</code></td>
+<td><a class="content-link" href="walkthrough-run-train.html">Prototype training driver</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/run_full_train.sh</code></td>
+<td><a class="content-link" href="walkthrough-run-full-train.html">Full-data training driver</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/run_infer.sh</code></td>
+<td><a class="content-link" href="walkthrough-run-infer.html">Inference driver</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/run_full_stage2_ddp.sh</code></td>
+<td><a class="content-link" href="walkthrough-run-full-stage2-ddp.html">Original Stage-2 DDP driver</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/run_full_stage2_ddp_v2.sh</code></td>
+<td><a class="content-link" href="walkthrough-run-full-stage2-ddp-v2.html">Paper-faithful Stage-2 DDP driver</a></td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/evaluate.sh</code></td>
+<td><a class="content-link" href="walkthrough-evaluate.html">Batch evaluation driver</a></td>
+</tr>
+<tr>
+<td>All 12 <code dir="ltr">condor/*.sub</code> files</td>
+<td><a class="content-link" href="walkthrough-condor.html">HTCondor submit files</a></td>
+</tr>
+</tbody></table></div>
+<section class="quiz" aria-labelledby="quiz-walkthrough-index-title">
+<h3 class="quiz-title" id="quiz-walkthrough-index-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-index-q1">
+<p class="quiz-question">If a student wants to understand why graph stems must match CSV-derived complex IDs, which walkthrough should they read first?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They should start with <code dir="ltr">scripts/seminar_csv.py</code>, because its walkthrough defines the shared ID derivation used by converters and trainers.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-index-q2">
+<p class="quiz-question">Which pair of walkthroughs best explains the transition from predicted KarmaDock poses to benchmark CSV metrics?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The prediction-layout converter explains ranking and SDF export, and <code dir="ltr">evaluation/evaluation.py</code> explains how those ranked SDF records become RMSD and PoseBusters result rows.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-index-q3">
+<p class="quiz-question">Why does the index separate shell-driver walkthroughs from the Python training and evaluation walkthroughs?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The shell drivers explain reproducible orchestration and environment setup, while the Python pages explain data interpretation, model optimization, distributed synchronization, and metric computation.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#how-these-files-fit-together">How these files fit together</a></li><li class="toc-level-2"><a href="#walkthrough-index">Walkthrough index</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

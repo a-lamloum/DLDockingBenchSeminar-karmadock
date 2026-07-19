@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-run-full-train.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>scripts/runfulltrain.sh | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-run-full-train.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-run-full-train.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html" aria-current="page">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsrunfulltrainsh"><code dir="ltr">scripts/run_full_train.sh</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This is the single-GPU full-dataset analogue of <code dir="ltr">run_train.sh</code>. Because the full structures and generated graphs are large, it reads and writes them through a home directory mounted into the Docker job rather than transferring them with every HTCondor submission.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why does full-data training use home-mounted storage instead of transferring all artifacts into each job sandbox?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The structures, generated graphs, checkpoints, and logs are large or resumable, so mounted persistent storage avoids repeated staging and loss at job exit.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">How is this script related to <code dir="ltr">run_train.sh</code>?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It implements the same single-process scratch and fine-tune training concepts for curated full-data splits, with persistence and path controls suited to the larger dataset.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">What limitation remains despite supporting the full dataset?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It still runs one GPU and does not exploit DDP, making full training functional but potentially impractical in wall time.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p><code dir="ltr">condor/full_train_scratch.sub</code> invokes it as <code dir="ltr">scratch</code>; <code dir="ltr">finetune</code> is also implemented even though no listed submit file uses that mode. It reads <code dir="ltr">$FULL_DATA_DIR/{full_train,full_val}.csv</code> and matching structure directories, defaulting to <code dir="ltr">$HOME/repro_test/full_data</code>. It persists converted data, graphs, W&amp;B state, and checkpoints below <code dir="ltr">$FULL_WORK_DIR</code>, defaulting to <code dir="ltr">$HOME/repro_test/work_full</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">Which mode does the listed Condor submit file use, and what other mode is available manually?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p><code dir="ltr">condor/full_train_scratch.sub</code> invokes <code dir="ltr">scratch</code>; the wrapper also implements <code dir="ltr">finetune</code> even though no listed submit file selects it.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">Why are <code dir="ltr">full_train</code> and <code dir="ltr">full_val</code> supplied as separate inputs?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They preserve the curated validation split rather than randomly carving validation examples from the full training set.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">What does <code dir="ltr">$FULL_WORK_DIR</code> persist across jobs?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It holds converted structures, graphs, preprocessing markers, checkpoints, resume state, and W&amp;B files for reuse.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># run_full_train.sh &lt;scratch|finetune&gt;
+</span><span class="tok-comment"># ...
+</span>set -euo pipefail
+set -x
+
+MODE=${<span class="tok-number">1</span>:?usage: run_full_train.sh &lt;scratch|finetune&gt;}
+KD=/app/KarmaDock
+export PYTHONPATH=/app/KarmaDock:${PYTHONPATH:-}
+
+DATA=<span class="tok-string">&quot;${FULL_DATA_DIR:-$HOME/repro_test/full_data}&quot;</span>
+WORK=<span class="tok-string">&quot;${FULL_WORK_DIR:-$HOME/repro_test/work_full}&quot;</span>
+SUBMIT=<span class="tok-string">&quot;$PWD&quot;</span>; SCRIPTS=<span class="tok-string">&quot;$SUBMIT/scripts&quot;</span>
+CKPT=<span class="tok-string">&quot;$WORK/ckpt&quot;</span>; mkdir -p <span class="tok-string">&quot;$CKPT&quot;</span></code></pre></div>
+<p>The strict/debug Bash options have the same roles as in <code dir="ltr">run_train.sh</code>. <code dir="ltr">${VAR:-default}</code> makes the paths relocatable. HTCondor stages the <code dir="ltr">scripts</code> directory beneath the sandbox working directory even though the executable itself may appear flattened, so the code deliberately uses <code dir="ltr">$PWD/scripts</code> rather than the executable&#x27;s directory.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">preprocess() {                               <span class="tok-comment"># $1 = split name (full_train | full_val)
+</span>  local split=<span class="tok-string">&quot;$1&quot;</span>
+  local kin=<span class="tok-string">&quot;$WORK/$split/complex&quot;</span> graph=<span class="tok-string">&quot;$WORK/$split/graphs&quot;</span>
+  <span class="tok-keyword">if</span> [ -f <span class="tok-string">&quot;$WORK/$split/.preprocessed&quot;</span> ]; <span class="tok-keyword">then</span> echo <span class="tok-string">&quot;# $split already preprocessed&quot;</span>; return; <span class="tok-keyword">fi</span>
+  mkdir -p <span class="tok-string">&quot;$kin&quot;</span> <span class="tok-string">&quot;$graph&quot;</span>
+  python3 <span class="tok-string">&quot;$SCRIPTS/convert_seminar_to_karmadock.py&quot;</span> \
+      --csv <span class="tok-string">&quot;$DATA/$split.csv&quot;</span> --src_dir <span class="tok-string">&quot;$DATA/$split&quot;</span> --out_dir <span class="tok-string">&quot;$kin&quot;</span>
+  ( cd <span class="tok-string">&quot;$KD/utils&quot;</span>
+    python3 -u pre_processing.py --complex_file_dir <span class="tok-string">&quot;$kin&quot;</span>
+    python3 -u generate_graph.py --complex_file_dir <span class="tok-string">&quot;$kin&quot;</span> --graph_file_dir <span class="tok-string">&quot;$graph&quot;</span> )
+  touch <span class="tok-string">&quot;$WORK/$split/.preprocessed&quot;</span>
+}
+preprocess full_train
+preprocess full_val</code></pre></div>
+<p>The function removes duplication between the curated train and validation splits. <code dir="ltr">local</code> keeps its variables from leaking into global script state. Both splits get their own converted structures and graph directory. The separate validation graphs are important: full validation is curated rather than randomly carved from training.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">COMMON=( --csv <span class="tok-string">&quot;$DATA/full_train.csv&quot;</span> --graph_dir <span class="tok-string">&quot;$WORK/full_train/graphs&quot;</span>
+         --complex_dir <span class="tok-string">&quot;$WORK/full_train/complex&quot;</span>
+         --val_csv <span class="tok-string">&quot;$DATA/full_val.csv&quot;</span> --val_graph_dir <span class="tok-string">&quot;$WORK/full_val/graphs&quot;</span>
+         --batch_size <span class="tok-number">4</span> --accum_steps <span class="tok-number">16</span> --random_seed <span class="tok-number">42</span> --resume
+         --wandb --wandb_project karmadock-seminar --wandb_run_name <span class="tok-string">&quot;full_${MODE}&quot;</span> )</code></pre></div>
+<p>A Bash array preserves each argument as a distinct shell word, even when a path contains spaces. Every mode shares the explicit leak-resistant validation split, batch settings, resume behavior, and W&amp;B logging. W&amp;B credentials are expected via <code dir="ltr">WANDB_API_KEY</code> or the mounted home <code dir="ltr">.netrc</code>; <code dir="ltr">train.py</code> falls back to offline logging otherwise.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">if</span> [ <span class="tok-string">&quot;$MODE&quot;</span> = <span class="tok-string">&quot;scratch&quot;</span> ]; <span class="tok-keyword">then</span>
+  <span class="tok-keyword">if</span> [ ! -f <span class="tok-string">&quot;$CKPT/p_stage1/stage.done&quot;</span> ]; <span class="tok-keyword">then</span>
+    python3 -u <span class="tok-string">&quot;$SCRIPTS/train.py&quot;</span> <span class="tok-string">&quot;${COMMON[@]}&quot;</span> \
+        --out_dir <span class="tok-string">&quot;$CKPT/p_stage1&quot;</span> --init_model <span class="tok-string">&quot;&quot;</span> --pos_r <span class="tok-number">0</span> \
+        --lr 1e-<span class="tok-number">3</span> --weight_decay 1e-<span class="tok-number">5</span> --patience <span class="tok-number">70</span> --epochs <span class="tok-number">1000</span>
+    touch <span class="tok-string">&quot;$CKPT/p_stage1/stage.done&quot;</span>
+  <span class="tok-keyword">fi</span>
+  python3 -u <span class="tok-string">&quot;$SCRIPTS/train.py&quot;</span> <span class="tok-string">&quot;${COMMON[@]}&quot;</span> \
+      --out_dir <span class="tok-string">&quot;$CKPT/p_stage2&quot;</span> --init_model <span class="tok-string">&quot;$CKPT/p_stage1/karmadock_team002.pkl&quot;</span> \
+      --pos_r <span class="tok-number">1</span> --lr 1e-<span class="tok-number">4</span> --weight_decay 1e-<span class="tok-number">4</span> --patience <span class="tok-number">20</span> --epochs <span class="tok-number">1000</span> --jitter <span class="tok-number">0.05</span>
+  echo <span class="tok-string">&quot;=== FULL from-scratch done: $CKPT/p_stage2/karmadock_team002.pkl ===&quot;</span></code></pre></div>
+<p>This is the same two-stage objective as the prototype driver: MDN-only scoring first, then combined scoring and docking-coordinate learning. The explicit validation CSV means all available <code dir="ltr">full_train</code> graphs remain training data and all available <code dir="ltr">full_val</code> graphs remain validation data.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">elif</span> [ <span class="tok-string">&quot;$MODE&quot;</span> = <span class="tok-string">&quot;finetune&quot;</span> ]; <span class="tok-keyword">then</span>
+  python3 -u <span class="tok-string">&quot;$SCRIPTS/train.py&quot;</span> <span class="tok-string">&quot;${COMMON[@]}&quot;</span> \
+      --out_dir <span class="tok-string">&quot;$CKPT/p_finetune&quot;</span> --init_model <span class="tok-string">&quot;$KD/trained_models/karmadock_screening.pkl&quot;</span> \
+      --pos_r <span class="tok-number">1</span> --lr 1e-<span class="tok-number">4</span> --weight_decay <span class="tok-number">0</span> --patience <span class="tok-number">30</span> --epochs <span class="tok-number">500</span>
+  echo <span class="tok-string">&quot;=== FULL fine-tune done: $CKPT/p_finetune/karmadock_team002.pkl ===&quot;</span>
+<span class="tok-keyword">else</span>
+  echo <span class="tok-string">&quot;ERROR: mode must be &#x27;scratch&#x27; or &#x27;finetune&#x27;&quot;</span>; exit <span class="tok-number">2</span>
+<span class="tok-keyword">fi</span></code></pre></div>
+<p>The alternative initializes from released weights and trains a single combined-loss stage. The mode check is intentionally late because preprocessing happens before it; valid submit files always pass a known mode.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">Why does the <code dir="ltr">preprocess</code> function use a marker independently for each split?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Train and validation have separate converted structures and graph directories, so each expensive pipeline can be skipped only after its own successful completion.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">How does the <code dir="ltr">COMMON</code> Bash array improve correctness when building trainer commands?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It shares leak-resistant validation, batch, seed, resume, and logging arguments while preserving every path or value as a distinct shell word.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">How do scratch and fine-tune differ in their initialization and number of stages?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Scratch trains MDN-only Stage 1 from random weights and initializes combined Stage 2 from its best checkpoint; fine-tune starts from released weights and runs only one combined-loss stage.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>The script assumes HTCondor mounted the user&#x27;s home (<code dir="ltr">+WantGPUHomeMounted = true</code> in the submit file). Without it, defaults may point at unavailable container paths.</li>
+<li>Preprocessing markers have the same stale-marker risk as <code dir="ltr">run_train.sh</code>.</li>
+<li>Mode validation occurs after both splits are preprocessed, so an invalid mode can still perform expensive preprocessing before exiting.</li>
+<li>The comments explicitly call one-GPU full training impractical; this driver is functional but does not exploit multiple GPUs.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">What fails if the HTCondor job does not mount the user&#x27;s home?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The default data and work paths point into the unavailable home mount, so large inputs, graphs, and persistent checkpoints cannot be found or written.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">Why can an invalid mode still consume substantial time before producing its error?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The script preprocesses both full-data splits before reaching the late <code dir="ltr">scratch</code> or <code dir="ltr">finetune</code> mode branch.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">Why can a <code dir="ltr">.preprocessed</code> marker become misleading?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It records prior completion but does not verify that underlying CSVs, structures, or graphs remain present, current, and uncorrupted.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="walkthrough-condor.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>شرح `condor/*.sub` | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="walkthrough-condor.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-condor.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html" aria-current="page">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="condorsub">شرح <code dir="ltr">condor/*.sub</code></h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="purpose">الغرض</h2>
+<p>تصف هذه الملفات الـ<bdi dir="ltr">12</bdi> مهام المستودع لنظام <bdi dir="ltr">HTCondor:</bdi> تدريب النموذج الأولي والبيانات الكاملة، وتجارب المرحلة <bdi dir="ltr">2</bdi> على <bdi dir="ltr">GPU</bdi> واحدة أو عدة وحدات، والاستدلال، والتقييم. لا تنفذ منطق التعلم الآلي بنفسها؛ بل تختار بيئة <bdi dir="ltr">Docker</bdi>، وتنقل الملفات، وتحجز الموارد، وتستدعي غلاف <bdi dir="ltr">shell</bdi> بوسائط أو متغيرات بيئة، وتوجه المخرجات والسجلات.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">لماذا لا تُعدّ ملفات الإرسال تطبيقات لخوارزميات تعلّم الآلة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأنها تضبط شروط التنفيذ وتستدعي الأغلفة؛ أما منطق تدريب النموذج والإرساء والتحويل والتقييم فيوجد في برامج <bdi dir="ltr">Python</bdi> و<bdi dir="ltr">Shell</bdi> التي تشغّلها.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">ما المشكلة التي يحلّها إبقاء موارد المهمة وتجهيز الملفات داخل ملفات الإرسال؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يجعل ذلك كل مهمة عنقودية تصرّح بالبيئة والمدخلات والمخرجات ومتطلبات العتاد والسجلات اللازمة لإعادة تنفيذها، بصورة منفصلة عن منطق البرنامج.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">لماذا توجد ملفات إرسال مستقلة لتجارب النموذج الأولي والبيانات الكاملة والاستدلال والتقييم و<bdi dir="ltr">Stage-2</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن هذه المهام تحتاج أغلفة ومدخلات ونقاط تحقق وموارد واستراتيجيات حفظ ومسارات إخراج مختلفة، مع أنها تشترك في صورة الحاوية نفسها.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">موقعه في المنظومة</h2>
+<p>يرسل المستخدم ملفًا بواسطة <code dir="ltr">condor_submit &lt;file&gt;.sub</code>. يطابق <bdi dir="ltr">HTCondor</bdi> المهمة مع عامل، وينقل المدخلات المعلنة إلى صندوق مؤقت، ويشغّل برنامج <bdi dir="ltr">shell</bdi> المحدد داخل <code dir="ltr">ahlamloum/karmadock-seminar:v6</code>، ثم يعيد المخرجات المعلنة. تستدعي مهام الاستدلال <code dir="ltr">scripts/run_infer.sh</code>، وتستدعي مهام التدريب أحد أغلفة التدريب، وتستدعي مهام <bdi dir="ltr">DDP</bdi> مشغّل المرحلة <bdi dir="ltr">2</bdi>، وتستدعي مهمة التقييم على <bdi dir="ltr">CPU</bdi> ‏<code dir="ltr">scripts/evaluate.sh</code> بعد وجود التنبؤات.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">ماذا يحدث بين تنفيذ <code dir="ltr">condor_submit</code> وتشغيل غلاف المستودع؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يطابق <bdi dir="ltr">HTCondor</bdi> عاملًا مناسبًا، وينشئ صندوقًا مؤقتًا، ويجهّز المدخلات المعلنة، ويشغّل الغلاف داخل صورة <bdi dir="ltr">Docker</bdi>، ثم يعيد المخرجات والسجلات المعلنة.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">لماذا يجب تشغيل <code dir="ltr">condor/evaluate.sub</code> بعد مهام الاستدلال؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن مدخلاته هي أدلة الوضعيات التي ينتجها الاستدلال، فلا يمكنه بناء مصفوفة تقييم النموذج الأولي قبل وجود تلك التنبؤات.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">كيف تتصل ملفات إرسال الاستدلال والتدريب و<bdi dir="ltr">DDP</bdi> والتقييم بطبقة التنسيق الأدنى؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تستدعي على الترتيب <code dir="ltr">run_infer.sh</code> أو غلاف تدريب أو مشغّل <bdi dir="ltr">Stage-2</bdi> بتقنية <bdi dir="ltr">DDP</bdi> أو <code dir="ltr">evaluate.sh</code>، وتمرر الوسائط والبيئة التي يتوقعها كل غلاف.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">شرح الملفات</h2>
+<h3 id="shared-htcondor-submit-file-vocabulary">مفردات ملفات إرسال <bdi dir="ltr">HTCondor</bdi> المشتركة</h3>
+<p>ملف الإرسال قائمة من توجيهات <code dir="ltr">key = value</code> يتبعها <code dir="ltr">queue</code>. تعني التوجيهات المشتركة هنا ما يأتي:</p>
+<ul>
+<li>يشغّل <code dir="ltr">universe = docker</code> البرنامج داخل <code dir="ltr">docker_image</code>. توفر الصورة <bdi dir="ltr">KarmaDock</bdi> و<bdi dir="ltr">Python</bdi> و<bdi dir="ltr">PyTorch</bdi> و<bdi dir="ltr">RDKit</bdi> وبقية الاعتماديات.</li>
+<li><code dir="ltr">executable</code> هو البرنامج المنقول، ويمرر <code dir="ltr">arguments</code> سطر أوامره الموضعي، بينما يحقن <code dir="ltr">environment</code> متغيرات البيئة الخاصة بالمهمة.</li>
+<li>تعلن <code dir="ltr">request_gpus</code> و<code dir="ltr">request_cpus</code> و<code dir="ltr">request_memory</code> الموارد المطلوبة للمطابقة والجدولة وتخبر العامل بمقدار التخصيص. هذه القيم لكل مهمة لا لكل عملية.</li>
+<li><code dir="ltr">requirements</code> تعبير <bdi dir="ltr">ClassAd</bdi> في <bdi dir="ltr">HTCondor.</bdi> تتطلب الملفات نطاق <bdi dir="ltr">UID</bdi> الخاص بعلوم الحاسوب في سارلاند، وتستبعد <code dir="ltr">idun.hpc.uni-saarland.de</code> الموثقة كعقدة إشكالية. أما <code dir="ltr">+WantGPUHomeMounted = true</code> فهي سمة محلية تطلب تثبيت مجلد منزل المرسل داخل الحاوية.</li>
+<li>تقيد <code dir="ltr">gpus_minimum_capability</code> و<code dir="ltr">gpus_minimum_memory</code> مطابقة <bdi dir="ltr">GPU</bdi> أكثر. لا يطلب قدرة حسابية <bdi dir="ltr">8.0</bdi> أو أحدث وذاكرة <bdi dir="ltr">32,000</bdi> <bdi dir="ltr">MB</bdi> على الأقل إلا تشغيل <bdi dir="ltr">2-GPU</bdi> النهائي.</li>
+<li>يفعّل <code dir="ltr">should_transfer_files = YES</code> نقل الملفات. تسرد <code dir="ltr">transfer_input_files</code> الشيفرة والبيانات المنسوخة إلى الصندوق، وتنقل المجلدات تكراريًا. ينتظر <code dir="ltr">when_to_transfer_output = ON_EXIT</code> انتهاء المهمة طبيعيًا، وتقيد <code dir="ltr">transfer_output_files</code> ما يعاد. لا تحتاج المهام التي تحفظ النتائج مباشرة في منزل مثبت إلى نقل مخرجات كبيرة.</li>
+<li>يلتقط <code dir="ltr">output</code> الخرج القياسي، و<code dir="ltr">error</code> الخطأ القياسي، و<code dir="ltr">log</code> سجل دورة حياة <bdi dir="ltr">HTCondor.</bdi> يمنع <code dir="ltr">$(ClusterId)</code> و<code dir="ltr">$(ProcId)</code> المهام من مشاركة أسماء السجلات.</li>
+<li>تنشئ <code dir="ltr">queue 1</code> عملية <bdi dir="ltr">Condor</bdi> واحدة من الوصف. لا يرتبط ذلك بعدد عمليات <bdi dir="ltr">DDP</bdi>؛ إذ يمكن لمهمة <bdi dir="ltr">Condor</bdi> واحدة بدء عدة عمليات <bdi dir="ltr">GPU</bdi> محلية بواسطة <code dir="ltr">torchrun</code>.</li>
+</ul>
+<h3 id="evaluate-sub"><code dir="ltr">condor/evaluate.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># evaluate.sub  —  the scoring step (run AFTER the p1/p2/p3 docking jobs).
+</span><span class="tok-comment"># Runs scripts/evaluate.sh, which calls `evaluation/evaluation.py --dataset proto_test`
+</span><span class="tok-comment"># over every pipeline x pose-variant in results/ and writes the *_evaluation.csv files
+</span><span class="tok-comment">#
+</span><span class="tok-comment">#   condor_submit condor/evaluate.sub
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/evaluate.sh
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, evaluation, data/proto_test.csv, data/prototype_model_data/proto_test, results
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/evaluate.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/evaluate.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/evaluate.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">4</span>
+<span class="tok-keyword">request_memory</span> = 16GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>هذه مهمة <bdi dir="ltr">CPU</bdi> الوحيدة، فلا يوجد <code dir="ltr">request_gpus</code>. تنقل جميع نتائج النموذج الأولي، وتشغّل مصفوفة <bdi dir="ltr">RMSD</bdi> ذات <bdi dir="ltr">3×3</bdi>، وتعيد شجرة <code dir="ltr">results</code> الموسعة. تخدم أربع وحدات <bdi dir="ltr">CPU</bdi> و<bdi dir="ltr">16</bdi> <bdi dir="ltr">GB</bdi> ‏<bdi dir="ltr">RDKit</bdi> والتقييم لا الاستدلال. يجب تشغيلها بعد الاستدلال لأن مدخلاتها كلها هي الوضعيات التي تنتجها تلك المهام.</p>
+<h3 id="full-stage2-2gpu-sub"><code dir="ltr">condor/full_stage2_2gpu.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># full_stage2_2gpu.sub — COPY of full_stage2_mgpu.sub for the 2x A100 DDP Stage-2 run.
+</span><span class="tok-comment"># Changes vs the original (which is left untouched):
+</span><span class="tok-comment">#   request_gpus 4 -&gt; 2 ; cpus 16 -&gt; 8 ; memory 64GB -&gt; 16GB
+</span><span class="tok-comment">#   + GPU selector (cap &gt;=8.0 &amp; &gt;=32 GB) so 2 A100s/L40S/H200 are picked, never a 16 GB OOM card
+</span><span class="tok-comment">#   environment S2_BATCH=8 S2_ACCUM=4 -&gt; effective batch 2*8*4 = 64 (paper)
+</span><span class="tok-comment">#   executable + transfer use run_full_stage2_ddp_v2.sh (wd 0, patience 70)
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = run_full_stage2_ddp_v2.sh
+<span class="tok-keyword">environment</span>   = <span class="tok-string">&quot;S2_BATCH=8 S2_ACCUM=4 STAGE1_CKPT=/home/bdldt_team002/repro_test/work_full/ckpt/p_stage1/karmadock_team002.pkl&quot;</span>
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = train_ddp.py, seminar_csv.py, run_full_stage2_ddp_v2.sh
+
+<span class="tok-keyword">output</span> = logs/s2_2gpu.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/s2_2gpu.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/s2_2gpu.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">2</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 16GB
+gpus_minimum_capability = <span class="tok-number">8.0</span>
+gpus_minimum_memory     = <span class="tok-number">32000</span>
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>هذه تجربة وحدتي <bdi dir="ltr">GPU</bdi> النهائية الفعلية. تحافظ تجاوزات البيئة على دفعة عالمية فعلية <bdi dir="ltr">64</bdi> وتشير مباشرة إلى أفضل نقطة تحقق نهائية للمرحلة <bdi dir="ltr">1.</bdi> يغيّر مشغّل <bdi dir="ltr">v2</bdi> اضمحلال الأوزان و<bdi dir="ltr">patience</bdi> للمرحلة <bdi dir="ltr">2.</bdi> تتجنب قيود <bdi dir="ltr">GPU</bdi> الأجهزة ذات <bdi dir="ltr">16</bdi> <bdi dir="ltr">GB</bdi> المعروفة بنفاد الذاكرة. لا تنقل إلا الشيفرة لأن البيانات والرسوم ونقطة التحقق والمخرجات موجودة في المنزل المثبت. يجعل المسار الثابت <code dir="ltr">/home/bdldt_team002/...</code> الملف خاصًا بحساب رغم قابلية تجاوز المسارات في المشغّل.</p>
+<h3 id="full-stage2-mgpu-sub"><code dir="ltr">condor/full_stage2_mgpu.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># full_stage2_mgpu.sub — ISOLATED multi-GPU (DDP) Stage-2 TEST on the full dataset.
+</span><span class="tok-comment"># Separate from the prototype submission and from the running full job (167960):
+</span><span class="tok-comment">#   - reads ~/repro_test/work_full graphs (read-only) + a Stage-1 snapshot,
+</span><span class="tok-comment">#   - writes only to ~/stage2_mgpu_test/work (its own dir).
+</span><span class="tok-comment"># ... setup and smoke-test comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = run_full_stage2_ddp.sh
+<span class="tok-comment"># Per-GPU batch 8 x accum 2 x 4 GPUs = effective batch 64. Override here if relocating data:
+</span><span class="tok-comment">#   environment = &quot;S2_BATCH=8 S2_ACCUM=2 STAGE1_CKPT=/path/to/stage1.pkl&quot;
+</span>
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = train_ddp.py, seminar_csv.py, run_full_stage2_ddp.sh
+<span class="tok-comment"># data, graphs, checkpoints all live on the mounted home -- nothing large is transferred
+</span>
+<span class="tok-keyword">output</span> = logs/s2mgpu.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/s2mgpu.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/s2mgpu.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">4</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">16</span>
+<span class="tok-keyword">request_memory</span> = 64GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>هذه تجربة المرحلة <bdi dir="ltr">2</bdi> الأصلية على أربع وحدات <bdi dir="ltr">GPU</bdi> باستخدام قيم <code dir="ltr">run_full_stage2_ddp.sh</code> الافتراضية: دفعة <bdi dir="ltr">8</bdi> × تجميع <bdi dir="ltr">2</bdi> × أربع رتب = <bdi dir="ltr">64.</bdi> تطلب <bdi dir="ltr">CPU</bdi> وذاكرة أكثر، لكنها لا تفرض قيدًا على جيل <bdi dir="ltr">GPU</bdi> أو ذاكرتها بخلاف نسخة <bdi dir="ltr">2-GPU.</bdi> تتوقع الإرسال من مجلد نشر يحوي الملفات الثلاثة المنقولة بأسمائها المجردة ونسخة مرحلة <bdi dir="ltr">1</bdi> منشأة مسبقًا في المنزل المثبت.</p>
+<h3 id="full-test-infer-sub"><code dir="ltr">condor/full_test_infer.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># full_test_infer.sub  —  dock the 6,183-complex full_test set with the FULL-DATA
+</span><span class="tok-comment"># (multi-GPU Stage-2 trained) checkpoint. Produces the 3 pose variants
+</span><span class="tok-comment"># (uncorrected / FF / align) in results/full_scratch/full_test{,_ff,_align}/.
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = full_test full_scratch_karmadock_team002.pkl full_scratch
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, model/full_scratch_karmadock_team002.pkl, data/full_test.csv, data/full_test
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/full_test_infer.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/full_test_infer.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/full_test_infer.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>تنقل مجموعة الاختبار الكاملة ذات <bdi dir="ltr">6,183</bdi> مركّبًا ونقطة تحقق البيانات الكاملة في المستودع، ثم تضع وسم الخرج <code dir="ltr">full_scratch</code>. تمرر نقطة التحقق كاسم مجرد لأن <bdi dir="ltr">HTCondor</bdi> ينقلها إلى الصندوق، ويحلها <code dir="ltr">run_infer.sh</code> مقابل <code dir="ltr">$PWD</code>. هذا استدلال على <bdi dir="ltr">GPU</bdi> واحدة لا <bdi dir="ltr">DDP.</bdi></p>
+<h3 id="full-train-scratch-sub"><code dir="ltr">condor/full_train_scratch.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># full_train_scratch.sub  —  FULL-dataset training FROM SCRATCH (next phase, long job).
+</span><span class="tok-comment"># Trains the paper&#x27;s 2-stage protocol on full_train (23,483) / full_val (2,609) on one GPU.
+</span><span class="tok-comment"># ... mounted-home rationale and prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_full_train.sh
+<span class="tok-keyword">arguments</span>     = scratch
+<span class="tok-comment"># Data/work default to $HOME/repro_test/{full_data,work_full}, resolved inside the container
+</span><span class="tok-comment"># via the mounted home (portable across accounts). To relocate, uncomment and edit -- do NOT
+</span><span class="tok-comment"># hardcode another user&#x27;s home:
+</span><span class="tok-comment">#   environment = &quot;FULL_DATA_DIR=/path/to/full_data FULL_WORK_DIR=/path/to/work_full&quot;
+</span>
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts
+<span class="tok-comment"># data, graphs and checkpoints live on the mounted home -- nothing large is transferred
+</span>
+<span class="tok-keyword">output</span> = logs/full_train.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/full_train.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/full_train.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 64GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>يستدعي غلاف البيانات الكاملة على <bdi dir="ltr">GPU</bdi> واحدة بوضع <code dir="ltr">scratch</code> الذي ينفذ المرحلتين. لا تنقل إلا الشيفرة؛ وتبقى البيانات ذات نحو <bdi dir="ltr">14</bdi> <bdi dir="ltr">GB</bdi> والرسوم ونقاط التحقق القابلة للاستئناف في المنزل المثبت. تطلب ذاكرة مضيف أكبر بكثير من الاستدلال لأن المعالجة المسبقة ومحملات رسوم التدريب أثقل.</p>
+<h3 id="p1-baseline-sub"><code dir="ltr">condor/p1_baseline.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p1_baseline.sub  —  PIPELINE 1 (released weights) docking on proto_test.
+</span><span class="tok-comment"># Produces the 3 pose variants (uncorrected / FF / align) in results/p1_baseline/.
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = proto_test /app/KarmaDock/trained_models/karmadock_screening.pkl p1_baseline
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, data/proto_test.csv, data/prototype_model_data/proto_test
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/p1_baseline.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p1_baseline.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p1_baseline.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>يمثل <bdi dir="ltr">P1</bdi> استدلالًا فقط بنقطة التحقق المطلقة المنشورة داخل صورة <bdi dir="ltr">Docker</bdi>، فلا ينقل ملف نموذج. وتعكس بنية ملفاته و<bdi dir="ltr">CSV</bdi> وبرامجه ومجلد <code dir="ltr">results</code> المسارين <bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3</bdi> لضبط المقارنة.</p>
+<h3 id="p2-scratch-infer-sub"><code dir="ltr">condor/p2_scratch_infer.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p2_scratch_infer.sub  —  PIPELINE 2 (from-scratch model) docking on proto_test.
+</span><span class="tok-comment"># ... description and prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = proto_test p2_scratch_karmadock_team002.pkl p2_scratch
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, model/p2_scratch_karmadock_team002.pkl, data/proto_test.csv, data/prototype_model_data/proto_test
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/p2_scratch.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p2_scratch.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p2_scratch.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>يختلف <bdi dir="ltr">P2</bdi> عن <bdi dir="ltr">P1</bdi> في مصدر نقطة التحقق ووسمها فقط؛ إذ ينقل نموذج الفريق الأولي المدرّب من الصفر ويحل اسمه المجرد. يؤدي تثبيت البيانات والصورة والبذرة العشوائية داخل الغلاف والموارد إلى عزل أثر الأوزان.</p>
+<h3 id="p2-train-scratch-sub"><code dir="ltr">condor/p2_train_scratch.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p2_train_scratch.sub  —  PIPELINE 2 training FROM SCRATCH (BONUS / long path).
+</span><span class="tok-comment"># Preprocesses proto_train (712) then runs the paper&#x27;s 2-stage protocol on one GPU.
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_train.sh
+<span class="tok-keyword">arguments</span>     = scratch
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, data/prototype_model_data/proto_train.csv, data/prototype_model_data/proto_train
+<span class="tok-keyword">transfer_output_files</span>   = ckpt
+
+<span class="tok-keyword">output</span> = logs/p2_train.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p2_train.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p2_train.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 48GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>تنقل مجموعة التدريب الأولية الصغيرة وتطلب <code dir="ltr">scratch</code>، فتجري المرحلة <bdi dir="ltr">1</bdi> الخاصة بـ<bdi dir="ltr">MDN</bdi> فقط ثم المرحلة <bdi dir="ltr">2</bdi> المشتركة. لا يعاد إلا <code dir="ltr">ckpt</code>. ينشئ الغلاف أيضًا <code dir="ltr">work_train</code>، لكنه غير مدرج كمخرج؛ لذلك لا يفيد إلا داخل صندوق أُعيدت جدولته إذا حافظ الموقع على حالته، ولا تنقل الرسوم عند الإكمال العادي.</p>
+<h3 id="p3-finetune-sub"><code dir="ltr">condor/p3_finetune.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p3_finetune.sub  —  PIPELINE 3 fine-tune training (BONUS / long path).
+</span><span class="tok-comment"># ... description and prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_train.sh
+<span class="tok-keyword">arguments</span>     = finetune
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, data/prototype_model_data/proto_train.csv, data/prototype_model_data/proto_train
+<span class="tok-keyword">transfer_output_files</span>   = ckpt
+
+<span class="tok-keyword">output</span> = logs/p3_train.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p3_train.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p3_train.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 48GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>تطابق هذه المهمة تدريب <bdi dir="ltr">P2</bdi> في الموارد والبيانات، لكنها تمرر <code dir="ltr">finetune</code>، فيبدأ الغلاف من أوزان الصورة المنشورة ويشغّل المرحلة ذات الخسارة المشتركة فقط. يجعل هذا التناظر فروق تدريب <bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3</bdi> راجعة إلى البروتوكول لا موارد الجدولة.</p>
+<h3 id="p3-finetune-infer-sub"><code dir="ltr">condor/p3_finetune_infer.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p3_finetune_infer.sub  —  PIPELINE 3 (fine-tuned model) docking on proto_test.
+</span><span class="tok-comment"># ... description and prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = proto_test p3_finetune_karmadock_team002.pkl p3_finetune
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, model/p3_finetune_karmadock_team002.pkl, data/proto_test.csv, data/prototype_model_data/proto_test
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/p3_finetune.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p3_finetune.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p3_finetune.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>يطابق استدلال <bdi dir="ltr">P3</bdi> بنيويًا استدلال <bdi dir="ltr">P2</bdi>، لكنه ينقل نقطة التحقق المضبوطة ويختار وسم النتائج <code dir="ltr">p3_finetune</code>.</p>
+<h3 id="posebusters-infer-sub"><code dir="ltr">condor/posebusters_infer.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># posebusters_infer.sub  —  dock the 308-complex PoseBusters set with the FULL-DATA
+</span><span class="tok-comment"># (multi-GPU Stage-2 trained) checkpoint. Produces the 3 pose variants
+</span><span class="tok-comment"># (uncorrected / FF / align) in results/full_scratch/posebusters_filtered{,_ff,_align}/.
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = posebusters_filtered full_scratch_karmadock_team002.pkl full_scratch
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, model/full_scratch_karmadock_team002.pkl, data/posebusters_filtered.csv, data/posebusters_filtered
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/posebusters_infer.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/posebusters_infer.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/posebusters_infer.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>يعيد هذا استخدام نموذج البيانات الكاملة على معيار <bdi dir="ltr">PoseBusters</bdi> الأصغر. ملف الإرسال واضح داخليًا، لكن المحول المستدعى لا يتعرف حاليًا على مخطط <code dir="ltr">ligand_file</code> في <bdi dir="ltr">CSV</bdi> المرفق؛ راجع التنبيهات.</p>
+<h3 id="smoke-2gpu-sub"><code dir="ltr">condor/smoke_2gpu.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># smoke_2gpu.sub — SMOKE TEST of the DDP Stage-2 path: 2 GPUs, 3 epochs.
+</span><span class="tok-comment"># Validates torchrun + NCCL + id-shard + all-reduce + rank-0 ckpt on real GPUs, and measures
+</span><span class="tok-comment"># per-epoch wall time so the full run can be estimated. Isolated (writes ~/stage2_mgpu_test/work).
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = run_full_stage2_ddp.sh
+<span class="tok-keyword">environment</span>   = <span class="tok-string">&quot;S2_EPOCHS=3&quot;</span>
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = train_ddp.py, seminar_csv.py, run_full_stage2_ddp.sh
+
+<span class="tok-keyword">output</span> = logs/smoke.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/smoke.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/smoke.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">2</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 48GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>يقصر اختبار الدخان التدريب على ثلاث حقب للتحقق من بدء العمليات واتصال <bdi dir="ltr">NCCL</bdi> وتقسيم المعرّفات وتخفيض المقاييس وحفظ نقطة التحقق على <bdi dir="ltr">rank-0</bdi> قبل إنفاق أيام على التشغيل الكامل. وبما أنه يستخدم قيم المشغّل الأصلية (<code dir="ltr">BS=8</code> و<code dir="ltr">ACC=2</code>)، فإن دفعته الفعلية على وحدتي <bdi dir="ltr">GPU</bdi> هي <bdi dir="ltr">32</bdi> لا <bdi dir="ltr">64</bdi>؛ فغرضه التحقق من المنظومة لا إنتاج تدريب مطابق للورقة.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">لماذا لا تعني <code dir="ltr">queue 1</code> أن مهمة <bdi dir="ltr">DDP</bdi> تستخدم عملية <bdi dir="ltr">GPU</bdi> واحدة فقط؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تنشئ تعليمة <code dir="ltr">queue 1</code> مهمة <bdi dir="ltr">Condor</bdi> واحدة، لكن يمكن لهذه المهمة حجز عدة وحدات <bdi dir="ltr">GPU</bdi> وترك <code dir="ltr">torchrun</code> يبدأ عملية محلية لكل <bdi dir="ltr">GPU</bdi> داخل الصندوق نفسه.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">لماذا تعتمد مهام البيانات الكاملة و<bdi dir="ltr">DDP</bdi> على مجلد منزل مركّب بدل نقل جميع المدخلات ونقاط التحقق؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن بياناتها ورسومها البيانية كبيرة، ولأن نقاط التحقق يجب أن تستمر خلال التشغيل الطويل؛ لذلك يتجنب المجلد المركّب النقل المتكرر ومخاطر الحفظ باستخدام <code dir="ltr">ON_EXIT</code>.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">كيف تستخدم مهمة <bdi dir="ltr">GPU</bdi> الثنائية النهائية ومهمة الاختبار السريع إعدادات الموارد لهدفين مختلفين؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تقيّد المهمة النهائية التنفيذ بوحدات <bdi dir="ltr">GPU</bdi> قوية وعالية الذاكرة وتضبط التراكم لدفعة فعّالة مقدارها <bdi dir="ltr">64</bdi>، بينما تقبل مهمة الاختبار ذات <bdi dir="ltr">3</bdi> حقب دفعة فعّالة مقدارها <bdi dir="ltr">32</bdi> لأنها تختبر الإطلاق و<bdi dir="ltr">NCCL</bdi> والتقسيم والاختزالات وحفظ نقاط التحقق، لا جودة التدريب النهائية.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">تنبيهات وملاحظات</h2>
+<ul>
+<li>تُفسر مسارات الإرسال نسبة إلى المجلد الذي يُشغّل فيه <code dir="ltr">condor_submit</code>، لا بالضرورة مجلد ملف <code dir="ltr">.sub</code>. تتوقع ملفات النموذج الأولي الإرسال من جذر المستودع، بينما تتوقع ملفات <bdi dir="ltr">DDP</bdi> ذات الأسماء المجردة مجلد نشر يحتويها.</li>
+<li>يجب عمومًا أن يكون المجلد الأب <code dir="ltr">logs/</code> موجودًا لدى المرسل؛ لا تنشئه هذه الملفات.</li>
+<li>لا ينسخ <code dir="ltr">ON_EXIT</code> نقاط تحقق الصندوق باستمرار. تتجنب مهام البيانات الكاملة و<bdi dir="ltr">DDP</bdi> الخطر بالكتابة في المنزل المثبت، بينما تعتمد مهام النموذج الأولي على سلوك الصندوق وإعادة الجدولة حتى الخروج.</li>
+<li>يقيد <code dir="ltr">full_stage2_2gpu.sub</code> وحده قدرة <bdi dir="ltr">GPU</bdi> وذاكرتها. قد تطابق بقية مهام <bdi dir="ltr">GPU</bdi> أي بطاقة تحقق الطلب العام، بما فيها بطاقات مختلفة الذاكرة والأداء.</li>
+<li>ينقل <code dir="ltr">posebusters_infer.sub</code> الملف <code dir="ltr">data/posebusters_filtered.csv</code> ذي الأعمدة الفعلية <code dir="ltr">ligand_name,ligand_file,protein_file</code>. يستدعي <code dir="ltr">run_infer.sh</code> ‏<code dir="ltr">seminar_csv.complex_records</code> الذي لا يدعم هذا المخطط ويبحث بدلًا منه عن أعمدة البيانات الوصفية الكاملة. قد يفشل المسار كما هو بخطأ <bdi dir="ltr">pandas</bdi> من نوع <code dir="ltr">KeyError</code>؛ ويتعارض تعليق ملف الإرسال الذي يدعي قراءة <code dir="ltr">ligand_file</code> مع الشيفرة.</li>
+<li>لا تختصر الأسطر <code dir="ltr"># ... comments unchanged ...</code> أعلاه إلا تعليقات نثرية؛ أُعيد إنتاج كل توجيه تنفيذي من ملفات المصدر الـ<bdi dir="ltr">12.</bdi></li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">لماذا قد يؤدي الإرسال من الدليل الخطأ إلى تعطيل ملف <code dir="ltr">.sub</code> صحيح؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تُحل مسارات الإرسال النسبية انطلاقًا من الدليل الذي يُشغّل فيه <code dir="ltr">condor_submit</code>، وتفترض الملفات المختلفة إما جذر المستودع أو دليل نشر يحتوي الملفات المجهّزة بأسمائها المجردة.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">لماذا لا تكفي <code dir="ltr">ON_EXIT</code> لحماية نقاط تحقق النموذج الأولي أثناء مهمة طويلة تنقطع؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأنها تنقل المخرجات فقط بعد انتهاء المهمة بصورة طبيعية، فلا تُنسخ نقاط التحقق داخل الصندوق باستمرار وقد لا تنجو من الانقطاع أو إعادة الجدولة المعتادة.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">لماذا قد يفشل <code dir="ltr">posebusters_infer.sub</code> قبل الإرساء مع أن تعليمات التجهيز فيه متماسكة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن ملف <bdi dir="ltr">CSV</bdi> المجهّز يستخدم <code dir="ltr">ligand_file</code>، بينما تتعرف <code dir="ltr">seminar_csv.complex_records</code> على <code dir="ltr">ligand_file_name</code> أو مخطط البيانات الكامل ذي الأعمدة الأربعة، وقد ترفع خطأ عمود مفقود من <bdi dir="ltr">pandas.</bdi></p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#purpose">الغرض</a></li><li class="toc-level-2"><a href="#how-it-fits-in">موقعه في المنظومة</a></li><li class="toc-level-2"><a href="#walkthrough">شرح الملفات</a></li><li class="toc-level-3"><a href="#shared-htcondor-submit-file-vocabulary">مفردات ملفات إرسال <bdi dir="ltr">HTCondor</bdi> المشتركة</a></li><li class="toc-level-3"><a href="#evaluate-sub"><bdi dir="ltr">condor/evaluate.sub</bdi></a></li><li class="toc-level-3"><a href="#full-stage2-2gpu-sub"><bdi dir="ltr">condor/fullstage22gpu.sub</bdi></a></li><li class="toc-level-3"><a href="#full-stage2-mgpu-sub"><bdi dir="ltr">condor/fullstage2mgpu.sub</bdi></a></li><li class="toc-level-3"><a href="#full-test-infer-sub"><bdi dir="ltr">condor/fulltestinfer.sub</bdi></a></li><li class="toc-level-3"><a href="#full-train-scratch-sub"><bdi dir="ltr">condor/fulltrainscratch.sub</bdi></a></li><li class="toc-level-3"><a href="#p1-baseline-sub"><bdi dir="ltr">condor/p1baseline.sub</bdi></a></li><li class="toc-level-3"><a href="#p2-scratch-infer-sub"><bdi dir="ltr">condor/p2scratchinfer.sub</bdi></a></li><li class="toc-level-3"><a href="#p2-train-scratch-sub"><bdi dir="ltr">condor/p2trainscratch.sub</bdi></a></li><li class="toc-level-3"><a href="#p3-finetune-sub"><bdi dir="ltr">condor/p3finetune.sub</bdi></a></li><li class="toc-level-3"><a href="#p3-finetune-infer-sub"><bdi dir="ltr">condor/p3finetuneinfer.sub</bdi></a></li><li class="toc-level-3"><a href="#posebusters-infer-sub"><bdi dir="ltr">condor/posebustersinfer.sub</bdi></a></li><li class="toc-level-3"><a href="#smoke-2gpu-sub"><bdi dir="ltr">condor/smoke2gpu.sub</bdi></a></li><li class="toc-level-2"><a href="#gotchas--notes">تنبيهات وملاحظات</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

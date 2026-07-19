@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-convert-karmadock-to-seminar.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>scripts/convertkarmadocktoseminar.py | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-convert-karmadock-to-seminar.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-convert-karmadock-to-seminar.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html" aria-current="page">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsconvertkarmadocktoseminarpy"><code dir="ltr">scripts/convert_karmadock_to_seminar.py</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This command converts KarmaDock&#x27;s repeat-by-repeat outputs into the evaluator&#x27;s one-file-per-complex format. It ranks repeated predictions by mixture-density-network (MDN) score and writes a multi-record SDF with the highest-scoring pose first.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why must repeated KarmaDock predictions be combined into one SDF per complex?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The seminar evaluator expects one ranked multi-record <code dir="ltr">&lt;id&gt;_pred.sdf</code> file for each complex rather than KarmaDock&#x27;s repeat-by-repeat output tree.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">Why is MDN score used before writing the output records?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It provides the model&#x27;s ranking signal, so sorting scores descending places the predicted best pose first for evaluator top-1 rank.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">What would be lost if the converter wrote only the highest-scoring molecule?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Lower-ranked candidates and best-of-N evaluation would be lost because the evaluator uses SDF record order as pose rank.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p><code dir="ltr">run_infer.sh</code> calls it for raw, force-field-corrected, and alignment-corrected outputs after upstream <code dir="ltr">ligand_docking.py</code>. It reads <code dir="ltr">&lt;input_dir&gt;/&lt;repeat&gt;.csv</code> and pose SDFs, a dataset CSV, <code dir="ltr">--mode</code>, and optional <code dir="ltr">--n_repeat</code> (default 3), then writes <code dir="ltr">&lt;out_dir&gt;/&lt;id&gt;_pred.sdf</code> in evaluator rank order.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">Why does <code dir="ltr">run_infer.sh</code> invoke this converter three times?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It exports parallel raw, force-field-corrected, and alignment-corrected result trees through the same evaluator-compatible interface.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">How do <code dir="ltr">--mode</code> and <code dir="ltr">--n_repeat</code> affect the produced SDF?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p><code dir="ltr">--mode</code> selects which pose filename variant to seek, while <code dir="ltr">--n_repeat</code> controls which repeat score tables and pose directories can contribute records.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">Why does the converter also need the dataset CSV after docking is complete?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The CSV supplies the ordered complex IDs and filenames needed to create one expected output path for every dataset complex.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">import</span> argparse
+<span class="tok-keyword">import</span> os
+<span class="tok-keyword">import</span> sys
+
+<span class="tok-keyword">import</span> pandas <span class="tok-keyword">as</span> pd
+<span class="tok-keyword">from</span> rdkit <span class="tok-keyword">import</span> Chem
+
+<span class="tok-keyword">from</span> seminar_csv <span class="tok-keyword">import</span> complex_records</code></pre></div>
+<p>pandas reads scores; RDKit parses/writes SDF molecular records and coordinates.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument(<span class="tok-string">&quot;--input_dir&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;KarmaDock out_dir (has 0.csv, 0/, ...)&quot;</span>)
+    ap.add_argument(<span class="tok-string">&quot;--csv&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;seminar CSV listing the complexes&quot;</span>)
+    ap.add_argument(<span class="tok-string">&quot;--out_dir&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;seminar results dir&quot;</span>)
+    ap.add_argument(<span class="tok-string">&quot;--mode&quot;</span>, default=<span class="tok-string">&quot;align_corrected&quot;</span>,
+                    choices=[<span class="tok-string">&quot;uncorrected&quot;</span>, <span class="tok-string">&quot;ff_corrected&quot;</span>, <span class="tok-string">&quot;align_corrected&quot;</span>],
+                    help=<span class="tok-string">&quot;which corrected pose to export (paper recommends FF/align correction)&quot;</span>)
+    ap.add_argument(<span class="tok-string">&quot;--n_repeat&quot;</span>, type=int, default=<span class="tok-number">3</span>)
+    args = ap.parse_args()
+
+    <span class="tok-keyword">for</span> path <span class="tok-keyword">in</span> (args.csv, args.input_dir):
+        <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> os.path.exists(path):
+            sys.exit(f&quot;ERROR: not found: {path}&quot;)
+    os.makedirs(args.out_dir, exist_ok=<span class="tok-keyword">True</span>)</code></pre></div>
+<p><code dir="ltr">choices</code> rejects mistyped modes. The two inputs are validated and output is safely created.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    scores = {}
+    repeats = []
+    <span class="tok-keyword">for</span> re <span class="tok-keyword">in</span> range(args.n_repeat):
+        csv_path = os.path.join(args.input_dir, f&quot;{re}.csv&quot;)
+        <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> os.path.exists(csv_path):
+            <span class="tok-keyword">continue</span>
+        repeats.append(re)
+        <span class="tok-keyword">for</span> _, row <span class="tok-keyword">in</span> pd.read_csv(csv_path).iterrows():
+            scores.setdefault(row[<span class="tok-string">&quot;pdb_id&quot;</span>], []).append({<span class="tok-string">&quot;repeat&quot;</span>: re, <span class="tok-string">&quot;score&quot;</span>: float(row[<span class="tok-string">&quot;score&quot;</span>])})
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> repeats:
+        sys.exit(<span class="tok-string">&quot;ERROR: no &lt;re&gt;.csv files found in input_dir&quot;</span>)</code></pre></div>
+<p>Each repeat score table contributes repeat/score pairs per complex. An MDN represents interaction-distance likelihoods as a mixture distribution; this scalar score ranks poses with higher treated as better. Missing individual repeats are tolerated, but no repeat tables is fatal.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    records = complex_records(args.csv)
+    ok = <span class="tok-number">0</span>
+    <span class="tok-keyword">for</span> cid, _lig, _prot <span class="tok-keyword">in</span> records:
+        ranked = sorted(scores.get(cid, [{<span class="tok-string">&quot;repeat&quot;</span>: r, <span class="tok-string">&quot;score&quot;</span>: <span class="tok-number">0.0</span>} <span class="tok-keyword">for</span> r <span class="tok-keyword">in</span> repeats]),
+                        key=<span class="tok-keyword">lambda</span> x: x[<span class="tok-string">&quot;score&quot;</span>], reverse=<span class="tok-keyword">True</span>)
+        out_path = os.path.join(args.out_dir, f&quot;{cid}_pred.sdf&quot;)
+        writer = Chem.SDWriter(out_path)
+        written = <span class="tok-number">0</span></code></pre></div>
+<p>Descending score determines SDF record order. If a complex has no scores, repeats receive tied zero scores and Python&#x27;s stable sort retains repeat order.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">        <span class="tok-keyword">for</span> info <span class="tok-keyword">in</span> ranked:
+            re = info[<span class="tok-string">&quot;repeat&quot;</span>]
+            pose = os.path.join(args.input_dir, str(re), f&quot;{cid}_pred_{args.mode}.sdf&quot;)
+            <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> os.path.exists(pose) <span class="tok-keyword">and</span> args.mode != <span class="tok-string">&quot;uncorrected&quot;</span>:
+                pose = os.path.join(args.input_dir, str(re), f&quot;{cid}_pred_uncorrected.sdf&quot;)
+            <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> os.path.exists(pose):
+                <span class="tok-keyword">continue</span>
+            <span class="tok-keyword">for</span> mol <span class="tok-keyword">in</span> Chem.SDMolSupplier(pose, removeHs=<span class="tok-keyword">False</span>):
+                <span class="tok-keyword">if</span> mol <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+                    <span class="tok-keyword">continue</span>
+                mol.SetProp(<span class="tok-string">&quot;KarmaDock_Score&quot;</span>, f&quot;{info[<span class="tok-string">&#x27;score&#x27;</span>]:.4f}&quot;)
+                mol.SetProp(<span class="tok-string">&quot;KarmaDock_Repeat&quot;</span>, str(re))
+                mol.SetProp(<span class="tok-string">&quot;KarmaDock_Mode&quot;</span>, args.mode)
+                writer.write(mol)
+                written += <span class="tok-number">1</span></code></pre></div>
+<p><strong>FF minimization</strong> relaxes geometry under a molecular mechanics force field. <strong>Alignment correction</strong> superimposes coordinates into a reference frame. Missing corrected files fall back to raw poses; missing/invalid records are skipped. Explicit hydrogens and three provenance properties are retained.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">        writer.close()
+        if written:
+            ok += 1
+        elif os.path.exists(out_path):
+            os.remove(out_path)
+    print(f&quot;wrote {ok}/{len(records)} predicted-pose files to {args.out_dir}&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()</code></pre></div>
+<p>Closing flushes output. Empty files are removed so existence means at least one pose. The summary counts complexes, not pose records.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">What happens when one repeat CSV is missing versus when every repeat CSV is missing?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>An individual missing repeat is ignored, but having no repeat score tables is fatal because there is no usable set of repeat outputs to convert.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">How is a complex with no score rows ranked, and why is the result deterministic?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Available repeats receive tied score <code dir="ltr">0.0</code>, and Python&#x27;s stable descending sort preserves their repeat order.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">Why does the converter retain <code dir="ltr">KarmaDock_Score</code>, <code dir="ltr">KarmaDock_Repeat</code>, and <code dir="ltr">KarmaDock_Mode</code> properties?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They preserve ranking and provenance information in the exported molecular records even after the original repeat directories are no longer visible to the evaluator.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>Evaluator rank is file order, so descending score and write order are inseparable.</li>
+<li>A corrected directory can contain raw fallback coordinates; <code dir="ltr">KarmaDock_Mode</code> records the requested mode, not the fallback.</li>
+<li>If any score exists for a complex, repeats absent from its score rows are not considered even if their pose files exist.</li>
+<li>RDKit parse failures are skipped instead of aborting conversion.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why can changing write order change evaluation without changing any coordinates?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The evaluator interprets SDF file order as rank, so reordering identical records changes which pose counts as top-1.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">Why does <code dir="ltr">KarmaDock_Mode=ff_corrected</code> not prove that the stored coordinates were force-field corrected?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>If the corrected file is missing, the converter falls back to the raw pose but records the requested mode rather than the actual fallback source.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">How can an existing pose be omitted when its repeat has no score row for that complex?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Once any scores exist for a complex, only repeats represented in those score rows enter the ranked list, even if another repeat directory contains a pose file.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

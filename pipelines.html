@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="pipelines.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Pipelines | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="pipelines.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="pipelines.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html" aria-current="page">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="2-the-three-pipelines">2. The three pipelines</h1>
+<div class="table-scroll"><table><thead><tr>
+<th>pipeline</th>
+<th>what it is</th>
+<th>weights</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>P1 — baseline</strong></td>
+<td>released <code dir="ltr">karmadock_screening.pkl</code>, inference only</td>
+<td>upstream (in image)</td>
+</tr>
+<tr>
+<td><strong>P2 — from scratch</strong></td>
+<td>paper&#x27;s 2-stage protocol, trained on <code dir="ltr">proto_train</code> (712)</td>
+<td><span class="unbundled"><code dir="ltr">model/p2_scratch_karmadock_team002.pkl</code> <span class="annotation">(available in the repository, not bundled into the website)</span></span></td>
+</tr>
+<tr>
+<td><strong>P3 — fine-tune</strong> <em>(bonus)</em></td>
+<td>released weights fine-tuned on <code dir="ltr">proto_train</code> (712)</td>
+<td><span class="unbundled"><code dir="ltr">model/p3_finetune_karmadock_team002.pkl</code> <span class="annotation">(available in the repository, not bundled into the website)</span></span></td>
+</tr>
+</tbody></table></div>
+<p><em>Fine-tuning (P3) is a bonus, not a core requirement and still under development.</em></p>
+<h3 id="workflow">Workflow</h3>
+<p><strong>① Training — produces the P2 / P3 checkpoints:</strong></p>
+<figure class="workflow"><a href="assets/images/workflow_training.png"><img src="assets/images/workflow_training.png" alt="Training workflow" width="580"></a></figure>
+<p><em>Preprocess <code dir="ltr">proto_train</code> (712) into graphs, then train: <code dir="ltr">--init_model</code> picks the route — </em><em>P2</em><em> from scratch (Stage 1 MDN scoring → Stage 2 + docking RMSD) or </em><em>P3</em><em> fine-tune from the released weights; <code dir="ltr">Early_stopper</code> keeps the best epoch as the checkpoint.</em></p>
+<p><strong>② Inference &amp; evaluation:</strong></p>
+<figure class="workflow"><a href="assets/images/workflow_inference.png"><img src="assets/images/workflow_inference.png" alt="Inference and evaluation workflow" width="700"></a></figure>
+<p><em>Run once per pipeline (P1 / P2 / P3): preprocess <code dir="ltr">proto_test</code> (136), dock + score with the chosen weights, export the 3 pose variants (uncorrected / FF / align), then score with the official <code dir="ltr">evaluation.py</code> (symmetry-corrected RMSD, top-1).</em></p>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">Check your understanding</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">How do P1, P2, and P3 differ in where their weights come from?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>P1 uses the released weights without training, P2 is trained from scratch with the two-stage protocol, and P3 fine-tunes the released weights.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">What determines whether the training workflow produces P2 or P3?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The initialization choice determines the path: P2 begins from scratch, while P3 supplies the released model through <code dir="ltr">--init_model</code> and fine-tunes it.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">Why does inference export three pose variants before evaluation?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It enables separate comparison of the raw prediction, force-field relaxation, and reference-frame alignment under the same official evaluator.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-3"><a href="#workflow">Workflow</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

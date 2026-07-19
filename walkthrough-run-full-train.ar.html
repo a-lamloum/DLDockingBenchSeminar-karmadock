@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="walkthrough-run-full-train.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>`scripts/run_full_train.sh` | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="walkthrough-run-full-train.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-run-full-train.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html" aria-current="page">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsrunfulltrainsh"><code dir="ltr">scripts/run_full_train.sh</code></h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="purpose">الغرض</h2>
+<p>هذا نظير <code dir="ltr">run_train.sh</code> للبيانات الكاملة على <bdi dir="ltr">GPU</bdi> واحدة. ولأن البنى الكاملة والرسوم المولّدة كبيرة، فإنه يقرأها ويكتبها عبر دليل المنزل المركّب داخل مهمة <bdi dir="ltr">Docker</bdi> بدل نقلها مع كل إرسال إلى <bdi dir="ltr">HTCondor.</bdi></p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">لماذا يستخدم تدريب البيانات الكاملة تخزينًا منزليًا مركّبًا بدل نقل الآثار كلها إلى كل صندوق مهمة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>البنى والرسوم ونقاط التحقق والسجلات كبيرة أو قابلة للاستئناف، فيتجنب التخزين الدائم النقل المتكرر والفقد عند خروج المهمة.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">ما علاقة البرنامج بـ<code dir="ltr">run_train.sh</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يطبق مفهومي التدريب من الصفر والضبط الدقيق بعملية واحدة على تقسيمات البيانات الكاملة المنتقاة، مع حفظ ومسارات تلائم المجموعة الأكبر.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">ما القيد الباقي رغم دعم البيانات الكاملة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يظل يستخدم <bdi dir="ltr">GPU</bdi> واحدة ولا يستفيد من <bdi dir="ltr">DDP</bdi>، لذلك يعمل التدريب الكامل لكنه قد يكون غير عملي زمنيًا.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">موقعه في المنظومة</h2>
+<p>يستدعيه <code dir="ltr">condor/full_train_scratch.sub</code> بالنمط <code dir="ltr">scratch</code>؛ كما يطبق <code dir="ltr">finetune</code> مع أن ملفات الإرسال المذكورة لا تستخدم ذلك النمط. يقرأ <code dir="ltr">$FULL_DATA_DIR/{full_train,full_val}.csv</code> وأدلة البنى المطابقة، مع القيمة الافتراضية <code dir="ltr">$HOME/repro_test/full_data</code>. ويحفظ البيانات المحوّلة والرسوم وحالة <bdi dir="ltr">W</bdi>&amp;<bdi dir="ltr">B</bdi> ونقاط التحقق تحت <code dir="ltr">$FULL_WORK_DIR</code>، وقيمته الافتراضية <code dir="ltr">$HOME/repro_test/work_full</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">أي نمط يستخدمه ملف <bdi dir="ltr">Condor</bdi> المذكور، وما النمط الآخر المتاح يدويًا؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يستدعي <code dir="ltr">condor/full_train_scratch.sub</code> النمط <code dir="ltr">scratch</code>، ويطبق الغلاف أيضًا <code dir="ltr">finetune</code> مع أن ملف إرسال مذكورًا لا يختاره.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">لماذا يُمرر <code dir="ltr">full_train</code> و<code dir="ltr">full_val</code> كمدخلين منفصلين؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يحفظان تقسيم التحقق المنتقى بدل اقتطاع أمثلة تحقق عشوائيًا من مجموعة التدريب الكاملة.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">ما الذي يحفظه <code dir="ltr">$FULL_WORK_DIR</code> بين المهام؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يحفظ البنى المحوّلة والرسوم وعلامات المعالجة ونقاط التحقق وحالة الاستئناف وملفات <bdi dir="ltr">W</bdi>&amp;<bdi dir="ltr">B</bdi> لإعادة الاستخدام.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">شرح الشيفرة</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># run_full_train.sh &lt;scratch|finetune&gt;
+</span><span class="tok-comment"># ...
+</span>set -euo pipefail
+set -x
+
+MODE=${<span class="tok-number">1</span>:?usage: run_full_train.sh &lt;scratch|finetune&gt;}
+KD=/app/KarmaDock
+export PYTHONPATH=/app/KarmaDock:${PYTHONPATH:-}
+
+DATA=<span class="tok-string">&quot;${FULL_DATA_DIR:-$HOME/repro_test/full_data}&quot;</span>
+WORK=<span class="tok-string">&quot;${FULL_WORK_DIR:-$HOME/repro_test/work_full}&quot;</span>
+SUBMIT=<span class="tok-string">&quot;$PWD&quot;</span>; SCRIPTS=<span class="tok-string">&quot;$SUBMIT/scripts&quot;</span>
+CKPT=<span class="tok-string">&quot;$WORK/ckpt&quot;</span>; mkdir -p <span class="tok-string">&quot;$CKPT&quot;</span></code></pre></div>
+<p>لخيارات <bdi dir="ltr">Bash</bdi> الصارمة وخيار التصحيح الأدوار نفسها التي في <code dir="ltr">run_train.sh</code>. وتجعل <code dir="ltr">${VAR:-default}</code> المسارات قابلة للنقل. يجهّز <bdi dir="ltr">HTCondor</bdi> دليل <code dir="ltr">scripts</code> تحت دليل عمل الصندوق مع أن الملف التنفيذي نفسه قد يظهر مسطحًا، لذلك تستخدم الشيفرة عمدًا <code dir="ltr">$PWD/scripts</code> بدل دليل الملف التنفيذي.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">preprocess() {                               <span class="tok-comment"># $1 = split name (full_train | full_val)
+</span>  local split=<span class="tok-string">&quot;$1&quot;</span>
+  local kin=<span class="tok-string">&quot;$WORK/$split/complex&quot;</span> graph=<span class="tok-string">&quot;$WORK/$split/graphs&quot;</span>
+  <span class="tok-keyword">if</span> [ -f <span class="tok-string">&quot;$WORK/$split/.preprocessed&quot;</span> ]; <span class="tok-keyword">then</span> echo <span class="tok-string">&quot;# $split already preprocessed&quot;</span>; return; <span class="tok-keyword">fi</span>
+  mkdir -p <span class="tok-string">&quot;$kin&quot;</span> <span class="tok-string">&quot;$graph&quot;</span>
+  python3 <span class="tok-string">&quot;$SCRIPTS/convert_seminar_to_karmadock.py&quot;</span> \
+      --csv <span class="tok-string">&quot;$DATA/$split.csv&quot;</span> --src_dir <span class="tok-string">&quot;$DATA/$split&quot;</span> --out_dir <span class="tok-string">&quot;$kin&quot;</span>
+  ( cd <span class="tok-string">&quot;$KD/utils&quot;</span>
+    python3 -u pre_processing.py --complex_file_dir <span class="tok-string">&quot;$kin&quot;</span>
+    python3 -u generate_graph.py --complex_file_dir <span class="tok-string">&quot;$kin&quot;</span> --graph_file_dir <span class="tok-string">&quot;$graph&quot;</span> )
+  touch <span class="tok-string">&quot;$WORK/$split/.preprocessed&quot;</span>
+}
+preprocess full_train
+preprocess full_val</code></pre></div>
+<p>تزيل الدالة التكرار بين تقسيمي التدريب والتحقق المنتقيين. وتحصر <code dir="ltr">local</code> متغيراتها كي لا تتسرب إلى حالة البرنامج العامة. يحصل كل تقسيم على بنى محوّلة ودليل رسوم مستقلين. وتهم رسوم التحقق المنفصلة لأن التحقق الكامل منتقى بدل اقتطاعه عشوائيًا من التدريب.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">COMMON=( --csv <span class="tok-string">&quot;$DATA/full_train.csv&quot;</span> --graph_dir <span class="tok-string">&quot;$WORK/full_train/graphs&quot;</span>
+         --complex_dir <span class="tok-string">&quot;$WORK/full_train/complex&quot;</span>
+         --val_csv <span class="tok-string">&quot;$DATA/full_val.csv&quot;</span> --val_graph_dir <span class="tok-string">&quot;$WORK/full_val/graphs&quot;</span>
+         --batch_size <span class="tok-number">4</span> --accum_steps <span class="tok-number">16</span> --random_seed <span class="tok-number">42</span> --resume
+         --wandb --wandb_project karmadock-seminar --wandb_run_name <span class="tok-string">&quot;full_${MODE}&quot;</span> )</code></pre></div>
+<p>تحافظ مصفوفة <bdi dir="ltr">Bash</bdi> على كل وسيط بوصفه كلمة <bdi dir="ltr">Shell</bdi> مستقلة حتى إذا احتوى المسار مسافات. تشترك الأنماط كلها في تقسيم التحقق الصريح المقاوم للتسرب، وإعدادات الدفعة، وسلوك الاستئناف، وتسجيل <bdi dir="ltr">W</bdi>&amp;<bdi dir="ltr">B.</bdi> تُتوقع بيانات اعتماد <bdi dir="ltr">W</bdi>&amp;<bdi dir="ltr">B</bdi> عبر <code dir="ltr">WANDB_API_KEY</code> أو ملف <code dir="ltr">.netrc</code> في المنزل المركّب؛ وإلا يعود <code dir="ltr">train.py</code> إلى التسجيل دون اتصال.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">if</span> [ <span class="tok-string">&quot;$MODE&quot;</span> = <span class="tok-string">&quot;scratch&quot;</span> ]; <span class="tok-keyword">then</span>
+  <span class="tok-keyword">if</span> [ ! -f <span class="tok-string">&quot;$CKPT/p_stage1/stage.done&quot;</span> ]; <span class="tok-keyword">then</span>
+    python3 -u <span class="tok-string">&quot;$SCRIPTS/train.py&quot;</span> <span class="tok-string">&quot;${COMMON[@]}&quot;</span> \
+        --out_dir <span class="tok-string">&quot;$CKPT/p_stage1&quot;</span> --init_model <span class="tok-string">&quot;&quot;</span> --pos_r <span class="tok-number">0</span> \
+        --lr 1e-<span class="tok-number">3</span> --weight_decay 1e-<span class="tok-number">5</span> --patience <span class="tok-number">70</span> --epochs <span class="tok-number">1000</span>
+    touch <span class="tok-string">&quot;$CKPT/p_stage1/stage.done&quot;</span>
+  <span class="tok-keyword">fi</span>
+  python3 -u <span class="tok-string">&quot;$SCRIPTS/train.py&quot;</span> <span class="tok-string">&quot;${COMMON[@]}&quot;</span> \
+      --out_dir <span class="tok-string">&quot;$CKPT/p_stage2&quot;</span> --init_model <span class="tok-string">&quot;$CKPT/p_stage1/karmadock_team002.pkl&quot;</span> \
+      --pos_r <span class="tok-number">1</span> --lr 1e-<span class="tok-number">4</span> --weight_decay 1e-<span class="tok-number">4</span> --patience <span class="tok-number">20</span> --epochs <span class="tok-number">1000</span> --jitter <span class="tok-number">0.05</span>
+  echo <span class="tok-string">&quot;=== FULL from-scratch done: $CKPT/p_stage2/karmadock_team002.pkl ===&quot;</span></code></pre></div>
+<p>هذا هو الهدف ذو المرحلتين نفسه في مشغّل النموذج الأولي: تسجيل <bdi dir="ltr">MDN</bdi> فقط أولًا، ثم تعلّم التسجيل وإحداثيات الإرساء معًا. يعني <bdi dir="ltr">CSV</bdi> الصريح للتحقق أن كل رسوم <code dir="ltr">full_train</code> المتاحة تظل للتدريب وكل رسوم <code dir="ltr">full_val</code> المتاحة تظل للتحقق.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">elif</span> [ <span class="tok-string">&quot;$MODE&quot;</span> = <span class="tok-string">&quot;finetune&quot;</span> ]; <span class="tok-keyword">then</span>
+  python3 -u <span class="tok-string">&quot;$SCRIPTS/train.py&quot;</span> <span class="tok-string">&quot;${COMMON[@]}&quot;</span> \
+      --out_dir <span class="tok-string">&quot;$CKPT/p_finetune&quot;</span> --init_model <span class="tok-string">&quot;$KD/trained_models/karmadock_screening.pkl&quot;</span> \
+      --pos_r <span class="tok-number">1</span> --lr 1e-<span class="tok-number">4</span> --weight_decay <span class="tok-number">0</span> --patience <span class="tok-number">30</span> --epochs <span class="tok-number">500</span>
+  echo <span class="tok-string">&quot;=== FULL fine-tune done: $CKPT/p_finetune/karmadock_team002.pkl ===&quot;</span>
+<span class="tok-keyword">else</span>
+  echo <span class="tok-string">&quot;ERROR: mode must be &#x27;scratch&#x27; or &#x27;finetune&#x27;&quot;</span>; exit <span class="tok-number">2</span>
+<span class="tok-keyword">fi</span></code></pre></div>
+<p>يبدأ البديل من الأوزان المنشورة ويدرّب مرحلة واحدة بخسارة مشتركة. يأتي فحص النمط متأخرًا عمدًا لأن المعالجة المسبقة تسبقه؛ وتمرر ملفات الإرسال الصالحة نمطًا معروفًا دائمًا.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">لماذا تستخدم دالة <code dir="ltr">preprocess</code> علامة مستقلة لكل تقسيم؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>للتدريب والتحقق بنى محوّلة وأدلة رسوم منفصلة، فلا يمكن تجاوز كل خط مكلف إلا بعد اكتماله الناجح مستقلًا.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">كيف تحسن مصفوفة <bdi dir="ltr">Bash</bdi> المسماة <code dir="ltr">COMMON</code> صحة بناء أوامر المدرّب؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تشارك وسائط التحقق المقاوم للتسرب والدفعة والبذرة والاستئناف والتسجيل، وتحفظ كل مسار أو قيمة كلمة <bdi dir="ltr">Shell</bdi> مستقلة.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">كيف يختلف التدريب من الصفر والضبط الدقيق في التهيئة وعدد المراحل؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يدرّب الأول <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> لـ<bdi dir="ltr">MDN</bdi> فقط من أوزان عشوائية ثم يهيئ <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> المشتركة من أفضل نقطة تحقق؛ ويبدأ الضبط من أوزان منشورة ويشغّل مرحلة مشتركة واحدة.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">محاذير وملاحظات</h2>
+<ul>
+<li>يفترض البرنامج أن <bdi dir="ltr">HTCondor</bdi> ركّب منزل المستخدم، أي <code dir="ltr">+WantGPUHomeMounted = true</code> في ملف الإرسال. وبدونه قد تشير القيم الافتراضية إلى مسارات غير متاحة في الحاوية.</li>
+<li>تحمل علامات المعالجة المسبقة خطر العلامة القديمة نفسه الموجود في <code dir="ltr">run_train.sh</code>.</li>
+<li>يحدث التحقق من النمط بعد معالجة التقسيمين، لذلك قد ينفذ نمط غير صالح معالجة مسبقة مكلفة قبل الخروج.</li>
+<li>تصف التعليقات التدريب الكامل على <bdi dir="ltr">GPU</bdi> واحدة بأنه غير عملي صراحة؛ فهذا المشغّل يعمل لكنه لا يستفيد من عدة وحدات <bdi dir="ltr">GPU.</bdi></li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">ما الذي يفشل إذا لم تركّب مهمة <bdi dir="ltr">HTCondor</bdi> منزل المستخدم؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تشير مسارات البيانات والعمل الافتراضية إلى منزل غير متاح، فلا يمكن العثور على المدخلات والرسوم ونقاط التحقق الدائمة أو كتابتها.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">لماذا قد يستهلك نمط غير صالح وقتًا كبيرًا قبل إظهار خطئه؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يعالج البرنامج تقسيمي البيانات الكاملة قبل بلوغ فرع النمط المتأخر <code dir="ltr">scratch</code> أو <code dir="ltr">finetune</code>.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">لماذا قد تصبح علامة <code dir="ltr">.preprocessed</code> مضللة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تسجل اكتمالًا سابقًا لكنها لا تتحقق من بقاء ملفات <bdi dir="ltr">CSV</bdi> أو البنى أو الرسوم حاضرة وحديثة وسليمة.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#purpose">الغرض</a></li><li class="toc-level-2"><a href="#how-it-fits-in">موقعه في المنظومة</a></li><li class="toc-level-2"><a href="#walkthrough">شرح الشيفرة</a></li><li class="toc-level-2"><a href="#gotchas--notes">محاذير وملاحظات</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

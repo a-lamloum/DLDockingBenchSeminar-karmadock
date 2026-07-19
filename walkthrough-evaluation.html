@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-evaluation.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>evaluation/evaluation.py | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-evaluation.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-evaluation.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html" aria-current="page">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="evaluationevaluationpy"><code dir="ltr">evaluation/evaluation.py</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This is the repository&#x27;s dataset-level docking evaluator. It maps CSV rows to reference and predicted structures, computes symmetry-aware heavy-atom RMSD for ranked poses, optionally runs PoseBusters physical-validity checks, prints aggregate top-1/best-of-N statistics, and writes one result row per evaluated pose.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why does this evaluator produce one row per pose rather than only one summary row per complex?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Per-pose rows preserve rank, RMSD thresholds, paths, and optional validity checks, allowing top-1 and best-of-N summaries to be derived afterward.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">What two different aspects of docking quality do RMSD and PoseBusters evaluate?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>RMSD compares predicted and reference ligand geometry, while PoseBusters checks whether a pose is physically and chemically plausible in its conditioning context.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">Why is symmetry awareness important when comparing ligand coordinates?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Chemically equivalent atom swaps should not penalize an otherwise identical pose, so the evaluator searches equivalent mappings for the minimum RMSD.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p>It consumes <code dir="ltr">data/&lt;dataset&gt;.csv</code>, reference files under <code dir="ltr">data/&lt;dataset&gt;/</code>, and predictions under <code dir="ltr">results/&lt;dataset&gt;/&lt;complex_id&gt;_pred.sdf</code>. <code dir="ltr">scripts/evaluate.sh</code> invokes it repeatedly through temporary symlinks for prototype comparisons; users can also invoke it directly. Its CLI requires <code dir="ltr">--dataset</code>, accepts <code dir="ltr">--top_n</code>, <code dir="ltr">--no_pb_valid</code>, and <code dir="ltr">--output_csv</code>, and defaults output to <code dir="ltr">results/&lt;dataset&gt;_evaluation.csv</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">How does the dataset name determine the evaluator&#x27;s input locations?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It selects <code dir="ltr">data/&lt;dataset&gt;.csv</code>, reference structures under <code dir="ltr">data/&lt;dataset&gt;/</code>, and ranked predictions under <code dir="ltr">results/&lt;dataset&gt;/</code>.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">Why can <code dir="ltr">scripts/evaluate.sh</code> reuse this fixed directory interface for several prototype pipelines?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The wrapper creates temporary symbolic-link views that expose each pipeline&#x27;s pose directory under the evaluator&#x27;s expected <code dir="ltr">results/proto_test</code> name.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">What changes when <code dir="ltr">--no_pb_valid</code> is supplied?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>PoseBusters checks are disabled, but ranked-pose loading, symmetry-corrected RMSD, aggregate statistics, and CSV output still run.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<h3 id="module-setup-and-logging">Module setup and logging</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-comment">#!/usr/bin/env python3</span>
+<span class="tok-string">&quot;&quot;&quot;
+updated_evaluation.py — Updated evaluation script for pocket-conditioned molecular docking tools.
+
+This script evaluates docking predictions against reference structures using CSV-based dataset mapping.
+Supports multiple dataset variants (proto_test, posebusters_filtered, full_test) with different naming conventions.
+
+Computes symmetry-corrected heavy-atom RMSD and runs PoseBusters physical validity checks.
+&quot;&quot;&quot;</span>
+
+<span class="tok-keyword">import</span> argparse
+<span class="tok-keyword">import</span> logging
+<span class="tok-keyword">import</span> sys
+<span class="tok-keyword">from</span> pathlib <span class="tok-keyword">import</span> Path
+<span class="tok-keyword">from</span> typing <span class="tok-keyword">import</span> Dict, List, Optional, Tuple
+
+<span class="tok-keyword">import</span> numpy <span class="tok-keyword">as</span> np
+<span class="tok-keyword">import</span> pandas <span class="tok-keyword">as</span> pd
+<span class="tok-keyword">from</span> rdkit <span class="tok-keyword">import</span> Chem
+<span class="tok-keyword">from</span> rdkit.Chem <span class="tok-keyword">import</span> AllChem, rdMolAlign
+
+logging.basicConfig(
+    level=logging.INFO,
+    format=<span class="tok-string">&quot;%(asctime)s [%(levelname)s] %(message)s&quot;</span>,
+    datefmt=<span class="tok-string">&quot;%H:%M:%S&quot;</span>,
+)
+logger = logging.getLogger(__name__)</code></pre></div>
+<p><code dir="ltr">Path</code> gives composable filesystem paths; the type hints describe expected dictionaries, lists, optional molecules/paths, and triples but do not enforce types at runtime. RDKit parses molecules and performs atom alignment. A module logger provides timestamps and severity levels, useful in long cluster evaluations.</p>
+<h3 id="symmetry-corrected-rmsd">Symmetry-corrected RMSD</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> calc_symmetry_rmsd(pred_mol: Chem.Mol, ref_mol: Chem.Mol) -&gt; float:
+    <span class="tok-string">&quot;&quot;&quot;
+    Compute symmetry-corrected heavy-atom RMSD between predicted and reference mol.
+
+    Uses RDKit&#x27;s GetBestRMS which accounts for molecular symmetry.
+    &quot;&quot;&quot;</span>
+    <span class="tok-keyword">try</span>:
+        pred_noH = AllChem.RemoveHs(pred_mol)
+        ref_noH = AllChem.RemoveHs(ref_mol)
+        rmsd = rdMolAlign.GetBestRMS(pred_noH, ref_noH)
+        <span class="tok-keyword">return</span> rmsd
+    <span class="tok-keyword">except</span> Exception <span class="tok-keyword">as</span> e:
+        logger.warning(f&quot;RMSD calculation failed: {e}&quot;)
+        <span class="tok-keyword">return</span> float(<span class="tok-string">&quot;nan&quot;</span>)</code></pre></div>
+<p>RMSD is the square root of the mean squared distance between corresponding atoms. Hydrogens are removed because their positions/counts are variable and docking benchmarks conventionally emphasize heavy (non-hydrogen) atoms. <strong>Symmetry correction</strong> considers chemically equivalent atom mappings—for example, swapping indistinguishable atoms in a symmetric group should not make an otherwise identical pose look wrong. <code dir="ltr">GetBestRMS</code> selects the mapping and rigid alignment with minimum RMSD. Any mismatch or RDKit failure becomes NaN so one molecule need not terminate the dataset.</p>
+<p>An important interpretation detail is that <code dir="ltr">GetBestRMS</code> performs optimal spatial alignment of the probe to the reference. That removes global translation/rotation before scoring, whereas pocket-conditioned docking RMSD is often measured in the fixed protein frame. This implementation therefore measures shape/conformation agreement after superposition, not purely placement error in the pocket.</p>
+<h3 id="loading-predicted-and-reference-molecules">Loading predicted and reference molecules</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> load_pred_poses(sdf_path: Path, top_n: int) -&gt; List[Chem.Mol]:
+    <span class="tok-string">&quot;&quot;&quot;Load up to top_n conformers from a multi-conformer SDF file.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> sdf_path.exists():
+        <span class="tok-keyword">return</span> []
+
+    supplier = Chem.SDMolSupplier(str(sdf_path), removeHs=<span class="tok-keyword">False</span>, sanitize=<span class="tok-keyword">False</span>)
+    poses = []
+    <span class="tok-keyword">for</span> i, mol <span class="tok-keyword">in</span> enumerate(supplier):
+        <span class="tok-keyword">if</span> i &gt;= top_n:
+            <span class="tok-keyword">break</span>
+        <span class="tok-keyword">if</span> mol <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:
+            poses.append(mol)
+        <span class="tok-keyword">else</span>:
+            logger.warning(f&quot;  Pose {i+<span class="tok-number">1</span>} in {sdf_path.name} could not be parsed, skipping.&quot;)
+    <span class="tok-keyword">return</span> poses</code></pre></div>
+<p>An SDF can contain several molecule records; this project treats their file order as rank. RDKit suppliers parse lazily. <code dir="ltr">sanitize=False</code> avoids rejecting predicted geometries because of chemistry checks, allowing RMSD attempts on imperfect outputs; <code dir="ltr">removeHs=False</code> preserves the record initially, with hydrogens removed explicitly during RMSD. Invalid records are skipped, so returned-list position is compacted even though warning rank reports original record position.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> load_ref_ligand(sdf_path: Path) -&gt; Optional[Chem.Mol]:
+    <span class="tok-string">&quot;&quot;&quot;Load single-conformer reference ligand from SDF.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> sdf_path.exists():
+        <span class="tok-keyword">return</span> <span class="tok-keyword">None</span>
+
+    supplier = Chem.SDMolSupplier(str(sdf_path), removeHs=<span class="tok-keyword">False</span>, sanitize=<span class="tok-keyword">False</span>)
+    <span class="tok-keyword">for</span> mol <span class="tok-keyword">in</span> supplier:
+        <span class="tok-keyword">if</span> mol <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:
+            <span class="tok-keyword">return</span> mol
+    <span class="tok-keyword">return</span> <span class="tok-keyword">None</span></code></pre></div>
+<p>Only the first parseable reference record is used. Returning <code dir="ltr">None</code> gives the caller one clear missing/unparseable signal.</p>
+<h3 id="dataset-schemas-and-paths">Dataset schemas and paths</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> get_complex_identifier(ligand_filename: str, dataset_name: str) -&gt; str:
+    <span class="tok-string">&quot;&quot;&quot;Extract complex identifier from ligand filename based on dataset naming convention.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> dataset_name <span class="tok-keyword">in</span> [<span class="tok-string">&quot;proto_test&quot;</span>, <span class="tok-string">&quot;full_test&quot;</span>, <span class="tok-string">&quot;proto_train&quot;</span>, <span class="tok-string">&quot;full_train&quot;</span>]:
+        <span class="tok-keyword">return</span> ligand_filename.replace(<span class="tok-string">&quot;_ligand_refined.sdf&quot;</span>, <span class="tok-string">&quot;&quot;</span>)
+    <span class="tok-keyword">elif</span> dataset_name == <span class="tok-string">&quot;posebusters_filtered&quot;</span>:
+        <span class="tok-keyword">return</span> ligand_filename.replace(<span class="tok-string">&quot;_ligand.sdf&quot;</span>, <span class="tok-string">&quot;&quot;</span>)
+    <span class="tok-keyword">else</span>:
+        <span class="tok-keyword">for</span> suffix <span class="tok-keyword">in</span> [<span class="tok-string">&quot;_ligand_refined.sdf&quot;</span>, <span class="tok-string">&quot;_ligand.sdf&quot;</span>, <span class="tok-string">&quot;.sdf&quot;</span>]:
+            <span class="tok-keyword">if</span> ligand_filename.endswith(suffix):
+                <span class="tok-keyword">return</span> ligand_filename.replace(suffix, <span class="tok-string">&quot;&quot;</span>)
+        <span class="tok-keyword">return</span> ligand_filename</code></pre></div>
+<p>The complex ID links CSV rows to <code dir="ltr">&lt;id&gt;_pred.sdf</code>. Refined seminar datasets and PoseBusters use different suffixes. The fallback is defensive, although argparse currently restricts calls to known dataset names. <code dir="ltr">replace</code> removes all occurrences of the selected text, not only the terminal one; intended filenames contain it once at the end.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> load_dataset_csv(csv_path: Path) -&gt; pd.DataFrame:
+    <span class="tok-string">&quot;&quot;&quot;Load and standardize dataset CSV file.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> csv_path.exists():
+        <span class="tok-keyword">raise</span> FileNotFoundError(f&quot;CSV file not found: {csv_path}&quot;)
+
+    df = pd.read_csv(csv_path)
+
+    <span class="tok-keyword">if</span> <span class="tok-string">&quot;ligand_file_name&quot;</span> <span class="tok-keyword">in</span> df.columns:
+        df = df.rename(columns={
+            <span class="tok-string">&quot;ligand_file_name&quot;</span>: <span class="tok-string">&quot;ligand_file&quot;</span>,
+            <span class="tok-string">&quot;protein_file_name&quot;</span>: <span class="tok-string">&quot;protein_file&quot;</span>
+        })
+    <span class="tok-keyword">elif</span> <span class="tok-string">&quot;ligand_name&quot;</span> <span class="tok-keyword">in</span> df.columns:
+        <span class="tok-keyword">pass</span>
+    <span class="tok-keyword">else</span>:
+        <span class="tok-keyword">raise</span> ValueError(f&quot;Unrecognized CSV format in {csv_path}&quot;)
+
+    <span class="tok-keyword">return</span> df</code></pre></div>
+<p>Downstream code expects canonical <code dir="ltr">ligand_file</code>/<code dir="ltr">protein_file</code> columns. Prototype/full evaluation CSVs are renamed; PoseBusters already has those columns and is identified by <code dir="ltr">ligand_name</code>. Unknown schemas fail early rather than constructing wrong paths.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> get_file_paths(row: pd.Series, dataset_name: str, data_dir: Path, results_dir: Path) -&gt; Tuple[Path, Path, Path]:
+    <span class="tok-string">&quot;&quot;&quot;Get file paths for reference protein, reference ligand, and predicted poses.&quot;&quot;&quot;</span>
+    ligand_file = row[<span class="tok-string">&quot;ligand_file&quot;</span>]
+    protein_file = row[<span class="tok-string">&quot;protein_file&quot;</span>]
+
+    ref_ligand_path = data_dir / dataset_name / ligand_file
+    ref_protein_path = data_dir / dataset_name / protein_file
+
+    complex_id = get_complex_identifier(ligand_file, dataset_name)
+    pred_sdf_path = results_dir / dataset_name / f&quot;{complex_id}_pred.sdf&quot;
+
+    <span class="tok-keyword">return</span> ref_protein_path, ref_ligand_path, pred_sdf_path</code></pre></div>
+<p>This function centralizes the fixed directory convention. Protein comes first in its return tuple because PoseBusters conditions validity checks on the pocket; RMSD itself only needs the two ligand paths.</p>
+<h3 id="posebusters-integration">PoseBusters integration</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> run_posebusters_check(pred_sdf: Path, ref_sdf: Path, protein_pdb: Path) -&gt; pd.DataFrame:
+    <span class="tok-string">&quot;&quot;&quot;Run PoseBusters validity checks on predicted poses.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">try</span>:
+        <span class="tok-keyword">from</span> posebusters <span class="tok-keyword">import</span> PoseBusters
+
+        buster = PoseBusters(config=<span class="tok-string">&quot;dock&quot;</span>)
+        results = buster.bust(
+            mol_pred=str(pred_sdf),
+            mol_true=str(ref_sdf),
+            mol_cond=str(protein_pdb),
+        )
+        <span class="tok-keyword">return</span> results
+    <span class="tok-keyword">except</span> ImportError:
+        logger.error(<span class="tok-string">&quot;PoseBusters not installed. Install with: pip install posebusters&quot;</span>)
+        sys.exit(<span class="tok-number">1</span>)
+    <span class="tok-keyword">except</span> Exception <span class="tok-keyword">as</span> e:
+        logger.warning(f&quot;PoseBusters check failed: {e}&quot;)
+        <span class="tok-keyword">return</span> pd.DataFrame()</code></pre></div>
+<p>PoseBusters checks whether a docked pose is physically/chemically plausible—such as internal geometry and clashes—using predicted ligand, true ligand, and conditioning protein. The <code dir="ltr">dock</code> configuration selects its docking test suite. A missing package is treated as a configuration error and exits; a per-complex runtime failure returns an empty DataFrame so evaluation can continue.</p>
+<h3 id="evaluating-one-complex">Evaluating one complex</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> evaluate_complex(
+    row: pd.Series,
+    dataset_name: str,
+    data_dir: Path,
+    results_dir: Path,
+    top_n: int,
+    run_pb: bool
+) -&gt; List[Dict]:
+    <span class="tok-string">&quot;&quot;&quot;Evaluate all poses for a single complex.&quot;&quot;&quot;</span>
+
+    ref_protein_path, ref_ligand_path, pred_sdf_path = get_file_paths(
+        row, dataset_name, data_dir, results_dir
+    )
+
+    complex_id = get_complex_identifier(row[<span class="tok-string">&quot;ligand_file&quot;</span>], dataset_name)</code></pre></div>
+<p>One CSV row is the unit of evaluation. Paths and ID are derived once and used for diagnostics and result fields.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    missing_files = []
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> pred_sdf_path.exists():
+        missing_files.append(f&quot;predicted poses: {pred_sdf_path}&quot;)
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> ref_ligand_path.exists():
+        missing_files.append(f&quot;reference ligand: {ref_ligand_path}&quot;)
+    <span class="tok-keyword">if</span> run_pb <span class="tok-keyword">and</span> <span class="tok-keyword">not</span> ref_protein_path.exists():
+        missing_files.append(f&quot;reference protein: {ref_protein_path}&quot;)
+
+    <span class="tok-keyword">if</span> missing_files:
+        logger.warning(f&quot;  [{complex_id}] Missing files: {<span class="tok-string">&#x27;, &#x27;</span>.join(missing_files)}&quot;)
+        <span class="tok-keyword">return</span> []</code></pre></div>
+<p>The protein is required only for PoseBusters, not ligand RMSD. Collecting all missing paths gives one actionable warning instead of failing on the first.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    ref_mol = load_ref_ligand(ref_ligand_path)
+    <span class="tok-keyword">if</span> ref_mol <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+        logger.warning(f&quot;  [{complex_id}] Could not parse reference ligand&quot;)
+        <span class="tok-keyword">return</span> []
+
+    pred_poses = load_pred_poses(pred_sdf_path, top_n)
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> pred_poses:
+        logger.warning(f&quot;  [{complex_id}] No valid predicted poses found&quot;)
+        <span class="tok-keyword">return</span> []</code></pre></div>
+<p>An unparseable reference invalidates all comparisons. At least one predicted record must parse inside the requested prefix.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    results = []
+    <span class="tok-keyword">for</span> rank, pose <span class="tok-keyword">in</span> enumerate(pred_poses, start=<span class="tok-number">1</span>):
+        rmsd = calc_symmetry_rmsd(pose, ref_mol)
+
+        result_row = {
+            <span class="tok-string">&quot;complex_id&quot;</span>: complex_id,
+            <span class="tok-string">&quot;dataset&quot;</span>: dataset_name,
+            <span class="tok-string">&quot;pose_rank&quot;</span>: rank,
+            <span class="tok-string">&quot;rmsd&quot;</span>: round(rmsd, <span class="tok-number">4</span>) <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> np.isnan(rmsd) <span class="tok-keyword">else</span> np.nan,
+            <span class="tok-string">&quot;rmsd_lt2&quot;</span>: rmsd &lt; <span class="tok-number">2.0</span> <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> np.isnan(rmsd) <span class="tok-keyword">else</span> <span class="tok-keyword">False</span>,
+            <span class="tok-string">&quot;rmsd_lt1&quot;</span>: rmsd &lt; <span class="tok-number">1.0</span> <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> np.isnan(rmsd) <span class="tok-keyword">else</span> <span class="tok-keyword">False</span>,
+            <span class="tok-string">&quot;ligand_file&quot;</span>: row[<span class="tok-string">&quot;ligand_file&quot;</span>],
+            <span class="tok-string">&quot;protein_file&quot;</span>: row[<span class="tok-string">&quot;protein_file&quot;</span>]
+        }
+
+        results.append(result_row)</code></pre></div>
+<p>The conventional docking success threshold is RMSD below 2 Å; below 1 Å is stricter. NaN never counts as success. RMSD is stored to four decimals while booleans are computed from the unrounded value. Note that after invalid SDF records are skipped, ranks are renumbered consecutively from the parseable list rather than preserving original record indices.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> run_pb:
+        pb_results = run_posebusters_check(pred_sdf_path, ref_ligand_path, ref_protein_path)
+
+        <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> pb_results.empty:
+            <span class="tok-keyword">for</span> rank_idx <span class="tok-keyword">in</span> range(min(len(results), len(pb_results))):
+                pb_row = pb_results.iloc[rank_idx]
+
+                bool_cols = pb_row.index[pb_row.apply(<span class="tok-keyword">lambda</span> x: isinstance(x, (bool, np.bool_)))]
+                pb_valid = bool(pb_row[bool_cols].all()) <span class="tok-keyword">if</span> len(bool_cols) &gt; <span class="tok-number">0</span> <span class="tok-keyword">else</span> <span class="tok-keyword">False</span>
+                results[rank_idx][<span class="tok-string">&quot;pb_valid&quot;</span>] = pb_valid
+
+                <span class="tok-keyword">for</span> col <span class="tok-keyword">in</span> bool_cols:
+                    <span class="tok-keyword">if</span> col <span class="tok-keyword">not</span> <span class="tok-keyword">in</span> results[rank_idx]:
+                        results[rank_idx][col] = bool(pb_row[col])
+        <span class="tok-keyword">else</span>:
+            <span class="tok-keyword">for</span> result_row <span class="tok-keyword">in</span> results:
+                result_row[<span class="tok-string">&quot;pb_valid&quot;</span>] = <span class="tok-keyword">None</span>
+
+    <span class="tok-keyword">return</span> results</code></pre></div>
+<p>PoseBusters is run once on the whole predicted SDF, then rows are paired by position with evaluated poses. <strong>PB-Valid</strong> is true only if every boolean PoseBusters test in that row passes; individual booleans are also copied unless their name would overwrite an existing result key. Empty check output records unknown validity as <code dir="ltr">None</code>, distinct from a real failure (<code dir="ltr">False</code>).</p>
+<h3 id="evaluating-a-dataset-and-summarizing">Evaluating a dataset and summarizing</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> evaluate_dataset(
+    dataset_name: str,
+    data_dir: Path,
+    results_dir: Path,
+    top_n: int,
+    run_pb: bool,
+    output_csv: Optional[Path] = <span class="tok-keyword">None</span>
+) -&gt; pd.DataFrame:
+    <span class="tok-string">&quot;&quot;&quot;Run evaluation on a complete dataset.&quot;&quot;&quot;</span>
+
+    csv_path = data_dir / f&quot;{dataset_name}.csv&quot;
+    df = load_dataset_csv(csv_path)
+
+    logger.info(f&quot;Loaded {len(df)} complexes from {csv_path}&quot;)
+    logger.info(f&quot;Dataset: {dataset_name} | Top-N: {top_n} | PoseBusters: {run_pb}&quot;)
+
+    all_results = []
+    n_skipped = <span class="tok-number">0</span>
+
+    <span class="tok-keyword">for</span> i, (_, row) <span class="tok-keyword">in</span> enumerate(df.iterrows(), start=<span class="tok-number">1</span>):
+        <span class="tok-keyword">if</span> i % <span class="tok-number">50</span> == <span class="tok-number">0</span> <span class="tok-keyword">or</span> i == len(df):
+            logger.info(f&quot;  Progress: {i}/{len(df)}&quot;)
+
+        results = evaluate_complex(row, dataset_name, data_dir, results_dir, top_n, run_pb)
+        <span class="tok-keyword">if</span> results:
+            all_results.extend(results)
+        <span class="tok-keyword">else</span>:
+            n_skipped += <span class="tok-number">1</span></code></pre></div>
+<p>The evaluator iterates pandas rows in CSV order and reports progress every 50. <code dir="ltr">all_results</code> is flattened because one complex may yield several pose rows. A complex is skipped only if it yields no pose rows; an RMSD-NaN pose still counts as evaluated.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> all_results:
+        logger.error(<span class="tok-string">&quot;No results produced. Check your predicted poses and data paths.&quot;</span>)
+        <span class="tok-keyword">return</span> pd.DataFrame()
+
+    results_df = pd.DataFrame(all_results)
+    n_evaluated = results_df[<span class="tok-string">&quot;complex_id&quot;</span>].nunique()
+    logger.info(f&quot;Evaluated {n_evaluated} complexes ({n_skipped} skipped)&quot;)</code></pre></div>
+<p>Returning an empty DataFrame is not itself a process failure. Otherwise pandas forms the union of keys, so PoseBusters columns absent from some rows become missing values.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    top1 = results_df[results_df[<span class="tok-string">&quot;pose_rank&quot;</span>] == <span class="tok-number">1</span>]
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> top1.empty:
+        rmsd_lt2_pct = top1[<span class="tok-string">&quot;rmsd_lt2&quot;</span>].mean() * <span class="tok-number">100</span>
+        rmsd_lt1_pct = top1[<span class="tok-string">&quot;rmsd_lt1&quot;</span>].mean() * <span class="tok-number">100</span>
+        median_rmsd = top1[<span class="tok-string">&quot;rmsd&quot;</span>].median()
+
+        logger.info(f&quot;Top-1 Results:&quot;)
+        logger.info(f&quot;  RMSD &lt; 2.0 Å: {rmsd_lt2_pct:.1f}%&quot;)
+        logger.info(f&quot;  RMSD &lt; 1.0 Å: {rmsd_lt1_pct:.1f}%&quot;)
+        logger.info(f&quot;  Median RMSD: {median_rmsd:.2f} Å&quot;)
+
+        <span class="tok-keyword">if</span> <span class="tok-string">&quot;pb_valid&quot;</span> <span class="tok-keyword">in</span> top1.columns:
+            pb_valid_pct = top1[<span class="tok-string">&quot;pb_valid&quot;</span>].mean() * <span class="tok-number">100</span>
+            logger.info(f&quot;  PB-Valid: {pb_valid_pct:.1f}%&quot;)</code></pre></div>
+<p>Top-1 means the first successfully loaded output record. In pandas, boolean mean is the fraction true; median ignores NaN RMSDs. PB <code dir="ltr">None</code> becomes missing and is normally excluded from its mean, so failed checks need not count as invalid in the denominator.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> top_n &gt; <span class="tok-number">1</span> <span class="tok-keyword">and</span> <span class="tok-keyword">not</span> results_df.empty:
+        best_poses = results_df.loc[results_df.groupby(<span class="tok-string">&quot;complex_id&quot;</span>)[<span class="tok-string">&quot;rmsd&quot;</span>].idxmin()]
+        best_lt2_pct = best_poses[<span class="tok-string">&quot;rmsd_lt2&quot;</span>].mean() * <span class="tok-number">100</span>
+        best_lt1_pct = best_poses[<span class="tok-string">&quot;rmsd_lt1&quot;</span>].mean() * <span class="tok-number">100</span>
+
+        logger.info(f&quot;Best-of-{top_n} Results:&quot;)
+        logger.info(f&quot;  RMSD &lt; 2.0 Å: {best_lt2_pct:.1f}%&quot;)
+        logger.info(f&quot;  RMSD &lt; 1.0 Å: {best_lt1_pct:.1f}%&quot;)
+
+        <span class="tok-keyword">if</span> <span class="tok-string">&quot;pb_valid&quot;</span> <span class="tok-keyword">in</span> best_poses.columns:
+            best_pb_pct = best_poses[<span class="tok-string">&quot;pb_valid&quot;</span>].mean() * <span class="tok-number">100</span>
+            logger.info(f&quot;  PB-Valid: {best_pb_pct:.1f}%&quot;)</code></pre></div>
+<p>Best-of-N is an oracle metric: for each complex it selects the pose with lowest reference RMSD, not the one the model ranked highest. This measures whether a good pose exists in the first N. PB validity is then reported for that RMSD-selected pose.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> output_csv:
+        output_csv.parent.mkdir(parents=<span class="tok-keyword">True</span>, exist_ok=<span class="tok-keyword">True</span>)
+        results_df.to_csv(output_csv, index=<span class="tok-keyword">False</span>)
+        logger.info(f&quot;Results saved to {output_csv}&quot;)
+
+    <span class="tok-keyword">return</span> results_df</code></pre></div>
+<p>Parent directories are created recursively and the flat per-pose table is written without a pandas index column. Returning it also makes the function usable programmatically.</p>
+<h3 id="command-line-interface-and-entry-point">Command-line interface and entry point</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> parse_args() -&gt; argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=<span class="tok-string">&quot;Evaluate docking predictions using CSV-based dataset mapping.&quot;</span>,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=<span class="tok-string">&quot;&quot;&quot;
+Examples:
+  python evaluation.py --dataset proto_test
+  python evaluation.py --dataset proto_test --no_pb_valid
+  python evaluation.py --dataset posebusters_filtered --top_n 5
+
+Expected file structure (from repository root):
+  data/{dataset}.csv
+  data/{dataset}/{ligand_file}
+  data/{dataset}/{protein_file}
+  results/{dataset}/{complex_id}_pred.sdf
+        &quot;&quot;&quot;</span>,
+    )
+
+    parser.add_argument(
+        <span class="tok-string">&quot;--dataset&quot;</span>, type=str, required=<span class="tok-keyword">True</span>,
+        choices=[<span class="tok-string">&quot;proto_test&quot;</span>, <span class="tok-string">&quot;proto_train&quot;</span>, <span class="tok-string">&quot;posebusters_filtered&quot;</span>, <span class="tok-string">&quot;full_test&quot;</span>, <span class="tok-string">&quot;full_train&quot;</span>],
+        help=<span class="tok-string">&quot;Dataset name to evaluate&quot;</span>
+    )
+    parser.add_argument(<span class="tok-string">&quot;--top_n&quot;</span>, type=int, default=<span class="tok-number">1</span>,
+                        help=<span class="tok-string">&quot;Number of ranked poses to evaluate per complex (default: 1)&quot;</span>)
+    parser.add_argument(<span class="tok-string">&quot;--no_pb_valid&quot;</span>, action=<span class="tok-string">&quot;store_true&quot;</span>,
+                        help=<span class="tok-string">&quot;Skip PoseBusters physical validity checks (PB validation is enabled by default)&quot;</span>)
+    parser.add_argument(<span class="tok-string">&quot;--output_csv&quot;</span>, type=Path, default=<span class="tok-keyword">None</span>,
+                        help=<span class="tok-string">&quot;Output CSV path (default: results/{dataset}_evaluation.csv)&quot;</span>)
+
+    <span class="tok-keyword">return</span> parser.parse_args()</code></pre></div>
+<p>Raw-description formatting preserves the multiline usage example. Dataset choices constrain directory/schema logic. The negative flag makes PoseBusters on by default, and <code dir="ltr">type=Path</code> converts only that path argument automatically.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> main():
+    args = parse_args()
+
+    data_dir = Path(<span class="tok-string">&quot;data&quot;</span>)
+    results_dir = Path(<span class="tok-string">&quot;results&quot;</span>)
+
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> data_dir.exists():
+        logger.error(f&quot;Data directory does not exist: {data_dir}&quot;)
+        sys.exit(<span class="tok-number">1</span>)
+
+    csv_path = data_dir / f&quot;{args.dataset}.csv&quot;
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> csv_path.exists():
+        logger.error(f&quot;Dataset CSV not found: {csv_path}&quot;)
+        sys.exit(<span class="tok-number">1</span>)
+
+    dataset_dir = data_dir / args.dataset
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> dataset_dir.exists():
+        logger.error(f&quot;Dataset directory does not exist: {dataset_dir}&quot;)
+        sys.exit(<span class="tok-number">1</span>)
+
+    results_dataset_dir = results_dir / args.dataset
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> results_dataset_dir.exists():
+        logger.warning(f&quot;Results directory does not exist: {results_dataset_dir}&quot;)
+        logger.warning(<span class="tok-string">&quot;Evaluation will skip all complexes without predicted poses.&quot;</span>)</code></pre></div>
+<p>All paths are relative to the current working directory, so the command must run from the repository root or <code dir="ltr">evaluate.sh</code>&#x27;s synthetic root. Missing input data is fatal. Missing predictions are only a warning so per-complex skipping logic can report coverage.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    output_csv = args.output_csv
+    <span class="tok-keyword">if</span> output_csv <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+        output_csv = results_dir / f&quot;{args.dataset}_evaluation.csv&quot;
+
+    evaluate_dataset(
+        dataset_name=args.dataset,
+        data_dir=data_dir,
+        results_dir=results_dir,
+        top_n=args.top_n,
+        run_pb=<span class="tok-keyword">not</span> args.no_pb_valid,
+        output_csv=output_csv
+    )
+
+    logger.info(<span class="tok-string">&quot;Evaluation complete.&quot;</span>)
+
+
+<span class="tok-keyword">if</span> __name__ == <span class="tok-string">&quot;__main__&quot;</span>:
+    main()</code></pre></div>
+<p>The default CSV sits directly under <code dir="ltr">results/</code>, separate from per-complex pose directories. <code dir="ltr">not args.no_pb_valid</code> converts the negative flag into the positive function argument. The module guard keeps import side-effect free except for logging configuration.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">Why can <code dir="ltr">GetBestRMS</code> report an optimistic docking result for a ligand placed incorrectly in the protein pocket?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It optimally aligns the probe to the reference before measuring RMSD, removing global translation and rotation rather than preserving the fixed protein frame.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">What happens to reported rank when an early SDF record cannot be parsed?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Invalid records are skipped and the parseable list is compacted, so evaluated poses receive consecutive ranks that may differ from their original record positions.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">Why are global loss-style percentages derived from sums and result rows rather than treating missing complexes as failures?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The evaluator skips complexes that produce no pose rows; boolean means and medians are computed only over rows that reached evaluation, so coverage must be reported separately.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q4">
+<p class="quiz-question">How does best-of-N differ from the model&#x27;s own top-1 ranking?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Best-of-N uses reference RMSD to choose the lowest-error pose among the first N, making it an oracle measure of whether a good candidate exists rather than whether the model ranked it first.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li><code dir="ltr">GetBestRMS</code> optimally aligns the predicted ligand to the reference. For blind docking, that can hide translation/rotation errors relative to the protein pocket and produce much more optimistic numbers than fixed-frame RMSD.</li>
+<li>Aggregate percentages use only complexes that produced result rows. Missing predictions/references are skipped rather than counted as failures, so coverage must be reported alongside success rates.</li>
+<li>PoseBusters reads the entire prediction SDF, while RMSD loading stops at <code dir="ltr">top_n</code> and drops invalid records. Pairing PoseBusters rows to compacted RMSD rows by position can misalign results when early SDF records are invalid; it also assumes PoseBusters preserves record order.</li>
+<li><code dir="ltr">top_n</code> is not validated as positive. Zero or negative values load no poses and cause every complex to be skipped.</li>
+<li>If PoseBusters fails and sets <code dir="ltr">pb_valid=None</code>, pandas means generally exclude those missing values instead of counting them as invalid.</li>
+<li>Best-of-N uses <code dir="ltr">idxmin</code>; groups whose RMSDs are all NaN may cause problematic selection depending on pandas behavior.</li>
+<li>The module docstring names <code dir="ltr">updated_evaluation.py</code>, while the actual repository path is <code dir="ltr">evaluation/evaluation.py</code>; this is a naming artifact, not a second file.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why can PoseBusters validity become paired with the wrong RMSD pose?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>PoseBusters processes the entire SDF in record order, while RMSD loading drops invalid records and stops at <code dir="ltr">top_n</code>, so positional pairing can diverge.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">How can skipped files inflate a reported success percentage?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Missing or unparseable complexes are removed from the denominator instead of counted as failures, leaving only complexes with result rows in the aggregate.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">Why is <code dir="ltr">pb_valid=None</code> not equivalent to a failed PoseBusters check?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It denotes unavailable check output and pandas normally excludes it from boolean means, whereas <code dir="ltr">False</code> represents an actual failed validity result.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-3"><a href="#module-setup-and-logging">Module setup and logging</a></li><li class="toc-level-3"><a href="#symmetry-corrected-rmsd">Symmetry-corrected RMSD</a></li><li class="toc-level-3"><a href="#loading-predicted-and-reference-molecules">Loading predicted and reference molecules</a></li><li class="toc-level-3"><a href="#dataset-schemas-and-paths">Dataset schemas and paths</a></li><li class="toc-level-3"><a href="#posebusters-integration">PoseBusters integration</a></li><li class="toc-level-3"><a href="#evaluating-one-complex">Evaluating one complex</a></li><li class="toc-level-3"><a href="#evaluating-a-dataset-and-summarizing">Evaluating a dataset and summarizing</a></li><li class="toc-level-3"><a href="#command-line-interface-and-entry-point">Command-line interface and entry point</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

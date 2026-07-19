@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="results.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>النتائج | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="results.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="results.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html" aria-current="page">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="results">النتائج</h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="final-submission-full-data--report-in-progress">🚧 التسليم النهائي (البيانات الكاملة) — التقرير قيد الإعداد</h2>
+<p>تستخدم الجداول التالية مجموعة <code dir="ltr">proto_test</code> الأولية (<bdi dir="ltr">136</bdi>). يجري استكمال <strong>التسليم النهائي للبيانات الكاملة</strong>: أُعيد تدريب نموذجنا من الصفر على تقسيم الندوة الكامل (<code dir="ltr">model/full_scratch_karmadock_team002.pkl</code>؛ بروتوكول الورقة ذي المرحلتين <bdi dir="ltr">2-stage</bdi>، مع المرحلة <bdi dir="ltr">2</bdi> على <bdi dir="ltr">2×A100</bdi> بسعة <bdi dir="ltr">40GB</bdi> لكل بطاقة)، وقورن مباشرةً بأوزان المؤلفين المنشورة على مجموعتي <code dir="ltr">full_test</code> (<bdi dir="ltr">6,183</bdi>) و<code dir="ltr">posebusters_filtered</code> (<bdi dir="ltr">308</bdi>) نفسيهما.</p>
+<p><strong>النتيجة الأولية الرئيسة</strong> (نجاح <bdi dir="ltr">top-1</bdi> عند <bdi dir="ltr">2</bdi> Å باستخدام <code dir="ltr">evaluation.py</code> والوضعية الخام):</p>
+<div class="table-scroll"><table><thead><tr>
+<th>المجموعة</th>
+<th>نموذجنا (البيانات الكاملة)</th>
+<th>الأوزان المنشورة</th>
+</tr></thead><tbody>
+<tr>
+<td><bdi dir="ltr">full_test</bdi> (<bdi dir="ltr">6,183</bdi>)</td>
+<td><bdi dir="ltr">82.2</bdi> %</td>
+<td><bdi dir="ltr">88.3</bdi> %</td>
+</tr>
+<tr>
+<td><bdi dir="ltr">PoseBusters</bdi> (<bdi dir="ltr">308</bdi>)</td>
+<td><bdi dir="ltr">76.9</bdi> % (<bdi dir="ltr">PB-Valid</bdi> <bdi dir="ltr">5.2</bdi> %)</td>
+<td><bdi dir="ltr">83.1</bdi> % (<bdi dir="ltr">PB-Valid</bdi> <bdi dir="ltr">2.6</bdi> %)</td>
+</tr>
+</tbody></table></div>
+<p>تتضمن الإضافة النموذج المدرّب (<code dir="ltr">model/</code>)، وملفات <bdi dir="ltr">CSV</bdi> الخاصة بمدخلات التقييم (<code dir="ltr">data/</code>)، وملفات إرسال <bdi dir="ltr">HPC</bdi> في <bdi dir="ltr">Condor</bdi> (<code dir="ltr">condor/full_stage2_2gpu.sub</code> لتدريب المرحلة <bdi dir="ltr">2</bdi> على <bdi dir="ltr">2×A100</bdi>، وملفا <code dir="ltr">condor/{full_test,posebusters}_infer.sub</code> للاستدلال)، وسجلات المهام (<code dir="ltr">condor/logs/</code>). ما زال التقرير الكامل ودفتر النتائج قيد الاستكمال.</p>
+<hr>
+<h2 id="3-results"><bdi dir="ltr">3.</bdi> النتائج</h2>
+<p>نموذج التسليم هو <strong><bdi dir="ltr">P2</bdi> المدرّب من الصفر</strong>، وهو المطلوب لإعادة تدريب الأداة على التقسيم المشترك. يُعرض <bdi dir="ltr">P1</bdi> المنشور و<bdi dir="ltr">P3</bdi> المضبوط بدقة للسياق. أُجري التقييم بواسطة <a class="content-link" href="walkthrough-evaluation.ar.html"><code dir="ltr">evaluation/evaluation.py</code></a> الرسمي على <strong><bdi dir="ltr">136</bdi> مركّبًا في <code dir="ltr">proto_test</code></strong> وعلى متغيرات المعالجة اللاحقة الثلاثة في <bdi dir="ltr">KarmaDock.</bdi></p>
+<p><strong>نسبة النجاح عند <bdi dir="ltr">2</bdi> Å (<bdi dir="ltr">top-1</bdi>):</strong></p>
+<div class="table-scroll"><table><thead><tr>
+<th>المسار</th>
+<th>الخام</th>
+<th>مصحح <bdi dir="ltr">FF</bdi></th>
+<th>مصحح بالمحاذاة</th>
+</tr></thead><tbody>
+<tr>
+<td><strong><bdi dir="ltr">P2</bdi> — من الصفر</strong> (نموذجنا)</td>
+<td><strong><bdi dir="ltr">10.3</bdi> %</strong></td>
+<td><bdi dir="ltr">11.0</bdi> %</td>
+<td><bdi dir="ltr">94.1</bdi> %</td>
+</tr>
+<tr>
+<td><bdi dir="ltr">P1</bdi> — خط الأساس المنشور</td>
+<td><bdi dir="ltr">80.9</bdi> %</td>
+<td><bdi dir="ltr">78.7</bdi> %</td>
+<td><bdi dir="ltr">95.6</bdi> %</td>
+</tr>
+<tr>
+<td><bdi dir="ltr">P3</bdi> — الضبط الدقيق <em>(إضافي)</em></td>
+<td><bdi dir="ltr">80.1</bdi> %</td>
+<td><bdi dir="ltr">75.0</bdi> %</td>
+<td><bdi dir="ltr">94.9</bdi> %</td>
+</tr>
+</tbody></table></div>
+<p>القيم الخام <strong>عند <bdi dir="ltr">1</bdi> Å / وسيط <bdi dir="ltr">RMSD</bdi></strong>: ‏<bdi dir="ltr">P2</bdi> ‏<bdi dir="ltr">3.7</bdi> % / <bdi dir="ltr">3.38</bdi> Å · ‏<bdi dir="ltr">P1</bdi> ‏<bdi dir="ltr">8.1</bdi> % / <bdi dir="ltr">1.45</bdi> Å · ‏<bdi dir="ltr">P3</bdi> ‏<bdi dir="ltr">7.4</bdi> % / <bdi dir="ltr">1.48</bdi> Å. توجد ملفات <bdi dir="ltr">CSV</bdi> لكل مركّب في <a class="content-link" href="results.ar.html"><code dir="ltr">results/</code></a>: النمط <code dir="ltr">&lt;pipeline&gt;_&lt;variant&gt;_evaluation.csv</code>، أما <code dir="ltr">proto_test_evaluation.csv</code> فهو النتيجة الرئيسة لـ<bdi dir="ltr">P2.</bdi> النتائج حتمية مع <code dir="ltr">--random_seed 2023</code>.</p>
+<blockquote><p>نعتقد أن نتيجة المحاذاة المصححة مضللة؛ إذ يُفترض وفق الورقة أن تكون أدنى من الوضعيتين الخام والمصححة بـ<bdi dir="ltr">FF</bdi>، بينما حدث العكس في نتائجنا. يحتاج ذلك إلى تحقيق إضافي، ولا يؤثر في تدريب المرحلة التالية.</p></blockquote>
+<p>الوضعية <strong>الخام</strong> هي خرج النموذج مباشرة. متغير <strong><bdi dir="ltr">FF</bdi></strong> استرخاء باستخدام حقل قوة. أما متغير <strong>المحاذاة</strong> فيضع الربيطة المتنبأ بها فوق الإطار المرجعي.</p>
+<h2 id="layout">تخطيط ملفات النتائج</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="">results/
+├── proto_test/                         primary set = from-scratch P2, UNCORRECTED poses (136)
+│                                        (what `python evaluation/evaluation.py --dataset proto_test` scores)
+├── p1_baseline/  proto_test/  proto_test_ff/  proto_test_align/    136 each
+├── p2_scratch/   proto_test/  proto_test_ff/  proto_test_align/    136 each
+├── p3_finetune/  proto_test/  proto_test_ff/  proto_test_align/    136 each
+├── proto_test_evaluation.csv           official RMSD for the primary set (= p2_scratch uncorrected)
+├── &lt;pipeline&gt;_&lt;variant&gt;_evaluation.csv per-complex RMSD for each of the 9 pipeline x variant combos
+└── README.md</code></pre></div>
+<p>ملفات الوضعيات هي <code dir="ltr">&lt;complex_id&gt;_pred.sdf</code>، وتُرتب المطابقات بدءًا من أفضل درجة <bdi dir="ltr">MDN.</bdi> المتغيرات الثلاثة هي: الخام، واسترخاء حقل القوة <bdi dir="ltr">FF</bdi>، والمحاذاة إلى الإطار المرجعي.</p>
+<h2 id="eval-csv-columns">أعمدة ملف <bdi dir="ltr">CSV</bdi> للتقييم</h2>
+<p><code dir="ltr">complex_id, dataset, pose_rank, rmsd, rmsd_lt2, rmsd_lt1, ligand_file, protein_file</code></p>
+<p>يستخدم التقييم <code dir="ltr">GetBestRMS</code> في <bdi dir="ltr">RDKit</bdi> مع تصحيح التناظر وأفضل وضعية <bdi dir="ltr">top-1.</bdi> تساوي <code dir="ltr">success@2Å</code> نسبة الصفوف التي تحقق <code dir="ltr">pose_rank == 1</code> و<code dir="ltr">rmsd_lt2 == True</code>.</p>
+<h2 id="per-complex-evaluation-downloads">تنزيل تقييمات كل مركّب</h2>
+<ul>
+<li><a class="content-link" href="assets/downloads/p1_baseline_align_evaluation.csv"><code dir="ltr">p1_baseline_align_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p1_baseline_ff_evaluation.csv"><code dir="ltr">p1_baseline_ff_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p1_baseline_uncorrected_evaluation.csv"><code dir="ltr">p1_baseline_uncorrected_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p2_scratch_align_evaluation.csv"><code dir="ltr">p2_scratch_align_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p2_scratch_ff_evaluation.csv"><code dir="ltr">p2_scratch_ff_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p2_scratch_uncorrected_evaluation.csv"><code dir="ltr">p2_scratch_uncorrected_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p3_finetune_align_evaluation.csv"><code dir="ltr">p3_finetune_align_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p3_finetune_ff_evaluation.csv"><code dir="ltr">p3_finetune_ff_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p3_finetune_uncorrected_evaluation.csv"><code dir="ltr">p3_finetune_uncorrected_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/proto_test_evaluation.csv"><code dir="ltr">proto_test_evaluation.csv</code></a></li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">لماذا لا ينبغي تفسير نسبة النجاح المصححة بالمحاذاة على أنها دقة الإرساء الخام للنموذج؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تضع المحاذاة الربيطة المتنبأ بها فوق الإطار المرجعي، ولذلك تطبق معالجة لاحقة تعتمد على المرجع ولا يتلقاها الخرج الخام.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">ما الذي يحسبه المقياس الرئيس <code dir="ltr">success@2Å</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>هو نسبة الوضعيات الأعلى ترتيبًا التي يقل <bdi dir="ltr">RMSD</bdi> المصحح للتناظر فيها عن <bdi dir="ltr">2</bdi> Å، أي الصفوف التي تحقق <code dir="ltr">pose_rank == 1</code> و<code dir="ltr">rmsd_lt2 == True</code>.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">أي نتيجة أولية تمثل نتيجة التسليم الرئيسة، وأين تحفظ بياناتها لكل مركّب؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>النتيجة الرئيسة هي خرج <bdi dir="ltr">P2</bdi> الخام المدرّب من الصفر، وتوجد قيم كل مركّب في <code dir="ltr">results/proto_test_evaluation.csv</code>.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#final-submission-full-data--report-in-progress">🚧 التسليم النهائي (البيانات الكاملة) — التقرير قيد الإعداد</a></li><li class="toc-level-2"><a href="#3-results"><bdi dir="ltr">3.</bdi> النتائج</a></li><li class="toc-level-2"><a href="#layout">تخطيط ملفات النتائج</a></li><li class="toc-level-2"><a href="#eval-csv-columns">أعمدة ملف <bdi dir="ltr">CSV</bdi> للتقييم</a></li><li class="toc-level-2"><a href="#per-complex-evaluation-downloads">تنزيل تقييمات كل مركّب</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

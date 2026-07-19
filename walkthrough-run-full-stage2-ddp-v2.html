@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-run-full-stage2-ddp-v2.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>scripts/runfullstage2ddpv2.sh | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-run-full-stage2-ddp-v2.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-run-full-stage2-ddp-v2.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html" aria-current="page">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsrunfullstage2ddpv2sh"><code dir="ltr">scripts/run_full_stage2_ddp_v2.sh</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This is a copy of the original DDP Stage-2 launcher with two explicitly paper-faithful hyperparameter changes: no weight decay and patience 70. Keeping a separate file preserves the historical original while making the experimental difference auditable.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why was a second launcher created instead of editing the original Stage-2 DDP script?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Keeping both files preserves the historical experiment and makes the two hyperparameter changes explicit and auditable.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">Which choices make the v2 launcher more paper-faithful according to its documented rationale?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It sets weight decay to <code dir="ltr">0</code> and early-stopping patience to <code dir="ltr">70</code> instead of <code dir="ltr">1e-4</code> and <code dir="ltr">20</code>.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">Why is holding the remaining command line constant important?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It isolates the effect of weight decay and patience rather than confounding the comparison with different data, objectives, initialization, or batch behavior.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p><code dir="ltr">condor/full_stage2_2gpu.sub</code> uses this version and supplies <code dir="ltr">S2_BATCH=8</code>, <code dir="ltr">S2_ACCUM=4</code>, and the final Stage-1 checkpoint, producing global effective batch 64 on two GPUs. Its paths, environment variables, inputs, output location, W&amp;B behavior, and <code dir="ltr">torchrun</code>/single-process selection are otherwise the same as <code dir="ltr">run_full_stage2_ddp.sh</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">How does <code dir="ltr">full_stage2_2gpu.sub</code> preserve global effective batch 64 with two GPUs?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It supplies per-process batch 8 and accumulation 4, giving <code dir="ltr">2 × 8 × 4 = 64</code>.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">Which operational behaviors are intentionally shared with the original launcher?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Paths, environment overrides, Stage-1 initialization, W&amp;B setup, resume directory, and the <code dir="ltr">torchrun</code> versus plain-Python branch remain the same.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">Why does the submit file point explicitly to the v2 launcher?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The executable selection makes the final two-GPU job use the revised patience and weight-decay settings without altering other DDP jobs.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<p>The setup and path blocks are reproduced because they are executable code, even though they match the original:</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># run_full_stage2_ddp_v2.sh — COPY ...
+</span>set -euo pipefail
+set -x
+
+KD=/app/KarmaDock
+export PYTHONPATH=/app/KarmaDock:${PYTHONPATH:-}
+SUBMIT=<span class="tok-string">&quot;$PWD&quot;</span>
+
+DATA=<span class="tok-string">&quot;${FULL_DATA_DIR:-$HOME/repro_test/full_data}&quot;</span>
+GRAPHS=<span class="tok-string">&quot;${FULL_GRAPHS_DIR:-$HOME/repro_test/work_full}&quot;</span>
+S2WORK=<span class="tok-string">&quot;${S2_WORK_DIR:-$HOME/stage2_mgpu_test/work}&quot;</span>
+STAGE1_CKPT=<span class="tok-string">&quot;${STAGE1_CKPT:-$HOME/stage2_mgpu_test/stage1_snapshot.pkl}&quot;</span>
+BS=<span class="tok-string">&quot;${S2_BATCH:-8}&quot;</span>; ACC=<span class="tok-string">&quot;${S2_ACCUM:-2}&quot;</span>
+EP=<span class="tok-string">&quot;${S2_EPOCHS:-1000}&quot;</span>
+
+mkdir -p <span class="tok-string">&quot;$S2WORK&quot;</span>
+[ -f <span class="tok-string">&quot;$STAGE1_CKPT&quot;</span> ] || { echo <span class="tok-string">&quot;ERROR: Stage-1 checkpoint not found: $STAGE1_CKPT&quot;</span>; exit <span class="tok-number">3</span>; }
+
+NGPU=$(nvidia-smi -L <span class="tok-number">2</span>&gt;/dev/null | wc -l); [ <span class="tok-string">&quot;${NGPU:-0}&quot;</span> -lt <span class="tok-number">1</span> ] &amp;&amp; NGPU=<span class="tok-number">1</span>
+RUN=<span class="tok-string">&quot;full_stage2_ddp_$(date +%Y%m%d-%H%M%S)&quot;</span>
+echo <span class="tok-string">&quot;=== Stage-2 DDP on $NGPU GPU(s); effective batch = $((NGPU*BS*ACC)); run=$RUN ===&quot;</span></code></pre></div>
+<p>Strict mode, home-mounted read-only inputs, isolated output, checkpoint validation, GPU counting, and run naming all serve the same purposes described for the original. The header also makes an important design choice explicit: no extra <code dir="ltr">--jitter</code> is passed because the dataset&#x27;s on-the-fly loading already randomizes the starting ligand pose.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">ARGS=( <span class="tok-string">&quot;$SUBMIT/train_ddp.py&quot;</span>
+  --csv <span class="tok-string">&quot;$DATA/full_train.csv&quot;</span>   --graph_dir <span class="tok-string">&quot;$GRAPHS/full_train/graphs&quot;</span> --complex_dir <span class="tok-string">&quot;$GRAPHS/full_train/complex&quot;</span>
+  --val_csv <span class="tok-string">&quot;$DATA/full_val.csv&quot;</span> --val_graph_dir <span class="tok-string">&quot;$GRAPHS/full_val/graphs&quot;</span>
+  --out_dir <span class="tok-string">&quot;$S2WORK/ckpt_s2_ddp&quot;</span> --init_model <span class="tok-string">&quot;$STAGE1_CKPT&quot;</span> --pos_r <span class="tok-number">1</span>
+  --lr 1e-<span class="tok-number">4</span> --weight_decay <span class="tok-number">0</span> --patience <span class="tok-number">70</span> --epochs <span class="tok-string">&quot;$EP&quot;</span>
+  --batch_size <span class="tok-string">&quot;$BS&quot;</span> --accum_steps <span class="tok-string">&quot;$ACC&quot;</span> --num_workers <span class="tok-number">3</span> --random_seed <span class="tok-number">42</span> --resume
+  --wandb --wandb_project karmadock-seminar --wandb_run_name <span class="tok-string">&quot;$RUN&quot;</span> )</code></pre></div>
+<p>This is the only meaningful command-line difference: <code dir="ltr">--weight_decay 0</code> removes Adam&#x27;s L2-style parameter shrinkage, and <code dir="ltr">--patience 70</code> allows a longer validation plateau. Everything else, including the combined Stage-2 objective, curated validation set, and resume behavior, is held constant so the comparison isolates those choices.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">if</span> [ <span class="tok-string">&quot;$NGPU&quot;</span> -gt <span class="tok-number">1</span> ]; <span class="tok-keyword">then</span>
+  torchrun --standalone --nnodes=<span class="tok-number">1</span> --nproc_per_node=<span class="tok-string">&quot;$NGPU&quot;</span> <span class="tok-string">&quot;${ARGS[@]}&quot;</span>
+<span class="tok-keyword">else</span>
+  python3 -u <span class="tok-string">&quot;${ARGS[@]}&quot;</span>
+<span class="tok-keyword">fi</span>
+echo <span class="tok-string">&quot;=== Stage-2 DDP done: $S2WORK/ckpt_s2_ddp/karmadock_team002.pkl ===&quot;</span></code></pre></div>
+<p>One process per visible GPU activates DDP; one visible GPU falls back to ordinary Python. The checkpoint path printed at the end is the best-validation model, not necessarily the final epoch.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">Why is no extra <code dir="ltr">--jitter</code> argument passed by this launcher?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The documented design relies on KarmaDock&#x27;s on-the-fly dataset loading to randomize starting ligand poses rather than adding another coordinate perturbation here.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">What are the only meaningful differences in the v2 <code dir="ltr">ARGS</code> array?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It uses <code dir="ltr">--weight_decay 0</code> and <code dir="ltr">--patience 70</code>; the combined Stage-2 objective, data, initialization, and remaining optimization arguments stay fixed.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">Why is the printed checkpoint described as the best model rather than the last epoch?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Training saves <code dir="ltr">karmadock_team002.pkl</code> on validation improvement, so early stopping or later degradation can make it differ from final-epoch state.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>All operational caveats from the original launcher—<code dir="ltr">nvidia-smi</code> under <code dir="ltr">pipefail</code>, resume-directory reuse, and world-size-dependent effective batch—also apply.</li>
+<li>“Paper-faithful” is the rationale recorded in the script comments; the repository does not programmatically verify paper hyperparameters.</li>
+<li>This file and the original write to the same default <code dir="ltr">S2WORK/ckpt_s2_ddp</code>, so launching both against defaults can make one resume the other&#x27;s state.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why do the original launcher&#x27;s GPU-count and batch-size caveats still apply?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The v2 file copies the same GPU detection, process selection, environment defaults, and resume structure; only two trainer hyperparameters differ.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">What does the phrase “paper-faithful” guarantee programmatically?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Nothing beyond the recorded command-line choices; the repository does not automatically compare those values with the paper.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">How can launching the original and v2 scripts interfere with each other?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Both default to the same <code dir="ltr">S2WORK/ckpt_s2_ddp</code> path, so one invocation can resume or overwrite state created by the other.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

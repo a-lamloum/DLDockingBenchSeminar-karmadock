@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-evaluate.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>scripts/evaluate.sh | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-evaluate.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-evaluate.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html" aria-current="page">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsevaluatesh"><code dir="ltr">scripts/evaluate.sh</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This is the prototype batch-scoring driver. It evaluates every available P1/P2/P3 × raw/FF/aligned result directory with the same <code dir="ltr">proto_test</code> dataset interface, then copies the P2 raw CSV to the repository&#x27;s headline filename.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why does this wrapper evaluate a 3×3 matrix instead of calling the evaluator only once?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It applies the same dataset evaluator to three model pipelines and three pose variants so their RMSD CSVs are directly comparable.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">Why is the P2 raw CSV copied to <code dir="ltr">proto_test_evaluation.csv</code>?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>That conventional filename is the repository headline result, while the explicitly named P2 source CSV remains available for provenance.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">Why is pose generation intentionally absent from this script?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Scoring is a separate reproducible stage that consumes existing results and can be rerun without repeating expensive docking.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p><code dir="ltr">condor/evaluate.sub</code> invokes it after the three prototype inference jobs. It expects <code dir="ltr">evaluation/evaluation.py</code>, a <code dir="ltr">proto_test.csv</code>, reference structures, and pose trees under <code dir="ltr">results/</code>. It writes <code dir="ltr">results/&lt;pipeline&gt;_&lt;variant&gt;_evaluation.csv</code> and optionally <code dir="ltr">results/proto_test_evaluation.csv</code>. There are no positional parameters or custom environment variables.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">What must inference jobs produce before <code dir="ltr">condor/evaluate.sub</code> can use this wrapper?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They must create the available P1, P2, and P3 raw, FF, or aligned pose directories beneath <code dir="ltr">results/</code>.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">Why does the wrapper probe both repository-style and flattened locations?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>HTCondor staging can preserve directory trees or place transferred inputs at the sandbox root, so both layouts are legitimate.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">What outputs can be absent without making the entire wrapper fail?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>CSV outputs for missing pose directories and the headline copy when P2 raw results do not exist are skipped rather than treated as fatal.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># evaluate.sh — the scoring step (separate from docking).
+</span><span class="tok-comment"># ...
+</span>set -euo pipefail
+
+ROOT=<span class="tok-string">&quot;$PWD&quot;</span>
+EVALPY=<span class="tok-string">&quot;$ROOT/evaluation/evaluation.py&quot;</span></code></pre></div>
+<p>Strict Bash mode makes missing paths and failed evaluations stop the job. Unlike training/inference wrappers it does not use <code dir="ltr">set -x</code>, so only explicit messages and evaluator logs appear. The script assumes the current directory is the repository or flattened job root.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">first_existing () {   <span class="tok-comment"># &lt;test-flag -f|-d&gt; &lt;candidate&gt;...
+</span>    local flag=$<span class="tok-number">1</span>; shift
+    local p; <span class="tok-keyword">for</span> p <span class="tok-keyword">in</span> <span class="tok-string">&quot;$@&quot;</span>; <span class="tok-keyword">do</span> [ <span class="tok-string">&quot;$flag&quot;</span> <span class="tok-string">&quot;$p&quot;</span> ] &amp;&amp; { echo <span class="tok-string">&quot;$p&quot;</span>; return; }; <span class="tok-keyword">done</span>
+}
+CSV=$(first_existing -f <span class="tok-string">&quot;$ROOT/data/proto_test.csv&quot;</span> <span class="tok-string">&quot;$ROOT/proto_test.csv&quot;</span>)
+REF=$(first_existing -d <span class="tok-string">&quot;$ROOT/data/prototype_model_data/proto_test&quot;</span> <span class="tok-string">&quot;$ROOT/data/proto_test&quot;</span> <span class="tok-string">&quot;$ROOT/proto_test&quot;</span>)
+
+[ -n <span class="tok-string">&quot;$CSV&quot;</span> ]    || { echo <span class="tok-string">&quot;ERROR: proto_test.csv not found (looked in data/ and CWD)&quot;</span>; exit <span class="tok-number">1</span>; }
+[ -n <span class="tok-string">&quot;$REF&quot;</span> ]    || { echo <span class="tok-string">&quot;ERROR: proto_test reference dir not found — unzip data/prototype_model_data.zip -d data/prototype_model_data&quot;</span>; exit <span class="tok-number">1</span>; }
+[ -f <span class="tok-string">&quot;$EVALPY&quot;</span> ] || { echo <span class="tok-string">&quot;ERROR: missing $EVALPY&quot;</span>; exit <span class="tok-number">1</span>; }</code></pre></div>
+<p>HTCondor can preserve directory trees or flatten transferred items depending on staging context, so <code dir="ltr">first_existing</code> probes several legitimate locations. Its first argument is a test operator (<code dir="ltr">-f</code> file or <code dir="ltr">-d</code> directory); <code dir="ltr">shift</code> leaves only candidates. The three guards convert an empty lookup result into a clear fatal message.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">eval_one () {   <span class="tok-comment"># &lt;poses_dir&gt; &lt;out_csv&gt;
+</span>    local poses=$<span class="tok-number">1</span> out=$<span class="tok-number">2</span>
+    local E; E=<span class="tok-string">&quot;$(mktemp -d)&quot;</span>
+    mkdir -p <span class="tok-string">&quot;$E/data&quot;</span> <span class="tok-string">&quot;$E/results&quot;</span>
+    ln -sf <span class="tok-string">&quot;$CSV&quot;</span>   <span class="tok-string">&quot;$E/data/proto_test.csv&quot;</span>
+    ln -sf <span class="tok-string">&quot;$REF&quot;</span>   <span class="tok-string">&quot;$E/data/proto_test&quot;</span>
+    ln -sf <span class="tok-string">&quot;$poses&quot;</span> <span class="tok-string">&quot;$E/results/proto_test&quot;</span>
+    ( cd <span class="tok-string">&quot;$E&quot;</span> &amp;&amp; python3 <span class="tok-string">&quot;$EVALPY&quot;</span> --dataset proto_test --no_pb_valid --output_csv <span class="tok-string">&quot;$out&quot;</span> )
+    rm -rf <span class="tok-string">&quot;$E&quot;</span>
+}</code></pre></div>
+<p><code dir="ltr">evaluation.py</code> has fixed relative roots (<code dir="ltr">data/</code> and <code dir="ltr">results/</code>) and derives paths from the dataset name. Rather than move data, this function builds a temporary view with symbolic links so any pose directory appears as <code dir="ltr">results/proto_test</code>. <code dir="ltr">--no_pb_valid</code> deliberately limits this batch comparison to RMSD, avoiding expensive PoseBusters checks. The parenthesized <code dir="ltr">cd</code> does not alter the caller&#x27;s directory.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">for</span> tag <span class="tok-keyword">in</span> p1_baseline p2_scratch p3_finetune; <span class="tok-keyword">do</span>
+  <span class="tok-keyword">for</span> variant <span class="tok-keyword">in</span> <span class="tok-string">&quot;:uncorrected&quot;</span> <span class="tok-string">&quot;_ff:ff&quot;</span> <span class="tok-string">&quot;_align:align&quot;</span>; <span class="tok-keyword">do</span>
+    suffix=<span class="tok-string">&quot;${variant%%:*}&quot;</span>; label=<span class="tok-string">&quot;${variant##*:}&quot;</span>
+    poses=<span class="tok-string">&quot;$ROOT/results/$tag/proto_test${suffix}&quot;</span>
+    <span class="tok-keyword">if</span> [ ! -d <span class="tok-string">&quot;$poses&quot;</span> ]; <span class="tok-keyword">then</span> echo <span class="tok-string">&quot;skip $tag/$label (no poses at ${poses#$ROOT/})&quot;</span>; continue; <span class="tok-keyword">fi</span>
+    eval_one <span class="tok-string">&quot;$poses&quot;</span> <span class="tok-string">&quot;$ROOT/results/${tag}_${label}_evaluation.csv&quot;</span>
+    echo <span class="tok-string">&quot;wrote results/${tag}_${label}_evaluation.csv&quot;</span>
+  <span class="tok-keyword">done</span>
+<span class="tok-keyword">done</span></code></pre></div>
+<p>The nested loops define a 3×3 matrix. Each <code dir="ltr">suffix:label</code> token is split with Bash parameter expansion: <code dir="ltr">%%:*</code> removes the colon and everything after it, while <code dir="ltr">##*:</code> removes everything through the last colon. Missing pose variants are skipped rather than failing the entire matrix.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">if</span> [ -f <span class="tok-string">&quot;$ROOT/results/p2_scratch_uncorrected_evaluation.csv&quot;</span> ]; <span class="tok-keyword">then</span>
+  cp <span class="tok-string">&quot;$ROOT/results/p2_scratch_uncorrected_evaluation.csv&quot;</span> <span class="tok-string">&quot;$ROOT/results/proto_test_evaluation.csv&quot;</span>
+  echo <span class="tok-string">&quot;wrote results/proto_test_evaluation.csv (= P2 from-scratch, uncorrected)&quot;</span>
+<span class="tok-keyword">fi</span></code></pre></div>
+<p>The final copy creates the conventional default result name while retaining the explicitly labeled source CSV.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">Why does <code dir="ltr">eval_one</code> construct a temporary directory of symbolic links?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The Python evaluator expects fixed relative <code dir="ltr">data/proto_test</code> and <code dir="ltr">results/proto_test</code> paths, so symlinks present any selected pose tree through that interface without moving data.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">How does the <code dir="ltr">suffix:label</code> loop token produce both a directory path and an output filename?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Bash parameter expansion extracts the suffix before the colon for <code dir="ltr">proto_test${suffix}</code> and the label after the colon for the evaluation CSV name.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">Why is <code dir="ltr">--no_pb_valid</code> used for this batch comparison?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It keeps the matrix focused on RMSD and avoids repeating expensive PoseBusters checks across every pipeline and postprocessing variant.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>Temporary directories are removed only at the end of a successful <code dir="ltr">eval_one</code>; there is no trap, so an interrupted/failed evaluation can leave a directory in the system temp area.</li>
+<li>PoseBusters is always disabled by this wrapper even though it is enabled by default in the Python evaluator.</li>
+<li>The wrapper always exposes data to the evaluator as <code dir="ltr">proto_test</code>, even when iterating different model pipelines; that is correct because the structures are the same and only predictions change.</li>
+<li>Re-running overwrites existing evaluation CSVs and the headline copy.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why can a failed evaluation leave temporary files behind?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Cleanup occurs only after a successful evaluator command and there is no trap covering interruption or failure inside <code dir="ltr">eval_one</code>.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">Why is exposing every pipeline as dataset <code dir="ltr">proto_test</code> correct rather than misleading?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The reference structures and CSV dataset stay the same; only the predictions selected through the temporary results symlink change.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">What happens to existing CSVs when this wrapper is rerun?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Successful evaluations overwrite their named result CSVs, and the P2 raw file overwrites the conventional headline copy.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

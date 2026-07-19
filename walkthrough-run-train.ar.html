@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="walkthrough-run-train.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>`scripts/run_train.sh` | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="walkthrough-run-train.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-run-train.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html" aria-current="page">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsruntrainsh"><code dir="ltr">scripts/run_train.sh</code></h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="purpose">الغرض</h2>
+<p>هذا مشغّل تدريب النموذج الأولي المكتفي بذاته. يحوّل <code dir="ltr">proto_train</code> ويعالجه مسبقًا، ثم يشغّل إما بروتوكول التدريب من الصفر ذي المرحلتين، أي <bdi dir="ltr">P2</bdi>، أو يضبط نقطة التحقق المنشورة ضبطًا دقيقًا، أي <bdi dir="ltr">P3</bdi>، باستخدام حلقة <code dir="ltr">train.py</code> ذات العملية الواحدة.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">لماذا يضم مشغّل تدريب النموذج الأولي المعالجة المسبقة إلى استدعاء المدرّب؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يوفّر مسارًا مكتفيًا بذاته من بنى المقرر إلى رسوم <bdi dir="ltr">KarmaDock</bdi> ثم نقاط تحقق <bdi dir="ltr">P2</bdi> من الصفر أو <bdi dir="ltr">P3</bdi> المضبوطة.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">كيف يطابق النمطان المعلنان مسارات المعيار؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يشغّل <code dir="ltr">scratch</code> ‏<bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> لـ<bdi dir="ltr">MDN</bdi> فقط ثم <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> المشتركة لـ<bdi dir="ltr">P2</bdi>، بينما يبدأ <code dir="ltr">finetune</code> بأوزان منشورة ويدرّب الهدف المشترك لـ<bdi dir="ltr">P3.</bdi></p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">لماذا يوصف الغلاف بأنه ذو عملية واحدة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يستدعي <code dir="ltr">train.py</code> مباشرة دائمًا بدل إطلاق عملية لكل <bdi dir="ltr">GPU</bdi> عبر <code dir="ltr">torchrun</code> و<code dir="ltr">train_ddp.py</code>.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">موقعه في المنظومة</h2>
+<p>يستدعيه <code dir="ltr">condor/p2_train_scratch.sub</code> بالوسيط <code dir="ltr">scratch</code>، ويستدعيه <code dir="ltr">condor/p3_finetune.sub</code> بالوسيط <code dir="ltr">finetune</code>. ويتوقع <code dir="ltr">proto_train.csv</code> و<code dir="ltr">proto_train/</code> و<code dir="ltr">scripts/</code> في صندوق <bdi dir="ltr">HTCondor</bdi> الحالي، إضافة إلى <bdi dir="ltr">KarmaDock</bdi> الأصلي في <code dir="ltr">/app/KarmaDock</code>. ويكتب معالجة مسبقة قابلة لإعادة الاستخدام تحت <code dir="ltr">work_train/</code>، ونقاط التحقق والسجلات تحت <code dir="ltr">ckpt/</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">أي ملفي <bdi dir="ltr">Condor</bdi> يختار كل نمط تدريب؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يمرر <code dir="ltr">p2_train_scratch.sub</code> النمط <code dir="ltr">scratch</code>، ويمرر <code dir="ltr">p3_finetune.sub</code> النمط <code dir="ltr">finetune</code>.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">ما الذي يجب أن يجهزه <bdi dir="ltr">HTCondor</bdi> داخل الصندوق الحالي قبل بدء الغلاف؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يحتاج <code dir="ltr">proto_train.csv</code> وبنى <code dir="ltr">proto_train/</code> ودليل <code dir="ltr">scripts/</code> المحلي، بينما يأتي <bdi dir="ltr">KarmaDock</bdi> الأصلي من الصورة.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">ما المخرجات المقصود أن تنجو من التشغيل؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يوجد العمل والرسوم القابلة لإعادة الاستخدام تحت <code dir="ltr">work_train/</code>، ونقاط التحقق والسجلات تحت <code dir="ltr">ckpt/</code>، وفق سلوك النقل في ملف الإرسال.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">شرح الشيفرة</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># run_train.sh &lt;scratch|finetune&gt;
+</span><span class="tok-comment"># ...
+</span>set -euo pipefail
+set -x
+
+MODE=${<span class="tok-number">1</span>:?usage: run_train.sh &lt;scratch|finetune&gt;}
+SUBMIT=<span class="tok-string">&quot;$PWD&quot;</span>
+KD=/app/KarmaDock
+export PYTHONPATH=/app/KarmaDock:${PYTHONPATH:-}</code></pre></div>
+<p>يعثر سطر <code dir="ltr">env</code> الافتتاحي على <bdi dir="ltr">Bash</bdi> عبر البيئة. يوقف <code dir="ltr">set -e</code> التنفيذ عند أمر فاشل غير معالج، ويرفض <code dir="ltr">-u</code> المتغيرات غير المضبوطة، ويجعل <code dir="ltr">pipefail</code> خط الأنابيب يفشل إذا فشل أي مكوّن. ويطبع <code dir="ltr">set -x</code> الأوامر الموسعة لتصحيح أخطاء العنقود. يجعل <code dir="ltr">${1:?...}</code> الوسيط الموضعي الأول إلزاميًا. وتبقى <code dir="ltr">${PYTHONPATH:-}</code> آمنة تحت <code dir="ltr">-u</code> وتتيح استيرادات <bdi dir="ltr">KarmaDock</bdi> الأصلية لبرامج <bdi dir="ltr">Python</bdi> المحلية.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment"># Persistent work dir (NOT mktemp) so --resume survives a force-reschedule.
+</span>WORK=<span class="tok-string">&quot;$SUBMIT/work_train&quot;</span>; KIN=<span class="tok-string">&quot;$WORK/complex&quot;</span>; GRAPH=<span class="tok-string">&quot;$WORK/graphs&quot;</span>
+mkdir -p <span class="tok-string">&quot;$KIN&quot;</span> <span class="tok-string">&quot;$GRAPH&quot;</span> <span class="tok-string">&quot;$SUBMIT/ckpt&quot;</span>
+
+<span class="tok-keyword">if</span> [ ! -f <span class="tok-string">&quot;$WORK/.preprocessed&quot;</span> ]; <span class="tok-keyword">then</span>
+  python3 <span class="tok-string">&quot;$SUBMIT/scripts/convert_seminar_to_karmadock.py&quot;</span> \
+      --csv <span class="tok-string">&quot;$SUBMIT/proto_train.csv&quot;</span> --src_dir <span class="tok-string">&quot;$SUBMIT/proto_train&quot;</span> --out_dir <span class="tok-string">&quot;$KIN&quot;</span>
+  ( cd <span class="tok-string">&quot;$KD/utils&quot;</span>
+    python3 -u pre_processing.py --complex_file_dir <span class="tok-string">&quot;$KIN&quot;</span>
+    python3 -u generate_graph.py --complex_file_dir <span class="tok-string">&quot;$KIN&quot;</span> --graph_file_dir <span class="tok-string">&quot;$GRAPH&quot;</span> )
+  touch <span class="tok-string">&quot;$WORK/.preprocessed&quot;</span>
+<span class="tok-keyword">fi</span></code></pre></div>
+<p>دليل العمل دائم كي تستطيع مهمة عنقودية أُخرجت أو أعيدت جدولتها استخدام الرسوم ونقاط تحقق <code dir="ltr">--resume</code>. ينشئ المحوّل تخطيط مدخلات <bdi dir="ltr">KarmaDock</bdi>؛ وتستخرج <code dir="ltr">pre_processing.py</code> الأصلية الجيوب وتطبّعها، بينما تسلسل <code dir="ltr">generate_graph.py</code> كائنات الرسوم في ملفات <code dir="ltr">.dgl</code>. تجعل الأقواس أمر <code dir="ltr">cd</code> محليًا لعملية فرعية. ويمنح خيار <bdi dir="ltr">Python</bdi> ‏<code dir="ltr">-u</code> سجلات غير مخزنة مؤقتًا. لا تُلمس العلامة إلا إذا نجحت أوامر المعالجة كلها تحت <code dir="ltr">set -e</code>.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">cd <span class="tok-string">&quot;$SUBMIT&quot;</span>
+<span class="tok-keyword">if</span> [ <span class="tok-string">&quot;$MODE&quot;</span> = <span class="tok-string">&quot;scratch&quot;</span> ]; <span class="tok-keyword">then</span>
+  <span class="tok-keyword">if</span> [ ! -f ckpt/p2_stage1/stage.<span class="tok-keyword">done</span> ]; <span class="tok-keyword">then</span>
+    python3 -u scripts/train.py --csv proto_train.csv --graph_dir <span class="tok-string">&quot;$GRAPH&quot;</span> --complex_dir <span class="tok-string">&quot;$KIN&quot;</span> \
+        --out_dir ckpt/p2_stage1 --init_model <span class="tok-string">&quot;&quot;</span> --pos_r <span class="tok-number">0</span> --lr 1e-<span class="tok-number">3</span> --weight_decay 1e-<span class="tok-number">5</span> \
+        --batch_size <span class="tok-number">4</span> --accum_steps <span class="tok-number">16</span> --patience <span class="tok-number">70</span> --epochs <span class="tok-number">1000</span> --val_frac <span class="tok-number">0.1</span> --random_seed <span class="tok-number">42</span> --resume
+    touch ckpt/p2_stage1/stage.<span class="tok-keyword">done</span>
+  <span class="tok-keyword">fi</span></code></pre></div>
+<p>تبدأ <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> بأوزان عشوائية، أي <code dir="ltr">--init_model &quot;&quot;</code>، وتضبط <code dir="ltr">pos_r=0</code>، فتُضرب خسارة الإحداثيات/<bdi dir="ltr">RMSD</bdi> في صفر ويركز التدريب على هدف تسجيل <bdi dir="ltr">MDN.</bdi> ينفذ <strong>تراكم التدرجات</strong> تحديثًا واحدًا للمحسّن بعد <bdi dir="ltr">16</bdi> دفعة فيزيائية حجم كل منها <bdi dir="ltr">4</bdi>، بما يقارب دفعة فعّالة مقدارها <bdi dir="ltr">64</bdi> دون تخزين الأمثلة الـ<bdi dir="ltr">64</bdi> معًا. وقد يوقف الإيقاف المبكر الحقب الاسمية الـ<bdi dir="ltr">1000</bdi> بعد <bdi dir="ltr">70</bdi> عملية تحقق بلا تحسن. وتمنع <code dir="ltr">stage.done</code> إعادة <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> المكتملة.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">  python3 -u scripts/train.py --csv proto_train.csv --graph_dir <span class="tok-string">&quot;$GRAPH&quot;</span> --complex_dir <span class="tok-string">&quot;$KIN&quot;</span> \
+      --out_dir ckpt/p2_stage2 --init_model ckpt/p2_stage1/karmadock_team002.pkl --pos_r <span class="tok-number">1</span> \
+      --lr 1e-<span class="tok-number">4</span> --weight_decay 1e-<span class="tok-number">4</span> --batch_size <span class="tok-number">4</span> --accum_steps <span class="tok-number">16</span> --patience <span class="tok-number">20</span> --epochs <span class="tok-number">1000</span> \
+      --val_frac <span class="tok-number">0.1</span> --random_seed <span class="tok-number">42</span> --jitter <span class="tok-number">0.05</span> --resume
+  echo <span class="tok-string">&quot;=== P2 from-scratch done: ckpt/p2_stage2/karmadock_team002.pkl ===&quot;</span></code></pre></div>
+<p>تبدأ <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> من أفضل نقطة تحقق لـ<bdi dir="ltr">Stage-1</bdi> وتفعّل تعلم الإحداثيات باستخدام <code dir="ltr">pos_r=1</code>. وتستخدم معدل تعلم أصغر واضمحلال أوزان أقوى و<bdi dir="ltr">patience</bdi> أقصر وتشويش إحداثيات غاوسيًا مقداره <bdi dir="ltr">0.05</bdi> Å لزيادة البيانات. تعيد عملية تنقيح الوضعية في <bdi dir="ltr">KarmaDock</bdi> تدوير شبكة تحديث الإحداثيات المتكافئة ثلاث مرات داخل النموذج الأصلي؛ ولا يطبق هذا البرنامج تلك البنية، لكن <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> توفّر إشارة <bdi dir="ltr">RMSD</bdi> التي تدربها.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">elif</span> [ <span class="tok-string">&quot;$MODE&quot;</span> = <span class="tok-string">&quot;finetune&quot;</span> ]; <span class="tok-keyword">then</span>
+  python3 -u scripts/train.py --csv proto_train.csv --graph_dir <span class="tok-string">&quot;$GRAPH&quot;</span> --complex_dir <span class="tok-string">&quot;$KIN&quot;</span> \
+      --out_dir ckpt/p3_finetune --init_model /app/KarmaDock/trained_models/karmadock_screening.pkl \
+      --pos_r <span class="tok-number">1</span> --lr 1e-<span class="tok-number">4</span> --weight_decay <span class="tok-number">0</span> --batch_size <span class="tok-number">4</span> --accum_steps <span class="tok-number">16</span> --patience <span class="tok-number">30</span> --epochs <span class="tok-number">500</span> \
+      --val_frac <span class="tok-number">0.1</span> --random_seed <span class="tok-number">42</span> --resume
+  echo <span class="tok-string">&quot;=== P3 fine-tune done: ckpt/p3_finetune/karmadock_team002.pkl ===&quot;</span>
+<span class="tok-keyword">else</span>
+  echo <span class="tok-string">&quot;ERROR: mode must be &#x27;scratch&#x27; or &#x27;finetune&#x27;&quot;</span>; exit <span class="tok-number">2</span>
+<span class="tok-keyword">fi</span></code></pre></div>
+<p>يتجاوز الضبط الدقيق <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> ويبدأ بأوزان الفحص المنشورة، مع تحسين الخسارتين. ويرفض الفرع الأخير أي قيمة غير النمطين المعلنين بحالة خروج <bdi dir="ltr">2.</bdi></p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">لماذا يكون <code dir="ltr">work_train</code> دائمًا ومحميًا بعلامة <code dir="ltr">.preprocessed</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يمكن للمهام المعاد جدولتها إعادة استخدام البنى والرسوم المكلفة، ولا تُكتب العلامة إلا بعد نجاح أوامر المعالجة كلها تحت النمط الصارم.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">كيف تحصل <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> على دفعة فعّالة مقدارها <bdi dir="ltr">64</bdi> دون تحميل <bdi dir="ltr">64</bdi> معقّدًا معًا؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تراكم التدرجات عبر <bdi dir="ltr">16</bdi> دفعة فيزيائية حجم كل منها <bdi dir="ltr">4</bdi> قبل كل تحديث للمحسّن.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">لماذا تبدأ <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> من <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> وتغيّر <code dir="ltr">pos_r</code> من <bdi dir="ltr">0</bdi> إلى <bdi dir="ltr">1</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تتعلم <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> تسجيل <bdi dir="ltr">MDN</bdi> أولًا؛ وتعيد <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> استخدام أفضل نقطة تحقق وتفعّل حد إحداثيات <bdi dir="ltr">RMSD</bdi> لتنقيح الإرساء.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q4">
+<p class="quiz-question">كيف يختلف الضبط الدقيق عن استئناف <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يبدأ الضبط من نقطة تحقق الفحص المنشورة، ويتجاوز مرحلة <bdi dir="ltr">MDN</bdi> التي دربها المشروع، ويكتب إلى دليل <bdi dir="ltr">P3</bdi> منفصل بمعاملاته الفائقة.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">محاذير وملاحظات</h2>
+<ul>
+<li>تؤكد علامتا <code dir="ltr">.preprocessed</code> و<code dir="ltr">stage.done</code> الاكتمال من دون فحص ما إذا كانت الملفات حُذفت أو تلفت لاحقًا؛ احذف العلامة لفرض إعادة التوليد.</li>
+<li>لا يستأنف <code dir="ltr">--resume</code> إلا إذا وُجد <code dir="ltr">last.pt</code>. ولا تملك <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> المكتملة علامة مستقلة، لذلك تُستدعى مجددًا، مع إمكان استئناف نقطة تحققها قرب النهاية السابقة.</li>
+<li>تكون عبارة «الدفعة الفعّالة <bdi dir="ltr">64</bdi>» دقيقة لنوافذ التراكم الكاملة؛ أما النافذة الجزئية الأخيرة فتظل مقسومة على <bdi dir="ltr">16</bdi> في <code dir="ltr">train.py</code>، لذلك يكون تدرجها أصغر.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">لماذا قد تشير ملفات العلامات خطأ إلى اكتمال شرط التدريب؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تسجل انتهاء سلسلة أوامر سابقة لكنها لا تفحص حذف الرسوم أو نقاط التحقق أو تلفها أو تقادمها لاحقًا.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">لماذا قد تُستدعى <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> المكتملة مجددًا مع تجاوز <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لدى <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi> ملف <code dir="ltr">stage.done</code>، لكن <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi> لا تملك علامة مماثلة وتعتمد على سلوك استئناف <code dir="ltr">last.pt</code> الاختياري فقط.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">لماذا يكون وزن نافذة التراكم الجزئية الأخيرة أقل؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تُقسم خسارة كل دفعة مصغرة على <bdi dir="ltr">16</bdi> حتى عندما يبقى أقل من <bdi dir="ltr">16</bdi> دفعة قبل التحديث النهائي القسري.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#purpose">الغرض</a></li><li class="toc-level-2"><a href="#how-it-fits-in">موقعه في المنظومة</a></li><li class="toc-level-2"><a href="#walkthrough">شرح الشيفرة</a></li><li class="toc-level-2"><a href="#gotchas--notes">محاذير وملاحظات</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

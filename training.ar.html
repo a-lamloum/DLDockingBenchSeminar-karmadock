@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="training.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>5. معلومات التدريب ومعاملاته (من الورقة) | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="training.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="training.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html" aria-current="page">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="5-training-information--parameters-from-the-paper"><bdi dir="ltr">5.</bdi> معلومات التدريب ومعاملاته (من الورقة)</h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<p>ينفّذ <a class="content-link" href="walkthrough-train.ar.html"><code dir="ltr">train.py</code></a> <em>بروتوكول التدريب</em> في ورقة <bdi dir="ltr">KarmaDock.</bdi> حجم الدفعة الفعلي هو <bdi dir="ltr">64</bdi> في جميع التشغيلات (<code dir="ltr">batch_size 4 × accum_steps 16</code>)، وتقسيم التدريب والتحقق حتمي (<code dir="ltr">val_frac 0.1</code>، و<code dir="ltr">seed 42</code>).</p>
+<p><strong><bdi dir="ltr">P2</bdi> — التدريب من الصفر (<bdi dir="ltr">2</bdi> <bdi dir="ltr">stages</bdi> وفق بروتوكول الورقة):</strong></p>
+<div class="table-scroll"><table><thead><tr>
+<th>المرحلة</th>
+<th>الهدف</th>
+<th><code dir="ltr">pos_r</code></th>
+<th>المحسّن</th>
+<th><bdi dir="ltr">lr</bdi></th>
+<th><bdi dir="ltr">weight_decay</bdi></th>
+<th><bdi dir="ltr">patience</bdi></th>
+</tr></thead><tbody>
+<tr>
+<td><bdi dir="ltr">1</bdi></td>
+<td>التسجيل / <bdi dir="ltr">MDN</bdi> فقط (تجاوز إرساء <bdi dir="ltr">EGNN</bdi>)</td>
+<td><bdi dir="ltr">0</bdi></td>
+<td><bdi dir="ltr">Adam</bdi></td>
+<td><bdi dir="ltr">1e-3</bdi></td>
+<td><bdi dir="ltr">1e-5</bdi></td>
+<td><bdi dir="ltr">70</bdi></td>
+</tr>
+<tr>
+<td><bdi dir="ltr">2</bdi></td>
+<td>الإرساء + التسجيل (بدءًا من أفضل نتيجة للمرحلة <bdi dir="ltr">1</bdi>)</td>
+<td><bdi dir="ltr">1</bdi></td>
+<td><bdi dir="ltr">Adam</bdi></td>
+<td><bdi dir="ltr">1e-4</bdi></td>
+<td><bdi dir="ltr">1e-4</bdi></td>
+<td><bdi dir="ltr">20</bdi></td>
+</tr>
+</tbody></table></div>
+<p><strong><bdi dir="ltr">P3</bdi> — الضبط الدقيق (إضافي، مرحلة واحدة، يبدأ من الأوزان المنشورة):</strong> <code dir="ltr">pos_r 1</code>، و<bdi dir="ltr">Adam</bdi>، و<code dir="ltr">lr 1e-4</code>، و<code dir="ltr">weight_decay 0</code>، و<code dir="ltr">patience 30</code>، وحجم دفعة فعلي <bdi dir="ltr">64</bdi>، و<code dir="ltr">val_frac 0.1</code>، و<code dir="ltr">seed 42</code>.</p>
+<p>يمثل <strong><bdi dir="ltr">pos_r</bdi></strong> الوزن القياسي لخسارة <bdi dir="ltr">RMSD</bdi>، أي خسارة الإحداثيات والإرساء، في هدف تدريب <bdi dir="ltr">KarmaDock:</bdi> ‏<code dir="ltr">training objective loss = pos_r * rmsd_loss + mdn_loss</code>. يعمل بوصفه مفتاحًا للتحسين الموضعي: تكون قيمته <bdi dir="ltr">0</bdi> في المرحلة <bdi dir="ltr">1</bdi> لتدريب خسارة مسافات التفاعل <bdi dir="ltr">MDN</bdi> فقط، وتصبح <bdi dir="ltr">1</bdi> في المرحلة <bdi dir="ltr">2</bdi> لتفعيل حد <bdi dir="ltr">RMSD</bdi> وتحسين إحداثيات الربيطة المتنبأ بها باتجاه الوضعية البلورية.</p>
+<p>توجد منحنيات التدريب لكل حقبة في <a class="content-link" href="assets/downloads/p2_stage1_train_log.csv"><code dir="ltr">docs/p2_stage1_train_log.csv</code></a>، و<a class="content-link" href="assets/downloads/p2_stage2_train_log.csv"><code dir="ltr">docs/p2_stage2_train_log.csv</code></a>، و <a class="content-link" href="assets/downloads/p3_finetune_train_log.csv"><code dir="ltr">docs/p3_finetune_train_log.csv</code></a>.</p>
+<h2 id="training-log-summary">ملخص سجلات التدريب</h2>
+<p>حُسبت القيم مباشرةً من سجلات كل حقبة المرفقة، وتمثل القيم الأفضل الحدود الدنيا.</p>
+<div class="table-scroll"><table><thead><tr>
+<th>التشغيل</th>
+<th class="align-right">الحقبات</th>
+<th class="align-right">أفضل خسارة تحقق</th>
+<th class="align-right">أفضل <bdi dir="ltr">RMSD</bdi> للتحقق</th>
+<th class="align-right">خسارة التحقق النهائية</th>
+<th class="align-right">الزمن المسجل</th>
+<th><bdi dir="ltr">CSV</bdi></th>
+</tr></thead><tbody>
+<tr>
+<td><bdi dir="ltr">Full-data</bdi> <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi></td>
+<td class="align-right"><bdi dir="ltr">470</bdi></td>
+<td class="align-right"><bdi dir="ltr">3.55414</bdi> (<bdi dir="ltr">epoch</bdi> <bdi dir="ltr">399</bdi>)</td>
+<td class="align-right"><bdi dir="ltr">2.81194</bdi> (<bdi dir="ltr">epoch</bdi> <bdi dir="ltr">399</bdi>)</td>
+<td class="align-right"><bdi dir="ltr">3.62990</bdi></td>
+<td class="align-right"><bdi dir="ltr">81.50</bdi> <bdi dir="ltr">h</bdi></td>
+<td><a class="content-link" href="assets/downloads/full_stage2_train_log.csv"><code dir="ltr">full_stage2_train_log.csv</code></a></td>
+</tr>
+<tr>
+<td><bdi dir="ltr">P2</bdi> <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">1</bdi></td>
+<td class="align-right"><bdi dir="ltr">370</bdi></td>
+<td class="align-right"><bdi dir="ltr">1.20531</bdi> (<bdi dir="ltr">epoch</bdi> <bdi dir="ltr">299</bdi>)</td>
+<td class="align-right"><bdi dir="ltr">N/A</bdi> (<code dir="ltr">pos_r=0</code>)</td>
+<td class="align-right"><bdi dir="ltr">1.21701</bdi></td>
+<td class="align-right"><bdi dir="ltr">1.95</bdi> <bdi dir="ltr">h</bdi></td>
+<td><a class="content-link" href="assets/downloads/p2_stage1_train_log.csv"><code dir="ltr">p2_stage1_train_log.csv</code></a></td>
+</tr>
+<tr>
+<td><bdi dir="ltr">P2</bdi> <bdi dir="ltr">Stage</bdi> <bdi dir="ltr">2</bdi></td>
+<td class="align-right"><bdi dir="ltr">146</bdi></td>
+<td class="align-right"><bdi dir="ltr">6.16796</bdi> (<bdi dir="ltr">epoch</bdi> <bdi dir="ltr">125</bdi>)</td>
+<td class="align-right"><bdi dir="ltr">4.94560</bdi> (<bdi dir="ltr">epoch</bdi> <bdi dir="ltr">125</bdi>)</td>
+<td class="align-right"><bdi dir="ltr">6.24452</bdi></td>
+<td class="align-right"><bdi dir="ltr">3.42</bdi> <bdi dir="ltr">h</bdi></td>
+<td><a class="content-link" href="assets/downloads/p2_stage2_train_log.csv"><code dir="ltr">p2_stage2_train_log.csv</code></a></td>
+</tr>
+<tr>
+<td><bdi dir="ltr">P3</bdi> <bdi dir="ltr">fine-tune</bdi></td>
+<td class="align-right"><bdi dir="ltr">68</bdi></td>
+<td class="align-right"><bdi dir="ltr">3.48925</bdi> (<bdi dir="ltr">epoch</bdi> <bdi dir="ltr">37</bdi>)</td>
+<td class="align-right"><bdi dir="ltr">2.58530</bdi> (<bdi dir="ltr">epoch</bdi> <bdi dir="ltr">37</bdi>)</td>
+<td class="align-right"><bdi dir="ltr">3.59316</bdi></td>
+<td class="align-right"><bdi dir="ltr">1.57</bdi> <bdi dir="ltr">h</bdi></td>
+<td><a class="content-link" href="assets/downloads/p3_finetune_train_log.csv"><code dir="ltr">p3_finetune_train_log.csv</code></a></td>
+</tr>
+</tbody></table></div>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">لماذا تُضبط قيمة <code dir="ltr">pos_r</code> على <bdi dir="ltr">0</bdi> في المرحلة <bdi dir="ltr">1</bdi> من <bdi dir="ltr">P2</bdi>، ثم على <bdi dir="ltr">1</bdi> في المرحلة <bdi dir="ltr">2</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تدرّب المرحلة <bdi dir="ltr">1</bdi> هدف مسافات التفاعل <bdi dir="ltr">MDN</bdi> فقط، بينما تفعّل المرحلة <bdi dir="ltr">2</bdi> حد إحداثيات <bdi dir="ltr">RMSD</bdi> كي يحسّن النموذج وضعيات الربيطة أيضًا.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">كيف ينتج حجم الدفعة الفعلي البالغ <bdi dir="ltr">64</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تستخدم كل خطوة <code dir="ltr">batch_size 4</code>، وتتراكم التدرجات عبر <code dir="ltr">accum_steps 16</code>، فيصبح حجم الدفعة الفعلي <bdi dir="ltr">4</bdi> × <bdi dir="ltr">16</bdi> = <bdi dir="ltr">64.</bdi></p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">لماذا تُعرض قيمة <bdi dir="ltr">RMSD</bdi> للتحقق في المرحلة <bdi dir="ltr">1</bdi> من <bdi dir="ltr">P2</bdi> بوصفها غير متاحة رغم أن السجل يحتوي أصفارًا؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن <code dir="ltr">pos_r=0</code> يعطل تدريب الإحداثيات في تلك المرحلة، فلا يمثل الصفر المسجل قياس <bdi dir="ltr">RMSD</bdi> ذا معنى للتحسين أو المقارنة.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#training-log-summary">ملخص سجلات التدريب</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

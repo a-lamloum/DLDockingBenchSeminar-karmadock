@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="reproduce.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>4. التقييم وإعادة الإنتاج | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="reproduce.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="reproduce.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html" aria-current="page">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="4-evaluate--reproduce"><bdi dir="ltr">4.</bdi> التقييم وإعادة الإنتاج</h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<p>تتضمن المستودعات الوضعيات المتنبأ بها (مخزنة <strong>من دون ضغط</strong>) وملفات <bdi dir="ltr">CSV</bdi> الناتجة من <a class="content-link" href="walkthrough-evaluation.ar.html"><code dir="ltr">evaluation.py</code></a> الرسمي. يمكن قراءة النتائج مباشرة، أو إعادة تشغيل المقيّم محليًا على الوضعيات المرفقة من دون الحاجة إلى العنقود.</p>
+<h3 id="a-score-the-shipped-poses"><bdi dir="ltr">A.</bdi> تقييم الوضعيات المرفقة</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment"># one-time setup: unzip the reference structures and let evaluation.py find them
+</span>unzip -o data/prototype_model_data.zip -d data/prototype_model_data
+ln -sf prototype_model_data/proto_test data/proto_test      <span class="tok-comment"># data/proto_test.csv already ships
+</span>
+<span class="tok-comment"># score results/proto_test/ (= our from-scratch P2 model) -&gt; results/proto_test_evaluation.csv
+</span>python evaluation/evaluation.py --dataset proto_test</code></pre></div>
+<p>يضم <code dir="ltr">results/proto_test/</code> وضعيات نموذج <strong><bdi dir="ltr">P2</bdi> المدرّب من الصفر</strong>، وهو نموذج التسليم الرئيس. لتقييم مسار أو متغير آخر، اجعل <code dir="ltr">results/proto_test/</code> يشير إليه، مثل <code dir="ltr">rm results/proto_test &amp;&amp; ln -s p1_baseline/proto_test results/proto_test</code>، ثم أعد التشغيل. توجد ملفات <bdi dir="ltr">CSV</bdi> المحسوبة مسبقًا لكل مسار × متغير في <a class="content-link" href="results.ar.html"><code dir="ltr">results/</code></a>.</p>
+<h3 id="b-regenerate-the-poses-on-the-cluster-optional"><bdi dir="ltr">B.</bdi> إعادة توليد الوضعيات على العنقود (اختياري)</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">mkdir -p logs
+<span class="tok-comment"># dock: each job preprocesses, docks (seed 2023) and exports the 3 pose variants
+</span>condor_submit condor/p1_baseline.sub        <span class="tok-comment"># -&gt; results/p1_baseline/{proto_test,_ff,_align}
+</span>condor_submit condor/p2_scratch_infer.sub   <span class="tok-comment"># -&gt; results/p2_scratch/...
+</span>condor_submit condor/p3_finetune_infer.sub  <span class="tok-comment"># -&gt; results/p3_finetune/...
+</span><span class="tok-comment"># score (after the 3 docking jobs finish): runs evaluation.py over every pipeline x variant
+</span>condor_submit condor/evaluate.sub</code></pre></div>
+<p>ملفات الإرسال في <a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/</code></a> <strong>قابلة للنقل</strong>: تنقل البيانات وشيفرتنا إلى المهمة، وتستخدم الأوزان المنشورة المضمّنة في الصورة، فلا تحتاج إلى تعديل مسارات. الإرساء حتمي مع <code dir="ltr">--random_seed 2023</code>.</p>
+<blockquote><p>مجموعة التقييم هي <a class="content-link" href="assets/downloads/proto_test.csv"><code dir="ltr">data/proto_test.csv</code></a> وتضم <bdi dir="ltr">136</bdi> مركّبًا. تأتي البنى المرجعية من الحزمة، بينما تبقى <code dir="ltr">proto_train</code> التي تضم <bdi dir="ltr">712</bdi> مركّبًا بلا تغيير.</p></blockquote>
+<h3 id="retraining-from-scratch-and-fine-tuning">إعادة التدريب من الصفر والضبط الدقيق</h3>
+<p>توجد المعاملات الفائقة في <a class="content-link" href="training.ar.html#5-training-information--parameters-from-the-paper">القسم <bdi dir="ltr">5</bdi></a>. مشغلا العنقود هما <a class="content-link" href="walkthrough-condor.ar.html#p2-train-scratch-sub"><code dir="ltr">condor/p2_train_scratch.sub</code></a> للمسار <bdi dir="ltr">P2</bdi> و <a class="content-link" href="walkthrough-condor.ar.html#p3-finetune-sub"><code dir="ltr">condor/p3_finetune.sub</code></a> للمسار <bdi dir="ltr">P3.</bdi> التدريب هو المسار الطويل: يستغرق نحو <strong>~<bdi dir="ltr">54</bdi> <bdi dir="ltr">hours</bdi></strong> على <bdi dir="ltr">GPU</bdi> واحد لمعالجة <bdi dir="ltr">712</bdi> مركّبًا في <bdi dir="ltr">proto_train.</bdi></p>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">ما أقصر مسار للتحقق من وضعيات <bdi dir="ltr">P2</bdi> المرفقة من دون استخدام العنقود؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>فك حزمة البنى المرجعية، وأنشئ رابط <code dir="ltr">data/proto_test</code> المتوقع، ثم شغّل <code dir="ltr">python evaluation/evaluation.py --dataset proto_test</code> محليًا.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">لماذا تستطيع ملفات إرسال <bdi dir="ltr">HTCondor</bdi> العمل من دون تعديل مسارات خاصة بالموقع؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تنقل الملفات البيانات وشيفرة المشروع اللازمتين إلى كل مهمة، وتستخدم الأوزان المنشورة الموجودة سلفًا داخل الصورة.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">ما الفرق بين تقييم الوضعيات المرفقة وإعادة توليدها؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يشغّل التقييم المقيّم فقط على البنى المتنبأ بها الموجودة، أما إعادة التوليد فتعيد المعالجة المسبقة والإرساء للمسارات قبل إرسال المقيّم.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-3"><a href="#a-score-the-shipped-poses"><bdi dir="ltr">A.</bdi> تقييم الوضعيات المرفقة</a></li><li class="toc-level-3"><a href="#b-regenerate-the-poses-on-the-cluster-optional"><bdi dir="ltr">B.</bdi> إعادة توليد الوضعيات على العنقود (اختياري)</a></li><li class="toc-level-3"><a href="#retraining-from-scratch-and-fine-tuning">إعادة التدريب من الصفر والضبط الدقيق</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

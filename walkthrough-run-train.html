@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-run-train.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>scripts/runtrain.sh | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-run-train.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-run-train.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html" aria-current="page">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsruntrainsh"><code dir="ltr">scripts/run_train.sh</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This is the self-contained prototype training driver. It converts and preprocesses <code dir="ltr">proto_train</code>, then either runs the two-stage from-scratch protocol (P2) or fine-tunes the released checkpoint (P3), using the single-process <code dir="ltr">train.py</code> loop.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why does the prototype training driver include preprocessing as well as trainer invocation?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It provides a self-contained route from seminar structures to KarmaDock graphs and then to P2 scratch or P3 fine-tune checkpoints.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">How do the two advertised modes correspond to the benchmark pipelines?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p><code dir="ltr">scratch</code> runs MDN-only Stage 1 followed by combined Stage 2 for P2, while <code dir="ltr">finetune</code> starts from released weights and trains the combined objective for P3.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">Why is this wrapper described as single-process?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It always calls <code dir="ltr">train.py</code> directly rather than launching one process per GPU through <code dir="ltr">torchrun</code> and <code dir="ltr">train_ddp.py</code>.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p><code dir="ltr">condor/p2_train_scratch.sub</code> calls it with <code dir="ltr">scratch</code>; <code dir="ltr">condor/p3_finetune.sub</code> calls it with <code dir="ltr">finetune</code>. It expects <code dir="ltr">proto_train.csv</code>, <code dir="ltr">proto_train/</code>, and <code dir="ltr">scripts/</code> in the current HTCondor sandbox, plus upstream KarmaDock at <code dir="ltr">/app/KarmaDock</code>. It writes reusable preprocessing under <code dir="ltr">work_train/</code> and checkpoints/logs under <code dir="ltr">ckpt/</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">Which Condor files select each training mode?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p><code dir="ltr">p2_train_scratch.sub</code> passes <code dir="ltr">scratch</code>, while <code dir="ltr">p3_finetune.sub</code> passes <code dir="ltr">finetune</code>.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">What must HTCondor stage into the current sandbox before this wrapper starts?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It needs <code dir="ltr">proto_train.csv</code>, the <code dir="ltr">proto_train/</code> structures, and the local <code dir="ltr">scripts/</code> directory, while upstream KarmaDock comes from the image.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">Which outputs are intended to survive the run?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Reusable work and graphs live under <code dir="ltr">work_train/</code>, and model checkpoints plus logs live under <code dir="ltr">ckpt/</code>, subject to the submit file&#x27;s transfer behavior.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># run_train.sh &lt;scratch|finetune&gt;
+</span><span class="tok-comment"># ...
+</span>set -euo pipefail
+set -x
+
+MODE=${<span class="tok-number">1</span>:?usage: run_train.sh &lt;scratch|finetune&gt;}
+SUBMIT=<span class="tok-string">&quot;$PWD&quot;</span>
+KD=/app/KarmaDock
+export PYTHONPATH=/app/KarmaDock:${PYTHONPATH:-}</code></pre></div>
+<p>The <code dir="ltr">env</code> shebang locates Bash through the environment. <code dir="ltr">set -e</code> aborts on an unhandled failing command, <code dir="ltr">-u</code> rejects unset variables, and <code dir="ltr">pipefail</code> makes a pipeline fail if any component fails. <code dir="ltr">set -x</code> echoes expanded commands for cluster debugging. <code dir="ltr">${1:?...}</code> makes the first positional argument mandatory. <code dir="ltr">${PYTHONPATH:-}</code> is safe under <code dir="ltr">-u</code> and exposes upstream KarmaDock imports to local Python programs.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment"># Persistent work dir (NOT mktemp) so --resume survives a force-reschedule.
+</span>WORK=<span class="tok-string">&quot;$SUBMIT/work_train&quot;</span>; KIN=<span class="tok-string">&quot;$WORK/complex&quot;</span>; GRAPH=<span class="tok-string">&quot;$WORK/graphs&quot;</span>
+mkdir -p <span class="tok-string">&quot;$KIN&quot;</span> <span class="tok-string">&quot;$GRAPH&quot;</span> <span class="tok-string">&quot;$SUBMIT/ckpt&quot;</span>
+
+<span class="tok-keyword">if</span> [ ! -f <span class="tok-string">&quot;$WORK/.preprocessed&quot;</span> ]; <span class="tok-keyword">then</span>
+  python3 <span class="tok-string">&quot;$SUBMIT/scripts/convert_seminar_to_karmadock.py&quot;</span> \
+      --csv <span class="tok-string">&quot;$SUBMIT/proto_train.csv&quot;</span> --src_dir <span class="tok-string">&quot;$SUBMIT/proto_train&quot;</span> --out_dir <span class="tok-string">&quot;$KIN&quot;</span>
+  ( cd <span class="tok-string">&quot;$KD/utils&quot;</span>
+    python3 -u pre_processing.py --complex_file_dir <span class="tok-string">&quot;$KIN&quot;</span>
+    python3 -u generate_graph.py --complex_file_dir <span class="tok-string">&quot;$KIN&quot;</span> --graph_file_dir <span class="tok-string">&quot;$GRAPH&quot;</span> )
+  touch <span class="tok-string">&quot;$WORK/.preprocessed&quot;</span>
+<span class="tok-keyword">fi</span></code></pre></div>
+<p>The work directory is persistent because an evicted/rescheduled cluster job can reuse graphs and <code dir="ltr">--resume</code> checkpoints. The converter creates KarmaDock&#x27;s input layout; upstream <code dir="ltr">pre_processing.py</code> extracts/normalizes pockets, and <code dir="ltr">generate_graph.py</code> serializes graph objects as <code dir="ltr">.dgl</code> files. Parentheses make the <code dir="ltr">cd</code> local to a subshell. Python&#x27;s <code dir="ltr">-u</code> gives unbuffered logs. The sentinel is touched only if all preprocessing commands succeeded under <code dir="ltr">set -e</code>.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">cd <span class="tok-string">&quot;$SUBMIT&quot;</span>
+<span class="tok-keyword">if</span> [ <span class="tok-string">&quot;$MODE&quot;</span> = <span class="tok-string">&quot;scratch&quot;</span> ]; <span class="tok-keyword">then</span>
+  <span class="tok-keyword">if</span> [ ! -f ckpt/p2_stage1/stage.<span class="tok-keyword">done</span> ]; <span class="tok-keyword">then</span>
+    python3 -u scripts/train.py --csv proto_train.csv --graph_dir <span class="tok-string">&quot;$GRAPH&quot;</span> --complex_dir <span class="tok-string">&quot;$KIN&quot;</span> \
+        --out_dir ckpt/p2_stage1 --init_model <span class="tok-string">&quot;&quot;</span> --pos_r <span class="tok-number">0</span> --lr 1e-<span class="tok-number">3</span> --weight_decay 1e-<span class="tok-number">5</span> \
+        --batch_size <span class="tok-number">4</span> --accum_steps <span class="tok-number">16</span> --patience <span class="tok-number">70</span> --epochs <span class="tok-number">1000</span> --val_frac <span class="tok-number">0.1</span> --random_seed <span class="tok-number">42</span> --resume
+    touch ckpt/p2_stage1/stage.<span class="tok-keyword">done</span>
+  <span class="tok-keyword">fi</span></code></pre></div>
+<p>Stage 1 starts from random weights (<code dir="ltr">--init_model &quot;&quot;</code>) and sets <code dir="ltr">pos_r=0</code>, so the coordinate/RMSD term is multiplied by zero and training focuses on the MDN scoring objective. <strong>Gradient accumulation</strong> performs one optimizer update after 16 physical batches of 4, approximating an effective batch of 64 without storing all 64 examples simultaneously. Early stopping may end the nominal 1000 epochs after 70 non-improving validations. <code dir="ltr">stage.done</code> prevents a completed Stage 1 from being rerun.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">  python3 -u scripts/train.py --csv proto_train.csv --graph_dir <span class="tok-string">&quot;$GRAPH&quot;</span> --complex_dir <span class="tok-string">&quot;$KIN&quot;</span> \
+      --out_dir ckpt/p2_stage2 --init_model ckpt/p2_stage1/karmadock_team002.pkl --pos_r <span class="tok-number">1</span> \
+      --lr 1e-<span class="tok-number">4</span> --weight_decay 1e-<span class="tok-number">4</span> --batch_size <span class="tok-number">4</span> --accum_steps <span class="tok-number">16</span> --patience <span class="tok-number">20</span> --epochs <span class="tok-number">1000</span> \
+      --val_frac <span class="tok-number">0.1</span> --random_seed <span class="tok-number">42</span> --jitter <span class="tok-number">0.05</span> --resume
+  echo <span class="tok-string">&quot;=== P2 from-scratch done: ckpt/p2_stage2/karmadock_team002.pkl ===&quot;</span></code></pre></div>
+<p>Stage 2 initializes from the best Stage-1 checkpoint and enables coordinate learning with <code dir="ltr">pos_r=1</code>. It uses a smaller learning rate, stronger weight decay, shorter patience, and 0.05 Å Gaussian coordinate jitter as augmentation. KarmaDock&#x27;s pose refinement “recycles” its equivariant coordinate-update network three times inside the upstream model; this script does not implement that architecture, but Stage 2 provides the RMSD signal that trains it.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-keyword">elif</span> [ <span class="tok-string">&quot;$MODE&quot;</span> = <span class="tok-string">&quot;finetune&quot;</span> ]; <span class="tok-keyword">then</span>
+  python3 -u scripts/train.py --csv proto_train.csv --graph_dir <span class="tok-string">&quot;$GRAPH&quot;</span> --complex_dir <span class="tok-string">&quot;$KIN&quot;</span> \
+      --out_dir ckpt/p3_finetune --init_model /app/KarmaDock/trained_models/karmadock_screening.pkl \
+      --pos_r <span class="tok-number">1</span> --lr 1e-<span class="tok-number">4</span> --weight_decay <span class="tok-number">0</span> --batch_size <span class="tok-number">4</span> --accum_steps <span class="tok-number">16</span> --patience <span class="tok-number">30</span> --epochs <span class="tok-number">500</span> \
+      --val_frac <span class="tok-number">0.1</span> --random_seed <span class="tok-number">42</span> --resume
+  echo <span class="tok-string">&quot;=== P3 fine-tune done: ckpt/p3_finetune/karmadock_team002.pkl ===&quot;</span>
+<span class="tok-keyword">else</span>
+  echo <span class="tok-string">&quot;ERROR: mode must be &#x27;scratch&#x27; or &#x27;finetune&#x27;&quot;</span>; exit <span class="tok-number">2</span>
+<span class="tok-keyword">fi</span></code></pre></div>
+<p>Fine-tuning skips Stage 1 and begins with the released screening weights, optimizing both losses. The final branch rejects any value other than the two advertised modes with exit status 2.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">Why is <code dir="ltr">work_train</code> persistent and protected by a <code dir="ltr">.preprocessed</code> marker?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Rescheduled jobs can reuse costly converted structures and graphs, and the marker is written only after all strict-mode preprocessing commands succeed.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">How does Stage 1 obtain effective batch 64 without loading 64 complexes simultaneously?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It accumulates gradients over 16 physical batches of 4 before each optimizer update.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">Why does Stage 2 initialize from Stage 1 and change <code dir="ltr">pos_r</code> from 0 to 1?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Stage 1 learns MDN scoring first; Stage 2 reuses that best checkpoint and activates the RMSD coordinate term for docking refinement.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q4">
+<p class="quiz-question">How does fine-tuning differ from simply resuming Stage 2?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Fine-tuning initializes from the released screening checkpoint, skips the project-trained MDN-only stage, and writes to the separate P3 output directory with its own hyperparameters.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>The <code dir="ltr">.preprocessed</code> and <code dir="ltr">stage.done</code> markers assert completion without checking whether files were later deleted or corrupted; remove the marker to force regeneration.</li>
+<li><code dir="ltr">--resume</code> only resumes if <code dir="ltr">last.pt</code> exists. A completed Stage 2 has no separate marker and will be invoked again, although its checkpoint may resume near the previous end.</li>
+<li>The “effective batch 64” statement is exact for full accumulation windows; a final partial window is still divided by 16 in <code dir="ltr">train.py</code>, so its gradient is smaller.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why can marker files falsely indicate a complete training prerequisite?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They record that a previous command sequence finished but do not check whether graphs or checkpoints were later deleted, corrupted, or made stale.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">Why can a completed Stage 2 be invoked again even though Stage 1 is skipped?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Stage 1 has <code dir="ltr">stage.done</code>, but Stage 2 has no equivalent marker and relies only on optional <code dir="ltr">last.pt</code> resume behavior.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">Why is a final partial accumulation window underweighted?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Every microbatch loss is divided by 16 even when fewer than 16 batches remain before the forced final optimizer step.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="walkthrough-convert-seminar-to-karmadock.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>شرح `scripts/convert_seminar_to_karmadock.py` | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="walkthrough-convert-seminar-to-karmadock.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-convert-seminar-to-karmadock.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html" aria-current="page">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsconvertseminartokarmadockpy">شرح <code dir="ltr">scripts/convert_seminar_to_karmadock.py</code></h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="purpose">الغرض</h2>
+<p>يحوّل هذا الأمر تخطيط الملفات المسطح للندوة إلى التخطيط المنفصل لكل مركّب الذي تتطلبه المعالجة المسبقة في <bdi dir="ltr">KarmaDock</bdi> الأصلي. ينسخ البنى ولا يحولها كيميائيًا، ولذلك لا يتغير سوى المجلدات وأسماء الملفات.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">لماذا ينسخ هذا المحوّل البنى بدل تعديل الكيمياء الجزيئية؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن الجزيئات المصدر منقحة بالفعل؛ ولا يحتاج <bdi dir="ltr">KarmaDock</bdi> الأصلي إلا إلى تنظيم مختلف للأدلة وأسماء الملفات لكل معقّد.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">ما الثابت الذي ينشئه المحوّل لكل معقّد صالح؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>ينشئ <code dir="ltr">&lt;id&gt;/&lt;id&gt;_ligand.sdf</code> و<code dir="ltr">&lt;id&gt;_protein.pdb</code>، وهما الاسمان الدقيقان اللذان تتوقعهما المعالجة المسبقة الأصلية.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">لماذا يجب التعامل مع ملف الربيطة وملف البروتين كزوج؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تحتاج معالجة <bdi dir="ltr">KarmaDock</bdi> المسبقة كلا الشريكين الجزيئيين، لذلك لا يستطيع معقّد يملك ملف مصدر واحدًا فقط تكوين مدخل إرساء صالح.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">موقعه في المنظومة</h2>
+<p>تستدعيه <code dir="ltr">run_train.sh</code> و<code dir="ltr">run_full_train.sh</code> و<code dir="ltr">run_infer.sh</code> قبل استخراج الجيب وتوليد الرسوم البيانية في الشيفرة الأصلية. يأخذ <code dir="ltr">--csv</code> و<code dir="ltr">--src_dir</code> و<code dir="ltr">--out_dir</code>، ثم يكتب <code dir="ltr">&lt;out_dir&gt;/&lt;id&gt;/&lt;id&gt;_ligand.sdf</code> و<code dir="ltr">&lt;id&gt;_protein.pdb</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">لماذا يُستدعى هذا المحوّل قبل استخراج الجيب وتوليد الرسم البياني؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن تلك الخطوات الأصلية تجتاز تنظيم <bdi dir="ltr">KarmaDock</bdi> للمدخلات بحسب المعقّد، وهو لا يطابق تنظيم المقرر المسطح للبنى.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">كيف تقلل دالة <code dir="ltr">complex_records</code> المشتركة عدم الاتساق في خط الأنابيب؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تمنح تحويل التدريب والاستدلال المعرّفات وأسماء ملفات المصدر المرتبة نفسها عبر مخططات <bdi dir="ltr">CSV</bdi> المدعومة.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">ما دور <code dir="ltr">--src_dir</code> و<code dir="ltr">--out_dir</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يحتوي <code dir="ltr">--src_dir</code> بنى المصدر المسماة وفق المقرر، بينما يستقبل <code dir="ltr">--out_dir</code> شجرة الأدلة المعاد تنظيمها وفق <bdi dir="ltr">KarmaDock.</bdi></p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">شرح الشيفرة</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">import</span> argparse
+<span class="tok-keyword">import</span> os
+<span class="tok-keyword">import</span> shutil
+<span class="tok-keyword">import</span> sys
+
+<span class="tok-keyword">from</span> seminar_csv <span class="tok-keyword">import</span> complex_records</code></pre></div>
+<p>ينسخ <code dir="ltr">shutil.copy2</code> المحتويات ويحافظ على البيانات الوصفية حيثما أمكن، بينما يضمن مساعد <bdi dir="ltr">CSV</bdi> المشترك اتساق المعرّفات.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument(<span class="tok-string">&quot;--csv&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;seminar CSV (e.g. proto_train.csv)&quot;</span>)
+    ap.add_argument(<span class="tok-string">&quot;--src_dir&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;dir with the refined .sdf/.pdb files&quot;</span>)
+    ap.add_argument(<span class="tok-string">&quot;--out_dir&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;output KarmaDock-layout dir&quot;</span>)
+    args = ap.parse_args()
+
+    <span class="tok-keyword">for</span> path <span class="tok-keyword">in</span> (args.csv, args.src_dir):
+        <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> os.path.exists(path):
+            sys.exit(f&quot;ERROR: not found: {path}&quot;)</code></pre></div>
+<p>جميع المسارات إلزامية. يُتحقق من المدخلين قبل بدء عمل الخرج، وتطبع <code dir="ltr">sys.exit(string)</code> الخطأ وتنهي التنفيذ بحالة غير صفرية.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    os.makedirs(args.out_dir, exist_ok=<span class="tok-keyword">True</span>)
+    records = complex_records(args.csv)
+    ok = miss = <span class="tok-number">0</span>
+    <span class="tok-keyword">for</span> cid, lig, prot <span class="tok-keyword">in</span> records:
+        s_lig, s_prot = os.path.join(args.src_dir, lig), os.path.join(args.src_dir, prot)
+        <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> (os.path.exists(s_lig) <span class="tok-keyword">and</span> os.path.exists(s_prot)):
+            miss += <span class="tok-number">1</span>
+            <span class="tok-keyword">continue</span></code></pre></div>
+<p>يمكن لإعادة التشغيل استخدام مجلد الخرج نفسه. لا يكون المركّب صالحًا إلا عند وجود الشريكين الجزيئيين؛ وتُحصى الأزواج الناقصة ثم تُتجاوز.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">        d = os.path.join(args.out_dir, cid)
+        os.makedirs(d, exist_ok=True)
+        shutil.copy2(s_lig, os.path.join(d, f&quot;{cid}_ligand.sdf&quot;))
+        shutil.copy2(s_prot, os.path.join(d, f&quot;{cid}_protein.pdb&quot;))
+        ok += 1
+    print(f&quot;converted {ok}/{len(records)} complexes ({miss} missing source files)&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()</code></pre></div>
+<p>يحصل كل مركّب ناجح على الأسماء الدقيقة التي تتوقعها الشيفرة الأصلية. يكشف الملخص فقد البيانات من دون جعل بضعة إخفاقات في المعالجة أخطاء قاتلة. يمنع حاجز الوحدة النسخ عند الاستيراد.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">لماذا يُتحقق من مساري الإدخال قبل إنشاء دليل المخرجات؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يفشل البرنامج بوضوح عند غياب <bdi dir="ltr">CSV</bdi> أو دليل المصدر قبل أن يترك عملًا جزئيًا في المخرجات.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">ماذا يحدث عند غياب أحد الشريكين الجزيئيين لسجل في <bdi dir="ltr">CSV</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يزيد المحوّل عدّاد المفقودات، ويتجاوز ذلك المعقّد، ويتابع معالجة الأزواج المكتملة الأخرى.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">لماذا يُعد ملخص <code dir="ltr">converted</code> النهائي مهمًا تشغيليًا؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن الأزواج المفقودة لا تؤدي إلى خروج غير صفري، فيكشف الملخص فقد التغطية الصامت الذي يجب تأكيده بعدد الرسوم اللاحق.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">تنبيهات وملاحظات</h2>
+<ul>
+<li>لا تسبب الأزواج المفقودة خروجًا غير صفري؛ يجب فحص عدد الرسوم البيانية اللاحق والملخص.</li>
+<li>تُستبدل الملفات الهدف الموجودة، بينما تبقى مجلدات الخرج القديمة غير المرتبطة.</li>
+<li>استخراج الجيب وبناء الرسم البياني خطوتان أصليتان لاحقتان وليستا جزءًا من هذا المحول.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">لماذا قد يظل خروج العملية الناجح ممثلًا لتحويل غير مكتمل؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تُتجاوز أزواج الربيطة والبروتين المفقودة من دون إفشال الأمر، لذلك لا تثبت حالة النجاح وحدها اكتمال تغطية مجموعة البيانات.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">ما خطر الحالة القديمة الناتج من استخدام <code dir="ltr">exist_ok=True</code> عند إعادة التشغيل؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تُستبدل ملفات الهدف المتوقعة، لكن الأدلة غير المرتبطة والمتبقية من مجموعات بيانات أقدم تظل في شجرة المخرجات.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">لماذا ينبغي ألا يتوقع المستخدمون ملفات رسوم بيانية بعد انتهاء هذا الأمر؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن المحوّل يعيد تنظيم ملفات البنى فقط؛ أما استخراج الجيوب وتوليد الرسوم الأصليان فخطوتان لاحقتان منفصلتان.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#purpose">الغرض</a></li><li class="toc-level-2"><a href="#how-it-fits-in">موقعه في المنظومة</a></li><li class="toc-level-2"><a href="#walkthrough">شرح الشيفرة</a></li><li class="toc-level-2"><a href="#gotchas--notes">تنبيهات وملاحظات</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

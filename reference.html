@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="reference.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Reference | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="reference.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="reference.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html" aria-current="page">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="reference">Reference</h1>
+<h2 id="6-repository-layout">6. Repository layout</h2>
+<div class="table-scroll"><table><thead><tr>
+<th>path</th>
+<th>description</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="content-link" href="index.html"><code dir="ltr">README.md</code></a></td>
+<td>this file</td>
+</tr>
+<tr>
+<td><a class="content-link" href="reference.html#authorship--provenance"><code dir="ltr">Dockerfile</code></a></td>
+<td>image  (<code dir="ltr">ahlamloum/karmadock-seminar:v6</code>)</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthroughs.html"><code dir="ltr">scripts/</code></a></td>
+<td><code dir="ltr">train.py</code> (main artifact), converters, <code dir="ltr">run_infer.sh</code>, <code dir="ltr">evaluate.sh</code>, <code dir="ltr">run_train.sh</code></td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.html"><code dir="ltr">condor/</code></a></td>
+<td>portable HTCondor submit files (3 docking + 1 eval + 2 training)</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-evaluation.html"><code dir="ltr">evaluation/evaluation.py</code></a></td>
+<td>the seminar&#x27;s official evaluator (unmodified)</td>
+</tr>
+<tr>
+<td><a class="content-link" href="reference.html#6-repository-layout"><code dir="ltr">model/</code></a></td>
+<td>P2 + P3 trained checkpoints (~15 MB each)</td>
+</tr>
+<tr>
+<td><a class="content-link" href="assets/downloads/results_and_comparison.ipynb"><code dir="ltr">notebooks/results_and_comparison.ipynb</code></a></td>
+<td>tables, charts</td>
+</tr>
+<tr>
+<td><a class="content-link" href="results.html"><code dir="ltr">results/</code></a></td>
+<td><code dir="ltr">proto_test/</code> = P2 poses that <code dir="ltr">evaluation.py --dataset proto_test</code> scores; <code dir="ltr">&lt;pipeline&gt;/proto_test{,_ff,_align}/</code> = all 3 pipelines × 3 variants; <code dir="ltr">*_evaluation.csv</code> = official RMSD per pipeline × variant</td>
+</tr>
+<tr>
+<td><a class="content-link" href="training.html"><code dir="ltr">docs/</code></a></td>
+<td>training logs + figures</td>
+</tr>
+<tr>
+<td><a class="content-link" href="assets/downloads/proto_test.csv"><code dir="ltr">data/proto_test.csv</code></a></td>
+<td>proto_test mapping (136 complexes)</td>
+</tr>
+<tr>
+<td><span class="unbundled"><code dir="ltr">data/prototype_model_data.zip</code> <span class="annotation">(available in the repository, not bundled into the website)</span></span></td>
+<td>reference structures: proto<em>test + proto</em>train, refined SDF/PDB</td>
+</tr>
+<tr>
+<td><a class="content-link" href="reference.html"><code dir="ltr">scripts/README.md</code></a></td>
+<td>provenance: our code vs. upstream KarmaDock</td>
+</tr>
+</tbody></table></div>
+<p><strong>Docker image:</strong> <code dir="ltr">ahlamloum/karmadock-seminar:v6</code> (Docker Hub).</p>
+<h2 id="7-issues--fixes">7. Issues &amp; fixes</h2>
+<ul>
+<li><strong>Node Problem</strong>: in the idun cluster the gpu nodes are sometime during the run just return error so we had to exclude this specific node as a requirement in our sub files.</li>
+</ul>
+<p>Fix: exclude it — <code dir="ltr">requirements = … &amp;&amp; (Machine =!= &quot;idun.hpc.uni-saarland.de&quot;)</code>. <strong>[solved]</strong>.</p>
+<ul>
+<li>resources limitations: <code dir="ltr">request_gpus=2/4</code> jobs sat idle for days. The prototype runs single-GPU. we couldn&#x27;t run on 2 gpus that&#x27;s why we changed it to 1 gpu, we are not sure if this gonna work on the full dataset as it will take too much time.</li>
+</ul>
+<p>Fix: change the request to 1 gpu <strong>[solved]</strong>.</p>
+<h2 id="authorship--provenance">Authorship &amp; provenance</h2>
+<p><strong>The key point:</strong> public KarmaDock (<code dir="ltr">schrojunzhang/KarmaDock</code>) ships <strong>inference code + pretrained weights only — there is NO training script.</strong> Our seminar contribution is the <strong>training loop, the data adapters, the run wrappers, and the whole HTCondor orchestration</strong> built <em>around</em> KarmaDock. We <strong>call KarmaDock&#x27;s modules as-is</strong> (model, preprocessing, docking) and did <strong>not modify any file inside the upstream <code dir="ltr">KarmaDock/</code></strong> — it is cloned fresh in the <code dir="ltr">Dockerfile</code>; all of our code lives in <code dir="ltr">scripts/</code>.</p>
+<h3 id="files-we-created">Files we created</h3>
+<h3 id="scripts"><code dir="ltr">scripts/</code></h3>
+<div class="table-scroll"><table><thead><tr>
+<th>file</th>
+<th>what it does</th>
+<th>KarmaDock pieces it calls</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">train.py</code></td>
+<td><strong>our main artifact</strong> — a complete checkpointed training/fine-tuning loop (KarmaDock has none): loop, optimizer, early-stopping, gradient accumulation, val split, W&amp;B, <code dir="ltr">--resume</code>.</td>
+<td>imports the upstream <code dir="ltr">KarmaDock</code> model, <code dir="ltr">PDBBindGraphDataset</code>, <code dir="ltr">PassNoneDataLoader</code>, <code dir="ltr">set_random_seed</code>/<code dir="ltr">Early_stopper</code>; uses the model&#x27;s own <code dir="ltr">forward()</code> losses</td>
+</tr>
+<tr>
+<td><code dir="ltr">convert_seminar_to_karmadock.py</code></td>
+<td>seminar data layout → KarmaDock layout</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code dir="ltr">convert_karmadock_to_seminar.py</code></td>
+<td>KarmaDock docked poses → seminar <code dir="ltr">&lt;id&gt;_pred.sdf</code> (best-first)</td>
+<td>reads pose SDFs (RDKit)</td>
+</tr>
+<tr>
+<td><code dir="ltr">run_infer.sh</code></td>
+<td><strong>portable</strong> docking: preprocess → dock → export the 3 pose variants (uncorrected/FF/align)</td>
+<td>calls upstream <code dir="ltr">pre_processing.py</code>, <code dir="ltr">generate_graph.py</code>, <code dir="ltr">ligand_docking.py</code> + our converters</td>
+</tr>
+<tr>
+<td><code dir="ltr">evaluate.sh</code></td>
+<td>the separate scoring step: runs <code dir="ltr">evaluation.py</code> over every pipeline × variant</td>
+<td>calls the seminar&#x27;s <code dir="ltr">evaluation/evaluation.py</code></td>
+</tr>
+<tr>
+<td><code dir="ltr">run_train.sh</code></td>
+<td><strong>portable</strong> training: <code dir="ltr">scratch</code> = paper 2-stage (P2), <code dir="ltr">finetune</code> = from released weights (P3); preprocesses <code dir="ltr">proto_train</code> first</td>
+<td>calls our <code dir="ltr">train.py</code></td>
+</tr>
+</tbody></table></div>
+<h3 id="condor-our-work"><code dir="ltr">condor/</code> (our work)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>file</th>
+<th>job</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">p1_baseline.sub</code></td>
+<td>P1 inference (released weights) + eval</td>
+</tr>
+<tr>
+<td><code dir="ltr">p2_scratch_infer.sub</code></td>
+<td>P2 inference (our from-scratch checkpoint) + eval</td>
+</tr>
+<tr>
+<td><code dir="ltr">p3_finetune_infer.sub</code></td>
+<td>P3 inference (our fine-tuned checkpoint) + eval</td>
+</tr>
+<tr>
+<td><code dir="ltr">p2_train_scratch.sub</code></td>
+<td>P2 training (2-stage from scratch)</td>
+</tr>
+<tr>
+<td><code dir="ltr">p3_finetune.sub</code></td>
+<td>P3 fine-tune training</td>
+</tr>
+<tr>
+<td><code dir="ltr">evaluate.sub</code></td>
+<td>run the evaluate.sh script</td>
+</tr>
+</tbody></table></div>
+<h3 id="other-ours">Other ours</h3>
+<ul>
+<li><code dir="ltr">Dockerfile</code> — builds <code dir="ltr">ahlamloum/karmadock-seminar:v6</code> (clones KarmaDock, installs the authors&#x27; packed conda env, adds our <code dir="ltr">scripts/</code>).</li>
+<li><code dir="ltr">model/</code> checkpoints (P2, P3), the results notebook, all docs, and the training logs in <code dir="ltr">docs/</code>.</li>
+</ul>
+<h2 id="summary">Summary</h2>
+<ul>
+<li><strong>Authors&#x27;:</strong> the KarmaDock model + preprocessing/docking utilities + released weights (used as-is).</li>
+<li><strong>Ours:</strong> <code dir="ltr">train.py</code> (there was no trainer), the data adapters, the run wrappers, every condor</li>
+</ul>
+<p><code dir="ltr">.sub</code>, the Docker build, and all analysis/docs. <strong>No KarmaDock source file was edited.</strong></p>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">Check your understanding</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">Which parts belong to upstream KarmaDock, and which parts are the seminar team&#x27;s work?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Upstream supplies the model, preprocessing and docking utilities, and released weights; the team supplies training, adapters, wrappers, Condor jobs, the Docker build, and analysis documentation.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">Why was reducing the requested GPU count a practical fix on the cluster?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Jobs requesting multiple GPUs remained idle for days, while the prototype could execute on one GPU, so the smaller request made scheduling feasible.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">What evidence in the repository helps distinguish authored code from reused upstream code?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The provenance tables enumerate the scripts and submission files the team created, explain which upstream modules they call, and state that no source inside upstream <code dir="ltr">KarmaDock/</code> was edited.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#6-repository-layout">6. Repository layout</a></li><li class="toc-level-2"><a href="#7-issues--fixes">7. Issues &amp; fixes</a></li><li class="toc-level-2"><a href="#authorship--provenance">Authorship &amp; provenance</a></li><li class="toc-level-3"><a href="#files-we-created">Files we created</a></li><li class="toc-level-3"><a href="#scripts">scripts/</a></li><li class="toc-level-3"><a href="#condor-our-work">condor/ (our work)</a></li><li class="toc-level-3"><a href="#other-ours">Other ours</a></li><li class="toc-level-2"><a href="#summary">Summary</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

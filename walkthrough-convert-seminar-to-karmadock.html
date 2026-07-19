@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-convert-seminar-to-karmadock.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>scripts/convertseminartokarmadock.py | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-convert-seminar-to-karmadock.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-convert-seminar-to-karmadock.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html" aria-current="page">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsconvertseminartokarmadockpy"><code dir="ltr">scripts/convert_seminar_to_karmadock.py</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This command converts the seminar&#x27;s flat file layout into the per-complex layout required by upstream KarmaDock preprocessing. It copies rather than chemically transforms structures, so only directory and file naming change.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why does this converter copy structures instead of modifying molecular chemistry?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The source molecules are already refined; upstream KarmaDock needs only a different per-complex directory and filename convention.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">What invariant does the converter establish for each usable complex?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It creates <code dir="ltr">&lt;id&gt;/&lt;id&gt;_ligand.sdf</code> and <code dir="ltr">&lt;id&gt;_protein.pdb</code>, the exact names expected by upstream preprocessing.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">Why must ligand and protein files be treated as a pair?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>KarmaDock preprocessing needs both molecular partners, so a complex with only one source file cannot form a usable docking input.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p><code dir="ltr">run_train.sh</code>, <code dir="ltr">run_full_train.sh</code>, and <code dir="ltr">run_infer.sh</code> call it before upstream pocket extraction and graph generation. It takes <code dir="ltr">--csv</code>, <code dir="ltr">--src_dir</code>, and <code dir="ltr">--out_dir</code>, then writes <code dir="ltr">&lt;out_dir&gt;/&lt;id&gt;/&lt;id&gt;_ligand.sdf</code> and <code dir="ltr">&lt;id&gt;_protein.pdb</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">Why is this converter called before pocket extraction and graph generation?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Those upstream steps traverse KarmaDock&#x27;s per-complex input layout, which does not match the seminar&#x27;s flat structure layout.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">How does the shared <code dir="ltr">complex_records</code> helper reduce pipeline inconsistency?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It gives training and inference conversion the same ordered IDs and source filenames across supported CSV schemas.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">What are the roles of <code dir="ltr">--src_dir</code> and <code dir="ltr">--out_dir</code>?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p><code dir="ltr">--src_dir</code> contains the seminar-named source structures, while <code dir="ltr">--out_dir</code> receives the reorganized KarmaDock directory tree.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">import</span> argparse
+<span class="tok-keyword">import</span> os
+<span class="tok-keyword">import</span> shutil
+<span class="tok-keyword">import</span> sys
+
+<span class="tok-keyword">from</span> seminar_csv <span class="tok-keyword">import</span> complex_records</code></pre></div>
+<p><code dir="ltr">shutil.copy2</code> copies contents and preserves metadata where possible; the shared CSV helper guarantees consistent IDs.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument(<span class="tok-string">&quot;--csv&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;seminar CSV (e.g. proto_train.csv)&quot;</span>)
+    ap.add_argument(<span class="tok-string">&quot;--src_dir&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;dir with the refined .sdf/.pdb files&quot;</span>)
+    ap.add_argument(<span class="tok-string">&quot;--out_dir&quot;</span>, required=<span class="tok-keyword">True</span>, help=<span class="tok-string">&quot;output KarmaDock-layout dir&quot;</span>)
+    args = ap.parse_args()
+
+    <span class="tok-keyword">for</span> path <span class="tok-keyword">in</span> (args.csv, args.src_dir):
+        <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> os.path.exists(path):
+            sys.exit(f&quot;ERROR: not found: {path}&quot;)</code></pre></div>
+<p>All paths are mandatory. The two inputs are validated before output work; <code dir="ltr">sys.exit(string)</code> reports the error and exits nonzero.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    os.makedirs(args.out_dir, exist_ok=<span class="tok-keyword">True</span>)
+    records = complex_records(args.csv)
+    ok = miss = <span class="tok-number">0</span>
+    <span class="tok-keyword">for</span> cid, lig, prot <span class="tok-keyword">in</span> records:
+        s_lig, s_prot = os.path.join(args.src_dir, lig), os.path.join(args.src_dir, prot)
+        <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> (os.path.exists(s_lig) <span class="tok-keyword">and</span> os.path.exists(s_prot)):
+            miss += <span class="tok-number">1</span>
+            <span class="tok-keyword">continue</span></code></pre></div>
+<p>Reruns can reuse the output directory. A complex is usable only when both molecular partners exist; incomplete pairs are counted and skipped.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">        d = os.path.join(args.out_dir, cid)
+        os.makedirs(d, exist_ok=True)
+        shutil.copy2(s_lig, os.path.join(d, f&quot;{cid}_ligand.sdf&quot;))
+        shutil.copy2(s_prot, os.path.join(d, f&quot;{cid}_protein.pdb&quot;))
+        ok += 1
+    print(f&quot;converted {ok}/{len(records)} complexes ({miss} missing source files)&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()</code></pre></div>
+<p>Each successful complex gets exactly the names upstream expects. The summary exposes data loss without making a few preprocessing failures fatal. The module guard prevents copying when imported.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">Why are both input paths checked before the output directory is created?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The script fails clearly on a missing CSV or source directory before leaving partial output work behind.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">What happens when one molecular partner is absent for a CSV record?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The converter increments the missing count, skips that complex, and continues processing other complete pairs.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">Why is the final <code dir="ltr">converted</code> summary operationally important?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Missing pairs do not cause a nonzero exit, so the summary exposes silent coverage loss that downstream graph counts must confirm.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>Missing pairs do not cause a nonzero exit; downstream graph counts and the summary must be checked.</li>
+<li>Existing target files are overwritten, while unrelated stale output directories are retained.</li>
+<li>Pocket extraction and graph construction are later upstream steps, not part of this converter.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why can a successful process exit still represent incomplete conversion?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Missing ligand/protein pairs are skipped without making the command fail, so success status alone does not prove full dataset coverage.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">What stale-state risk comes from using <code dir="ltr">exist_ok=True</code> on reruns?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Expected target files are overwritten, but unrelated directories left from older datasets remain in the output tree.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">Why should users not expect graph files after this command finishes?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The converter only reorganizes structure files; upstream pocket extraction and graph generation are separate later steps.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

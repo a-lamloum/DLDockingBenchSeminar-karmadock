@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="results.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Results | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="results.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="results.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html" aria-current="page">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="results">Results</h1>
+<h2 id="final-submission-full-data--report-in-progress">🚧 Final submission (full-data) — report in progress</h2>
+<p>The tables below use the prototype <code dir="ltr">proto_test</code> (136). The <strong>final full-data submission</strong> is being finalized: our from-scratch model retrained on the full seminar split (<code dir="ltr">model/full_scratch_karmadock_team002.pkl</code>; 2-stage paper protocol, Stage-2 via 2×A100 (40GB each); evaluated head-to-head against the authors&#x27; released weights on the <strong>same</strong> <code dir="ltr">full_test</code> (6,183) and <code dir="ltr">posebusters_filtered</code> (308) sets.</p>
+<p><strong>Preliminary headline</strong> (top-1 success@2 Å, using <code dir="ltr">evaluation.py</code>, uncorrected):</p>
+<div class="table-scroll"><table><thead><tr>
+<th>set</th>
+<th>ours (full-data)</th>
+<th>released weights</th>
+</tr></thead><tbody>
+<tr>
+<td>full_test (6,183)</td>
+<td>82.2 %</td>
+<td>88.3 %</td>
+</tr>
+<tr>
+<td>PoseBusters (308)</td>
+<td>76.9 % (PB-Valid 5.2 %)</td>
+<td>83.1 % (PB-Valid 2.6 %)</td>
+</tr>
+</tbody></table></div>
+<p>This commit adds the trained model (<code dir="ltr">model/</code>), the evaluation input CSVs (<code dir="ltr">data/</code>), the HPC condor submit files (<code dir="ltr">condor/full_stage2_2gpu.sub</code> = the 2×A100 Stage-2 run; <code dir="ltr">condor/{full_test,posebusters}_infer.sub</code> = inference) and their job logs (<code dir="ltr">condor/logs/</code>). The full report and results notebook are being finalized.</p>
+<hr>
+<h2 id="3-results">3. Results</h2>
+<p>Our submission model is the <strong>from-scratch P2</strong> (the seminar task — retrain the tool on the shared split); P1 (released baseline) and P3 (fine-tune, bonus) are shown for context. Scored by the official <a class="content-link" href="walkthrough-evaluation.html"><code dir="ltr">evaluation/evaluation.py</code></a>  on the <strong>136-complex <code dir="ltr">proto_test</code></strong>, for all three KarmaDock pose post-processing variants.</p>
+<p><strong>success@2 Å (top-1):</strong></p>
+<div class="table-scroll"><table><thead><tr>
+<th>pipeline</th>
+<th>uncorrected</th>
+<th>FF-corrected</th>
+<th>align-corrected</th>
+</tr></thead><tbody>
+<tr>
+<td><strong>P2 — from scratch</strong> (our model)</td>
+<td><strong>10.3 %</strong></td>
+<td>11.0 %</td>
+<td>94.1 %</td>
+</tr>
+<tr>
+<td>P1 — baseline (released)</td>
+<td>80.9 %</td>
+<td>78.7 %</td>
+<td>95.6 %</td>
+</tr>
+<tr>
+<td>P3 — fine-tune <em>(bonus)</em></td>
+<td>80.1 %</td>
+<td>75.0 %</td>
+<td>94.9 %</td>
+</tr>
+</tbody></table></div>
+<p>Uncorrected <strong>@1 Å / median RMSD</strong>: P2 3.7 % / 3.38 Å · P1 8.1 % / 1.45 Å · P3 7.4 % / 1.48 Å. Per-complex CSVs are in <a class="content-link" href="results.html"><code dir="ltr">results/</code></a> (<code dir="ltr">&lt;pipeline&gt;_&lt;variant&gt;_evaluation.csv</code>, and <code dir="ltr">proto_test_evaluation.csv</code> = the P2 headline). Numbers are deterministic (<code dir="ltr">--random_seed 2023</code>)</p>
+<blockquote><p>we belive that align-corrected is misleading as according to the paper it should be lower than the uncorrected and FF-corrected results which is the opposite of what we got. [ need futher investigation - doesn&#x27;t affect the training process for the next phase ]</p></blockquote>
+<p>The <strong>uncorrected</strong> pose is the raw model output. The <strong>FF</strong> variant is a force-field relaxation. The <strong>align-corrected</strong> variant superimposes the predicted ligand onto the reference frame.</p>
+<h2 id="layout">Layout</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="">results/
+├── proto_test/                         primary set = from-scratch P2, UNCORRECTED poses (136)
+│                                        (what `python evaluation/evaluation.py --dataset proto_test` scores)
+├── p1_baseline/  proto_test/  proto_test_ff/  proto_test_align/    136 each
+├── p2_scratch/   proto_test/  proto_test_ff/  proto_test_align/    136 each
+├── p3_finetune/  proto_test/  proto_test_ff/  proto_test_align/    136 each
+├── proto_test_evaluation.csv           official RMSD for the primary set (= p2_scratch uncorrected)
+├── &lt;pipeline&gt;_&lt;variant&gt;_evaluation.csv per-complex RMSD for each of the 9 pipeline x variant combos
+└── README.md</code></pre></div>
+<p>Pose files are <code dir="ltr">&lt;complex_id&gt;_pred.sdf</code>, conformers ranked best-MDN-first. The three variants are the KarmaDock pose post-processing options: <strong>uncorrected</strong> (raw network output), <strong>FF</strong> (force-field relaxation), <strong>align</strong> (superimpose onto the reference frame).</p>
+<h2 id="eval-csv-columns">Eval CSV columns</h2>
+<p><code dir="ltr">complex_id, dataset, pose_rank, rmsd, rmsd_lt2, rmsd_lt1, ligand_file, protein_file</code> (RDKit <code dir="ltr">GetBestRMS</code>, symmetry-corrected, top-1). <code dir="ltr">success@2Å</code> = fraction of <code dir="ltr">pose_rank == 1</code> rows with <code dir="ltr">rmsd_lt2 == True</code>.</p>
+<h2 id="per-complex-evaluation-downloads">Per-complex evaluation downloads</h2>
+<ul>
+<li><a class="content-link" href="assets/downloads/p1_baseline_align_evaluation.csv"><code dir="ltr">p1_baseline_align_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p1_baseline_ff_evaluation.csv"><code dir="ltr">p1_baseline_ff_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p1_baseline_uncorrected_evaluation.csv"><code dir="ltr">p1_baseline_uncorrected_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p2_scratch_align_evaluation.csv"><code dir="ltr">p2_scratch_align_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p2_scratch_ff_evaluation.csv"><code dir="ltr">p2_scratch_ff_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p2_scratch_uncorrected_evaluation.csv"><code dir="ltr">p2_scratch_uncorrected_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p3_finetune_align_evaluation.csv"><code dir="ltr">p3_finetune_align_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p3_finetune_ff_evaluation.csv"><code dir="ltr">p3_finetune_ff_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/p3_finetune_uncorrected_evaluation.csv"><code dir="ltr">p3_finetune_uncorrected_evaluation.csv</code></a></li>
+<li><a class="content-link" href="assets/downloads/proto_test_evaluation.csv"><code dir="ltr">proto_test_evaluation.csv</code></a></li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">Check your understanding</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">Why should the align-corrected success rate not be read as the model&#x27;s raw docking accuracy?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Alignment superimposes the predicted ligand onto the reference frame, so it applies reference-dependent post-processing that the uncorrected output does not receive.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">What does the headline <code dir="ltr">success@2Å</code> metric count?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It is the fraction of top-ranked poses whose symmetry-corrected RMSD is below 2 Å, represented by rows with <code dir="ltr">pose_rank == 1</code> and <code dir="ltr">rmsd_lt2 == True</code>.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">Which prototype result is the primary submission result, and where is its per-complex data stored?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The primary prototype result is the uncorrected P2 from-scratch output, with per-complex values in <code dir="ltr">results/proto_test_evaluation.csv</code>.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#final-submission-full-data--report-in-progress">🚧 Final submission (full-data) — report in progress</a></li><li class="toc-level-2"><a href="#3-results">3. Results</a></li><li class="toc-level-2"><a href="#layout">Layout</a></li><li class="toc-level-2"><a href="#eval-csv-columns">Eval CSV columns</a></li><li class="toc-level-2"><a href="#per-complex-evaluation-downloads">Per-complex evaluation downloads</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

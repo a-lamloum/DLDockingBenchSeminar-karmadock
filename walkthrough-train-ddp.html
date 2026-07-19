@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-train-ddp.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>scripts/trainddp.py | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-train-ddp.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-train-ddp.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html" aria-current="page">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptstrainddppy"><code dir="ltr">scripts/train_ddp.py</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This file extends the single-process trainer with optional multi-GPU DistributedDataParallel (DDP). Under <code dir="ltr">torchrun</code>, one process owns each GPU, each process trains on a disjoint stripe of complex IDs, DDP averages gradients, and explicit reductions combine metrics; under plain <code dir="ltr">python3</code>, it follows the single-process path.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">How does DDP divide work differently from single-process <code dir="ltr">DataParallel</code>?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>DDP runs one process and model replica per GPU on disjoint complex subsets, then collectively synchronizes gradients so every replica applies the same update.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">Why must metrics be explicitly reduced even though DDP already synchronizes gradients?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Gradient synchronization keeps model parameters aligned, but each process observes local losses and counts that must be combined to report correct global means and make identical stopping decisions.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">What happens when the file is launched with plain <code dir="ltr">python3</code> instead of a multi-process <code dir="ltr">torchrun</code> environment?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p><code dir="ltr">WORLD_SIZE</code> defaults to one, distributed setup is skipped, and the trainer follows its compatible single-process path.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p><code dir="ltr">run_full_stage2_ddp.sh</code> and its v2 launcher call it directly, using <code dir="ltr">torchrun</code> when more than one GPU is visible. It accepts essentially the same data, model, optimizer, resume, and W&amp;B arguments as <code dir="ltr">train.py</code> (but no <code dir="ltr">--jitter</code>). <code dir="ltr">torchrun</code> additionally supplies <code dir="ltr">WORLD_SIZE</code>, <code dir="ltr">RANK</code>, and <code dir="ltr">LOCAL_RANK</code>. All ranks read graphs and participate in training; only rank 0 writes <code dir="ltr">train_log.csv</code>, <code dir="ltr">last.pt</code>, <code dir="ltr">karmadock_team002.pkl</code>, the W&amp;B run-ID file, and W&amp;B logs.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">How do the Stage-2 launchers decide whether to invoke this trainer with <code dir="ltr">torchrun</code>?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They count visible GPUs and use <code dir="ltr">torchrun</code> only when more than one is visible; otherwise they call the same script with ordinary Python.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">Why does only rank 0 write checkpoints, CSV logs, and W&amp;B data?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>All replicas should represent the same synchronized model, so one writer avoids duplicate runs and file races while other ranks continue participating in collectives.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">Why does this DDP variant omit the single-process trainer&#x27;s <code dir="ltr">--jitter</code> option?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The implemented interface relies on on-the-fly dataset pose randomization and does not expose an additional training-loop coordinate perturbation.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<h3 id="imports-and-ddp-model">Imports and DDP model</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">import</span> argparse
+<span class="tok-keyword">import</span> contextlib
+<span class="tok-keyword">import</span> os
+<span class="tok-keyword">import</span> sys
+<span class="tok-keyword">import</span> time
+
+<span class="tok-keyword">import</span> numpy <span class="tok-keyword">as</span> np
+<span class="tok-keyword">import</span> torch
+<span class="tok-keyword">import</span> torch.nn <span class="tok-keyword">as</span> nn
+<span class="tok-keyword">import</span> torch.distributed <span class="tok-keyword">as</span> dist
+<span class="tok-keyword">from</span> torch.nn.parallel <span class="tok-keyword">import</span> DistributedDataParallel <span class="tok-keyword">as</span> DDP
+
+<span class="tok-keyword">from</span> utils.fns <span class="tok-keyword">import</span> set_random_seed, Early_stopper, karmadock_evaluation
+<span class="tok-keyword">from</span> dataset.graph_obj <span class="tok-keyword">import</span> PDBBindGraphDataset
+<span class="tok-keyword">from</span> dataset.dataloader_obj <span class="tok-keyword">import</span> PassNoneDataLoader
+<span class="tok-keyword">from</span> architecture.KarmaDock_architecture <span class="tok-keyword">import</span> KarmaDock
+
+<span class="tok-keyword">from</span> seminar_csv <span class="tok-keyword">import</span> complex_ids</code></pre></div>
+<p><strong>DDP</strong> runs a separate Python process/model replica per GPU. During backward, replicas collectively sum/average corresponding parameter gradients so every optimizer performs the same update. This generally scales better than single-process <code dir="ltr">DataParallel</code>. <code dir="ltr">torch.distributed</code> exposes process-group collectives; <code dir="ltr">contextlib</code> supplies a no-op context for code shared between DDP and non-DDP modes. <code dir="ltr">sys</code> is imported but not used in this file.</p>
+<h3 id="distributed-helpers">Distributed helpers</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> ddp_info():
+    <span class="tok-string">&quot;&quot;&quot;(enabled, rank, local_rank, world_size) from the torchrun environment.&quot;&quot;&quot;</span>
+    world = int(os.environ.get(<span class="tok-string">&quot;WORLD_SIZE&quot;</span>, <span class="tok-string">&quot;1&quot;</span>))
+    <span class="tok-keyword">if</span> world &gt; <span class="tok-number">1</span>:
+        <span class="tok-keyword">return</span> <span class="tok-keyword">True</span>, int(os.environ[<span class="tok-string">&quot;RANK&quot;</span>]), int(os.environ.get(<span class="tok-string">&quot;LOCAL_RANK&quot;</span>, <span class="tok-string">&quot;0&quot;</span>)), world
+    <span class="tok-keyword">return</span> <span class="tok-keyword">False</span>, <span class="tok-number">0</span>, <span class="tok-number">0</span>, <span class="tok-number">1</span></code></pre></div>
+<p><code dir="ltr">WORLD_SIZE</code> is the total process count, <code dir="ltr">RANK</code> is a process&#x27;s global identity, and <code dir="ltr">LOCAL_RANK</code> chooses its GPU on the current node. Presence of a multi-process world activates DDP; otherwise deterministic zeros simplify later branching.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> shard(ids, rank, world):
+    <span class="tok-string">&quot;&quot;&quot;Stripe a list across ranks so each rank trains on a disjoint subset.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">return</span> ids[rank::world] <span class="tok-keyword">if</span> world &gt; <span class="tok-number">1</span> <span class="tok-keyword">else</span> list(ids)</code></pre></div>
+<p>Python&#x27;s extended slice takes every <code dir="ltr">world</code>-th ID starting at <code dir="ltr">rank</code>: with two ranks, one gets indices 0,2,4… and the other 1,3,5…. This replaces PyTorch&#x27;s usual <code dir="ltr">DistributedSampler</code>, a sampler that partitions a dataset and reshuffles consistently per epoch. The custom striping works around KarmaDock&#x27;s custom loader but fixes membership of each rank&#x27;s subset for the run.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> all_reduce_sum(values, device):
+    <span class="tok-string">&quot;&quot;&quot;Sum a small list of python floats across all ranks; returns a python list.&quot;&quot;&quot;</span>
+    t = torch.tensor(values, dtype=torch.float64, device=device)
+    dist.all_reduce(t, op=dist.ReduceOp.SUM)
+    <span class="tok-keyword">return</span> t.tolist()</code></pre></div>
+<p>An <strong>all-reduce</strong> is a collective operation: every rank contributes a tensor, the tensors are reduced elementwise, and every rank receives the result. Summing loss totals and counts lets each rank compute identical global means and therefore make the same early-stop decision. Float64 reduces numerical error in metric aggregation; these tensors do not participate in gradients.</p>
+<h3 id="cli-and-graph-selection">CLI and graph selection</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> parse_args():
+    p = argparse.ArgumentParser(description=<span class="tok-string">&quot;Retrain / fine-tune KarmaDock.&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--graph_dir&quot;</span>, required=<span class="tok-keyword">True</span>,
+                   help=<span class="tok-string">&quot;Dir with per-complex &lt;id&gt;.dgl graphs (from generate_graph.py).&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--val_graph_dir&quot;</span>, default=<span class="tok-string">&quot;&quot;</span>,
+                   help=<span class="tok-string">&quot;Graph dir for the validation complexes when --val_csv points to a &quot;</span>
+                        <span class="tok-string">&quot;separately-preprocessed split (LP train/val live in different dirs). &quot;</span>
+                        <span class="tok-string">&quot;Defaults to --graph_dir.&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--complex_dir&quot;</span>, default=<span class="tok-string">&quot;&quot;</span>,
+                   help=<span class="tok-string">&quot;KarmaDock-layout complex dir (only needed if a graph must be regenerated).&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--csv&quot;</span>, required=<span class="tok-keyword">True</span>,
+                   help=<span class="tok-string">&quot;Seminar train CSV (proto_train.csv / full_train.csv / lp_train.csv).&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--val_csv&quot;</span>, default=<span class="tok-string">&quot;&quot;</span>,
+                   help=<span class="tok-string">&quot;Optional explicit validation CSV. If set, ALL of --csv is used &quot;</span>
+                        <span class="tok-string">&quot;for training and these complexes for validation -- used for &quot;</span>
+                        <span class="tok-string">&quot;LP-PDBBind, whose leak-proof val split must NOT be a random &quot;</span>
+                        <span class="tok-string">&quot;carve-out of train. If empty, fall back to a --val_frac split.&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--out_dir&quot;</span>, required=<span class="tok-keyword">True</span>,
+                   help=<span class="tok-string">&quot;Where to write checkpoints and the training log.&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--init_model&quot;</span>, default=<span class="tok-string">&quot;&quot;</span>,
+                   help=<span class="tok-string">&quot;Checkpoint to initialise from. Empty = train from scratch; &quot;</span>
+                        <span class="tok-string">&quot;set to karmadock_screening.pkl to fine-tune.&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--resume&quot;</span>, action=<span class="tok-string">&quot;store_true&quot;</span>,
+                   help=<span class="tok-string">&quot;Resume from &lt;out_dir&gt;/last.pt if present (for cluster reschedules).&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--epochs&quot;</span>, type=int, default=<span class="tok-number">200</span>)
+    p.add_argument(<span class="tok-string">&quot;--batch_size&quot;</span>, type=int, default=<span class="tok-number">16</span>,
+                   help=<span class="tok-string">&quot;Physical minibatch size (limited by GPU memory).&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--accum_steps&quot;</span>, type=int, default=<span class="tok-number">1</span>,
+                   help=<span class="tok-string">&quot;Gradient-accumulation steps. Effective batch = batch_size*accum_steps. &quot;</span>
+                        <span class="tok-string">&quot;Paper uses an effective batch of 64; on a 16 GB V100 use e.g. &quot;</span>
+                        <span class="tok-string">&quot;--batch_size 8 --accum_steps 8.&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--lr&quot;</span>, type=float, default=<span class="tok-number">5e-4</span>)
+    p.add_argument(<span class="tok-string">&quot;--weight_decay&quot;</span>, type=float, default=<span class="tok-number">0.0</span>)
+    p.add_argument(<span class="tok-string">&quot;--pos_r&quot;</span>, type=float, default=<span class="tok-number">1.0</span>,
+                   help=<span class="tok-string">&quot;Weight on the pose (RMSD) loss vs the MDN scoring loss.&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--val_frac&quot;</span>, type=float, default=<span class="tok-number">0.1</span>)
+    p.add_argument(<span class="tok-string">&quot;--patience&quot;</span>, type=int, default=<span class="tok-number">20</span>,
+                   help=<span class="tok-string">&quot;Early-stopping patience (epochs without val improvement).&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--num_workers&quot;</span>, type=int, default=<span class="tok-number">4</span>)
+    p.add_argument(<span class="tok-string">&quot;--random_seed&quot;</span>, type=int, default=<span class="tok-number">2023</span>)
+    p.add_argument(<span class="tok-string">&quot;--grad_clip&quot;</span>, type=float, default=<span class="tok-number">10.0</span>)
+    p.add_argument(<span class="tok-string">&quot;--wandb&quot;</span>, action=<span class="tok-string">&quot;store_true&quot;</span>, help=<span class="tok-string">&quot;log metrics to W&amp;B&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--wandb_project&quot;</span>, default=<span class="tok-string">&quot;karmadock-seminar&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--wandb_entity&quot;</span>, default=<span class="tok-keyword">None</span>, help=<span class="tok-string">&quot;W&amp;B team/user (optional)&quot;</span>)
+    p.add_argument(<span class="tok-string">&quot;--wandb_run_name&quot;</span>, default=<span class="tok-keyword">None</span>)
+    <span class="tok-keyword">return</span> p.parse_args()</code></pre></div>
+<p>The meanings match <code dir="ltr">train.py</code>: physical batch is per process/GPU, so the intended complete global effective batch is <code dir="ltr">batch_size × accum_steps × world_size</code>. <code dir="ltr">pos_r</code> weights the coordinate/RMSD term against the MDN distance/scoring loss. There is no coordinate-jitter option in this DDP variant.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> split_available(ids, graph_dir, val_frac, seed):
+    <span class="tok-string">&quot;&quot;&quot;Keep only ids that actually have a graph, then deterministically split.&quot;&quot;&quot;</span>
+    have = [i <span class="tok-keyword">for</span> i <span class="tok-keyword">in</span> ids <span class="tok-keyword">if</span> os.path.exists(os.path.join(graph_dir, f&quot;{i}.dgl&quot;))]
+    missing = len(ids) - len(have)
+    <span class="tok-keyword">if</span> missing:
+        print(f&quot;# WARNING: {missing}/{len(ids)} complexes have no .dgl graph &quot;
+              f&quot;(rdkit/pocket failures) and are skipped.&quot;)
+    rng = np.random.RandomState(seed)
+    perm = rng.permutation(len(have))
+    n_val = max(<span class="tok-number">1</span>, int(round(len(have) * val_frac)))
+    val_idx = set(perm[:n_val].tolist())
+    train_ids = [have[i] <span class="tok-keyword">for</span> i <span class="tok-keyword">in</span> range(len(have)) <span class="tok-keyword">if</span> i <span class="tok-keyword">not</span> <span class="tok-keyword">in</span> val_idx]
+    valid_ids = [have[i] <span class="tok-keyword">for</span> i <span class="tok-keyword">in</span> range(len(have)) <span class="tok-keyword">if</span> i <span class="tok-keyword">in</span> val_idx]
+    <span class="tok-keyword">return</span> train_ids, valid_ids
+
+
+<span class="tok-keyword">def</span> available(ids, graph_dir):
+    <span class="tok-string">&quot;&quot;&quot;Keep only ids that actually have a .dgl graph (used with an explicit val CSV).&quot;&quot;&quot;</span>
+    have = [i <span class="tok-keyword">for</span> i <span class="tok-keyword">in</span> ids <span class="tok-keyword">if</span> os.path.exists(os.path.join(graph_dir, f&quot;{i}.dgl&quot;))]
+    missing = len(ids) - len(have)
+    <span class="tok-keyword">if</span> missing:
+        print(f&quot;# WARNING: {missing}/{len(ids)} complexes have no .dgl graph and are skipped.&quot;)
+    <span class="tok-keyword">return</span> have</code></pre></div>
+<p>These are identical to the single-process helpers: failed graphs are skipped, random splitting is seed-stable, and explicit validation is never mixed with training. This happens before sharding, so every rank independently derives the same global ID lists.</p>
+<h3 id="ddp-friendly-validation-and-synchronization-context">DDP-friendly validation and synchronization context</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> validate_sums(model, loader, device, pos_r):
+    <span class="tok-string">&quot;&quot;&quot;Validation loss SUMS (+count) over a loader -- DDP-friendly (all-reduce the sums).
+
+    Mirrors the loss used in training: loss = pos_r*rmsd_loss + mdn_loss.
+    &quot;&quot;&quot;</span>
+    model.eval()
+    s_tot = s_rmsd = s_mdn = <span class="tok-number">0.0</span>
+    n = <span class="tok-number">0</span>
+    <span class="tok-keyword">with</span> torch.no_grad():
+        <span class="tok-keyword">for</span> data <span class="tok-keyword">in</span> loader:
+            <span class="tok-keyword">if</span> data <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+                <span class="tok-keyword">continue</span>
+            data = data.to(device)
+            rmsd_loss, mdn_loss = model(data, device, pos_r)
+            <span class="tok-keyword">if</span> mdn_loss <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+                <span class="tok-keyword">continue</span>
+            loss = pos_r * rmsd_loss + mdn_loss
+            s_tot += float(loss); s_rmsd += float(rmsd_loss); s_mdn += float(mdn_loss); n += <span class="tok-number">1</span>
+    <span class="tok-keyword">return</span> s_tot, s_rmsd, s_mdn, n</code></pre></div>
+<p><code dir="ltr">eval()</code> switches inference-time layer behavior, and <code dir="ltr">no_grad()</code> prevents autograd graph construction, reducing memory and computation. Returning sums plus count is essential: averaging each shard first and then averaging shards would bias the result when shard sizes differ.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> maybe_no_sync(model, active):
+    <span class="tok-string">&quot;&quot;&quot;no_sync() context to skip DDP gradient all-reduce on non-boundary accum steps.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> active <span class="tok-keyword">and</span> hasattr(model, <span class="tok-string">&quot;no_sync&quot;</span>):
+        <span class="tok-keyword">return</span> model.no_sync()
+    <span class="tok-keyword">return</span> contextlib.nullcontext()</code></pre></div>
+<p>DDP normally synchronizes gradients after every backward. <code dir="ltr">no_sync()</code> is intended to suppress that communication for intermediate accumulation microsteps, synchronizing only at an optimizer boundary. <code dir="ltr">nullcontext()</code> lets the caller use one <code dir="ltr">with</code> statement when suppression is not active.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> build_loader(ids, args, dataset_type, shuffle, graph_dir=<span class="tok-keyword">None</span>):
+    ds = PDBBindGraphDataset(
+        src_dir=args.complex_dir,
+        pdb_ids=ids,
+        dst_dir=graph_dir <span class="tok-keyword">or</span> args.graph_dir,
+        dataset_type=dataset_type,
+        n_job=<span class="tok-number">1</span>,
+        on_the_fly=<span class="tok-keyword">True</span>,
+        verbose=<span class="tok-keyword">False</span>,
+    )
+    <span class="tok-keyword">return</span> PassNoneDataLoader(
+        dataset=ds, batch_size=args.batch_size, shuffle=shuffle,
+        num_workers=args.num_workers, follow_batch=[], pin_memory=<span class="tok-keyword">True</span>,
+    )</code></pre></div>
+<p>This matches <code dir="ltr">train.py</code>: each rank&#x27;s already-sharded IDs feed an independent custom loader, and on-the-fly loading re-randomizes starting poses. A standard <code dir="ltr">DistributedSampler</code> is not used.</p>
+<h3 id="process-group-startup-and-wb">Process-group startup and W&amp;B</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> main():
+    args = parse_args()
+
+    is_ddp, rank, local_rank, world = ddp_info()
+    main_proc = (rank == <span class="tok-number">0</span>)
+    <span class="tok-keyword">if</span> is_ddp:
+        dist.init_process_group(backend=<span class="tok-string">&quot;nccl&quot;</span>)
+        torch.cuda.set_device(local_rank)
+        device = f&quot;cuda:{local_rank}&quot;
+    <span class="tok-keyword">else</span>:
+        device = <span class="tok-string">&quot;cuda:0&quot;</span> <span class="tok-keyword">if</span> torch.cuda.is_available() <span class="tok-keyword">else</span> <span class="tok-string">&quot;cpu&quot;</span>
+
+    <span class="tok-keyword">if</span> main_proc:
+        os.makedirs(args.out_dir, exist_ok=<span class="tok-keyword">True</span>)
+    <span class="tok-keyword">if</span> is_ddp:
+        dist.barrier()
+    set_random_seed(args.random_seed)
+    <span class="tok-keyword">if</span> main_proc:
+        print(f&quot;# device: {device} | DDP: {is_ddp} (world_size={world})&quot;)</code></pre></div>
+<p>NCCL is NVIDIA&#x27;s GPU collective-communication backend. Each process selects its local GPU before constructing CUDA tensors. A <strong>barrier</strong> blocks every rank until all arrive, ensuring rank 0 created the output directory. All ranks receive the same base seed; because they hold different IDs, they process different samples even if shuffle/random streams begin alike.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    wb = <span class="tok-keyword">None</span>
+    <span class="tok-keyword">if</span> args.wandb <span class="tok-keyword">and</span> main_proc:
+        <span class="tok-keyword">try</span>:
+            <span class="tok-keyword">import</span> wandb
+            has_creds = os.environ.get(<span class="tok-string">&quot;WANDB_API_KEY&quot;</span>) <span class="tok-keyword">or</span> os.path.exists(os.path.expanduser(<span class="tok-string">&quot;~/.netrc&quot;</span>))
+            <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> has_creds <span class="tok-keyword">and</span> os.environ.get(<span class="tok-string">&quot;WANDB_MODE&quot;</span>) != <span class="tok-string">&quot;offline&quot;</span>:
+                print(<span class="tok-string">&quot;# WARNING: no W&amp;B credentials (WANDB_API_KEY / ~/.netrc) -&gt; forcing offline&quot;</span>)
+                os.environ[<span class="tok-string">&quot;WANDB_MODE&quot;</span>] = <span class="tok-string">&quot;offline&quot;</span>
+            eff_batch = args.batch_size * args.accum_steps * world
+            stage = <span class="tok-string">&quot;scoring&quot;</span> <span class="tok-keyword">if</span> args.pos_r == <span class="tok-number">0</span> <span class="tok-keyword">else</span> <span class="tok-string">&quot;docking&quot;</span>
+            base = args.wandb_run_name <span class="tok-keyword">or</span> <span class="tok-string">&quot;kd&quot;</span>
+            rid_file = os.path.join(args.out_dir, <span class="tok-string">&quot;wandb_run_id.txt&quot;</span>)
+            <span class="tok-keyword">if</span> args.resume <span class="tok-keyword">and</span> os.path.exists(os.path.join(args.out_dir, <span class="tok-string">&quot;last.pt&quot;</span>)) <span class="tok-keyword">and</span> os.path.exists(rid_file):
+                run_id = open(rid_file).read().strip()
+            <span class="tok-keyword">else</span>:
+                run_id = f&quot;{base}_{int(time.time())}_{os.getpid()}&quot;
+                os.makedirs(args.out_dir, exist_ok=<span class="tok-keyword">True</span>)
+                <span class="tok-keyword">with</span> open(rid_file, <span class="tok-string">&quot;w&quot;</span>) <span class="tok-keyword">as</span> _rf:
+                    _rf.write(run_id)
+            run_name = (f&quot;{base}_lr{args.lr:g}_bs{eff_batch}_ep{args.epochs}&quot;
+                        f&quot;_pat{args.patience}_seed{args.random_seed}_{run_id.rsplit(<span class="tok-string">&#x27;_&#x27;</span>, <span class="tok-number">2</span>)[-<span class="tok-number">1</span>]}&quot;)
+            cfg = dict(vars(args))
+            cfg.update(effective_batch=eff_batch, stage=stage, world_size=world,
+                       init_from=(<span class="tok-string">&quot;scratch&quot;</span> <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> args.init_model <span class="tok-keyword">else</span> os.path.basename(args.init_model)))
+            wb = wandb.init(project=args.wandb_project, entity=args.wandb_entity,
+                            id=run_id, name=run_name, config=cfg,
+                            dir=args.out_dir, resume=<span class="tok-string">&quot;allow&quot;</span>)
+            print(f&quot;# W&amp;B run: {run_name}&quot;)
+        <span class="tok-keyword">except</span> Exception <span class="tok-keyword">as</span> e:
+            print(f&quot;# WARNING: W&amp;B disabled ({e})&quot;)
+            wb = <span class="tok-keyword">None</span></code></pre></div>
+<p>Rank 0 alone owns experiment tracking, preventing duplicate runs. The configuration records world size and global effective batch. Compared with <code dir="ltr">train.py</code>, the displayed suffix is the PID component of the ID rather than a formatted start timestamp; identity is still persisted and reused only with both <code dir="ltr">--resume</code> and existing resume files.</p>
+<h3 id="global-data-lists-rank-shards-and-model-wrapping">Global data lists, rank shards, and model wrapping</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    val_graph_dir = args.val_graph_dir <span class="tok-keyword">or</span> args.graph_dir
+    <span class="tok-keyword">if</span> args.val_csv:
+        train_ids = available(complex_ids(args.csv), args.graph_dir)
+        valid_ids = available(complex_ids(args.val_csv), val_graph_dir)
+    <span class="tok-keyword">else</span>:
+        train_ids, valid_ids = split_available(
+            complex_ids(args.csv), args.graph_dir, args.val_frac, args.random_seed)
+    <span class="tok-keyword">if</span> main_proc:
+        print(f&quot;# train: {len(train_ids)} | valid: {len(valid_ids)} complexes (global)&quot;)
+    train_ids = shard(train_ids, rank, world)
+    valid_ids = shard(valid_ids, rank, world)
+    train_loader = build_loader(train_ids, args, <span class="tok-string">&quot;train&quot;</span>, shuffle=<span class="tok-keyword">True</span>)
+    valid_loader = build_loader(valid_ids, args, <span class="tok-string">&quot;valid&quot;</span>, shuffle=<span class="tok-keyword">False</span>, graph_dir=val_graph_dir)</code></pre></div>
+<p>Every process first computes the identical global split, then selects its stripe. This guarantees disjoint coverage without rank-to-rank coordination. Shards can differ in size by at most one complex, although the number of valid batches can differ further if samples become <code dir="ltr">None</code>.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    model = KarmaDock()
+    <span class="tok-keyword">if</span> is_ddp:
+        <span class="tok-keyword">if</span> args.init_model:
+            <span class="tok-keyword">if</span> main_proc:
+                print(f&quot;# init weights from {args.init_model}&quot;)
+            state = torch.load(args.init_model, map_location=<span class="tok-string">&quot;cpu&quot;</span>)
+            sd = {k.replace(<span class="tok-string">&quot;module.&quot;</span>, <span class="tok-string">&quot;&quot;</span>, <span class="tok-number">1</span>): v <span class="tok-keyword">for</span> k, v <span class="tok-keyword">in</span> state[<span class="tok-string">&quot;model_state_dict&quot;</span>].items()}
+            model.load_state_dict(sd, strict=<span class="tok-keyword">False</span>)
+        model.to(device)
+        model = DDP(model, device_ids=[local_rank], find_unused_parameters=<span class="tok-keyword">True</span>)
+    <span class="tok-keyword">else</span>:
+        model = nn.DataParallel(model, device_ids=[<span class="tok-number">0</span>] <span class="tok-keyword">if</span> device.startswith(<span class="tok-string">&quot;cuda&quot;</span>) <span class="tok-keyword">else</span> <span class="tok-keyword">None</span>)
+        model.to(device)
+        <span class="tok-keyword">if</span> args.init_model:
+            print(f&quot;# init weights from {args.init_model}&quot;)
+            state = torch.load(args.init_model, map_location=device)
+            model.load_state_dict(state[<span class="tok-string">&quot;model_state_dict&quot;</span>], strict=<span class="tok-keyword">False</span>)</code></pre></div>
+<p>DDP initialization loads onto CPU before GPU replication and strips one leading <code dir="ltr">module.</code> because the bare model has unprefixed keys; DDP adds the prefix again after wrapping. <code dir="ltr">find_unused_parameters=True</code> is necessary because Stage 1 (<code dir="ltr">pos_r=0</code>) can skip the docking branch, leaving some parameters without gradients; without detection DDP can wait for reductions that never arrive. The non-DDP path preserves <code dir="ltr">DataParallel</code>-prefixed checkpoint compatibility.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,
+                                 weight_decay=args.weight_decay)
+
+    best_ckpt = os.path.join(args.out_dir, <span class="tok-string">&quot;karmadock_team002.pkl&quot;</span>)
+    last_ckpt = os.path.join(args.out_dir, <span class="tok-string">&quot;last.pt&quot;</span>)
+    stopper = <span class="tok-keyword">None</span> <span class="tok-keyword">if</span> is_ddp <span class="tok-keyword">else</span> Early_stopper(model_file=best_ckpt, mode=<span class="tok-string">&quot;lower&quot;</span>, patience=args.patience)
+    best_val = <span class="tok-keyword">None</span>
+    bad_epochs = <span class="tok-number">0</span></code></pre></div>
+<p>Single-process mode keeps the upstream stopper. DDP uses manual state so every rank can update the same patience counter while only rank 0 touches files, avoiding write races.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    start_epoch = <span class="tok-number">0</span>
+    <span class="tok-keyword">if</span> args.resume <span class="tok-keyword">and</span> os.path.exists(last_ckpt):
+        ck = torch.load(last_ckpt, map_location=device)
+        model.load_state_dict(ck[<span class="tok-string">&quot;model_state_dict&quot;</span>], strict=<span class="tok-keyword">True</span>)
+        optimizer.load_state_dict(ck[<span class="tok-string">&quot;optimizer_state_dict&quot;</span>])
+        start_epoch = ck[<span class="tok-string">&quot;epoch&quot;</span>] + <span class="tok-number">1</span>
+        best_val = ck.get(<span class="tok-string">&quot;best_score&quot;</span>, <span class="tok-keyword">None</span>)
+        bad_epochs = ck.get(<span class="tok-string">&quot;bad_epochs&quot;</span>, <span class="tok-number">0</span>)
+        <span class="tok-keyword">if</span> stopper <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:
+            stopper.best_score = best_val
+        <span class="tok-keyword">if</span> main_proc:
+            print(f&quot;# resumed from {last_ckpt} at epoch {start_epoch}&quot;)
+
+    log_path = os.path.join(args.out_dir, <span class="tok-string">&quot;train_log.csv&quot;</span>)
+    <span class="tok-keyword">if</span> start_epoch == <span class="tok-number">0</span> <span class="tok-keyword">and</span> main_proc:
+        <span class="tok-keyword">with</span> open(log_path, <span class="tok-string">&quot;w&quot;</span>) <span class="tok-keyword">as</span> f:
+            f.write(<span class="tok-string">&quot;epoch,train_loss,train_rmsd,train_mdn,val_loss,val_rmsd,val_mdn,seconds\n&quot;</span>)</code></pre></div>
+<p>All ranks read the same rank-0-written resume checkpoint, including <code dir="ltr">bad_epochs</code> in DDP mode. Only rank 0 initializes the shared CSV.</p>
+<h3 id="training-accumulation-and-reductions">Training, accumulation, and reductions</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">for</span> epoch <span class="tok-keyword">in</span> range(start_epoch, args.epochs):
+        t0 = time.perf_counter()
+        model.train()
+        tr_tot, tr_rmsd, tr_mdn, n = <span class="tok-number">0.0</span>, <span class="tok-number">0.0</span>, <span class="tok-number">0.0</span>, <span class="tok-number">0</span>
+        optimizer.zero_grad()
+        accum = <span class="tok-number">0</span>
+        <span class="tok-keyword">for</span> data <span class="tok-keyword">in</span> train_loader:
+            <span class="tok-keyword">if</span> data <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+                <span class="tok-keyword">continue</span>
+            data = data.to(device)
+            rmsd_loss, mdn_loss = model(data, device, args.pos_r)
+            <span class="tok-keyword">if</span> mdn_loss <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+                <span class="tok-keyword">continue</span>
+            loss = args.pos_r * rmsd_loss + mdn_loss
+            boundary = ((accum + <span class="tok-number">1</span>) % args.accum_steps == <span class="tok-number">0</span>)
+            <span class="tok-keyword">with</span> maybe_no_sync(model, is_ddp <span class="tok-keyword">and</span> <span class="tok-keyword">not</span> boundary):
+                (loss / args.accum_steps).backward()</code></pre></div>
+<p>Each rank trains on its local shard. The intent is to skip inter-GPU gradient communication until an accumulation boundary. The source places only <code dir="ltr">backward()</code> inside <code dir="ltr">no_sync</code>; the significance of that exact placement is noted under Gotchas. As in <code dir="ltr">train.py</code>, no AMP/autocast is used.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">            accum += 1
+            if accum % args.accum_steps == 0:
+                if args.grad_clip &gt; 0:
+                    nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+                optimizer.step()
+                optimizer.zero_grad()
+            tr_tot += float(loss); tr_rmsd += float(rmsd_loss); tr_mdn += float(mdn_loss); n += 1
+        if accum % args.accum_steps != 0:
+            if args.grad_clip &gt; 0:
+                nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+            optimizer.step()
+            optimizer.zero_grad()</code></pre></div>
+<p>Complete windows update after clipping; the final partial window also updates. Local metric sums are retained until validation so they can be globally reduced.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">        <span class="tok-keyword">if</span> is_ddp:
+            s = list(validate_sums(model, valid_loader, device, args.pos_r))
+            tr_tot, tr_rmsd, tr_mdn, n, s0, s1, s2, vn = all_reduce_sum(
+                [tr_tot, tr_rmsd, tr_mdn, n, s[<span class="tok-number">0</span>], s[<span class="tok-number">1</span>], s[<span class="tok-number">2</span>], s[<span class="tok-number">3</span>]], device)
+            n = max(n, <span class="tok-number">1</span>); vn = max(vn, <span class="tok-number">1</span>)
+            tr_tot, tr_rmsd, tr_mdn = tr_tot / n, tr_rmsd / n, tr_mdn / n
+            val_loss, val_rmsd, val_mdn = s0 / vn, s1 / vn, s2 / vn
+        <span class="tok-keyword">else</span>:
+            n = max(n, <span class="tok-number">1</span>)
+            tr_tot, tr_rmsd, tr_mdn = tr_tot / n, tr_rmsd / n, tr_mdn / n
+            v_tot, v_rmsd, v_mdn = karmadock_evaluation(model, valid_loader, device, args.pos_r)
+            val_loss = float(v_tot.mean()); val_rmsd = float(v_rmsd.mean()); val_mdn = float(v_mdn.mean())
+        secs = time.perf_counter() - t0</code></pre></div>
+<p>DDP validation produces local sums, then one packed all-reduce combines eight numbers efficiently. Every rank obtains identical global metrics. Non-DDP delegates to the upstream evaluator, keeping compatibility with the original loop.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">        <span class="tok-keyword">if</span> main_proc:
+            print(f&quot;[epoch {epoch:03d}] train {tr_tot:.3f} (rmsd {tr_rmsd:.3f}/mdn {tr_mdn:.3f}) | &quot;
+                  f&quot;val {val_loss:.3f} (rmsd {val_rmsd:.3f}/mdn {val_mdn:.3f}) | {secs:.0f}s&quot;)
+            <span class="tok-keyword">with</span> open(log_path, <span class="tok-string">&quot;a&quot;</span>) <span class="tok-keyword">as</span> f:
+                f.write(f&quot;{epoch},{tr_tot:.5f},{tr_rmsd:.5f},{tr_mdn:.5f},&quot;
+                        f&quot;{val_loss:.5f},{val_rmsd:.5f},{val_mdn:.5f},{secs:.1f}\n&quot;)
+            <span class="tok-keyword">if</span> wb <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:
+                wb.log({<span class="tok-string">&quot;epoch&quot;</span>: epoch, <span class="tok-string">&quot;lr&quot;</span>: optimizer.param_groups[<span class="tok-number">0</span>][<span class="tok-string">&quot;lr&quot;</span>],
+                        <span class="tok-string">&quot;train/loss&quot;</span>: tr_tot, <span class="tok-string">&quot;train/rmsd&quot;</span>: tr_rmsd, <span class="tok-string">&quot;train/mdn&quot;</span>: tr_mdn,
+                        <span class="tok-string">&quot;val/loss&quot;</span>: val_loss, <span class="tok-string">&quot;val/rmsd&quot;</span>: val_rmsd, <span class="tok-string">&quot;val/mdn&quot;</span>: val_mdn,
+                        <span class="tok-string">&quot;epoch_seconds&quot;</span>: secs}, step=epoch)</code></pre></div>
+<p>Rank gating prevents duplicate console lines and file/W&amp;B writes. The logged seconds come from rank 0, but the preceding collective means it includes waiting for other ranks to reach metric reduction.</p>
+<h3 id="lockstep-early-stopping-and-teardown">Lockstep early stopping and teardown</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">        <span class="tok-keyword">if</span> is_ddp:
+            improved = (best_val <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>) <span class="tok-keyword">or</span> (val_loss &lt; best_val)
+            <span class="tok-keyword">if</span> improved:
+                best_val = val_loss; bad_epochs = <span class="tok-number">0</span>
+            <span class="tok-keyword">else</span>:
+                bad_epochs += <span class="tok-number">1</span>
+            <span class="tok-keyword">if</span> main_proc:
+                <span class="tok-keyword">if</span> improved:
+                    torch.save({<span class="tok-string">&quot;model_state_dict&quot;</span>: model.state_dict()}, best_ckpt)
+                torch.save({<span class="tok-string">&quot;epoch&quot;</span>: epoch, <span class="tok-string">&quot;model_state_dict&quot;</span>: model.state_dict(),
+                            <span class="tok-string">&quot;optimizer_state_dict&quot;</span>: optimizer.state_dict(),
+                            <span class="tok-string">&quot;best_score&quot;</span>: best_val, <span class="tok-string">&quot;bad_epochs&quot;</span>: bad_epochs}, last_ckpt)
+            <span class="tok-keyword">if</span> bad_epochs &gt;= args.patience:
+                <span class="tok-keyword">if</span> main_proc:
+                    print(f&quot;# early stopping at epoch {epoch}&quot;)
+                <span class="tok-keyword">break</span></code></pre></div>
+<p>Because <code dir="ltr">val_loss</code> was all-reduced, every rank updates identical <code dir="ltr">best_val</code>/<code dir="ltr">bad_epochs</code> and breaks together. Strictly smaller is improvement; equality consumes patience. Only rank 0 serializes, but DDP gradient synchronization keeps replicas equivalent.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">        <span class="tok-keyword">else</span>:
+            stopper.step(val_loss, model)
+            best_val = stopper.best_score
+            torch.save({<span class="tok-string">&quot;epoch&quot;</span>: epoch,
+                        <span class="tok-string">&quot;model_state_dict&quot;</span>: model.state_dict(),
+                        <span class="tok-string">&quot;optimizer_state_dict&quot;</span>: optimizer.state_dict(),
+                        <span class="tok-string">&quot;best_score&quot;</span>: stopper.best_score}, last_ckpt)
+            <span class="tok-keyword">if</span> stopper.early_stop:
+                print(f&quot;# early stopping at epoch {epoch}&quot;)
+                <span class="tok-keyword">break</span></code></pre></div>
+<p>Plain Python preserves the upstream stopper behavior and single-process resume format.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> wb <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:
+        wb.summary[<span class="tok-string">&quot;best_val_loss&quot;</span>] = float(best_val) <span class="tok-keyword">if</span> best_val <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span> <span class="tok-keyword">else</span> <span class="tok-keyword">None</span>
+        <span class="tok-keyword">try</span>:
+            art = __import__(<span class="tok-string">&quot;wandb&quot;</span>).Artifact(<span class="tok-string">&quot;karmadock_team002&quot;</span>, type=<span class="tok-string">&quot;model&quot;</span>)
+            art.add_file(best_ckpt)
+            wb.log_artifact(art)
+        <span class="tok-keyword">except</span> Exception <span class="tok-keyword">as</span> e:
+            print(f&quot;# W&amp;B artifact upload skipped ({e})&quot;)
+        wb.finish()
+    <span class="tok-keyword">if</span> is_ddp:
+        dist.barrier()
+        dist.destroy_process_group()
+    <span class="tok-keyword">if</span> main_proc:
+        print(f&quot;# done. best checkpoint: {best_ckpt}&quot;)
+
+
+<span class="tok-keyword">if</span> __name__ == <span class="tok-string">&quot;__main__&quot;</span>:
+    main()</code></pre></div>
+<p>Rank 0 finishes W&amp;B while other ranks proceed to the final barrier; they all wait before dismantling NCCL. Destroying the process group releases distributed resources cleanly.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">How does manual ID striping give ranks disjoint data, and what property does it not provide?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Rank <code dir="ltr">r</code> takes every <code dir="ltr">world_size</code>-th ID starting at <code dir="ltr">r</code>, creating disjoint fixed membership, but it does not reshuffle membership across epochs like <code dir="ltr">DistributedSampler</code>.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">Why are validation sums and counts all-reduced instead of averaging each rank&#x27;s mean?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Ranks can have unequal numbers of valid samples, so reducing totals and denominators avoids giving a small shard the same weight as a larger shard.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">Why must <code dir="ltr">find_unused_parameters=True</code> be enabled for Stage 1?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>With <code dir="ltr">pos_r=0</code>, the docking branch can leave parameters without gradients; unused-parameter detection prevents DDP from waiting for reductions that will never occur.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q4">
+<p class="quiz-question">How are checkpoint key prefixes handled across bare models, <code dir="ltr">DataParallel</code>, and DDP?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Initialization strips one leading <code dir="ltr">module.</code> before loading the bare model, and wrapping then restores the prefix expected by DDP or the compatible single-process <code dir="ltr">DataParallel</code> format.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q5">
+<p class="quiz-question">Why can every rank break early stopping at the same epoch even though only rank 0 saves files?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>All-reduced validation loss gives every rank the same improvement signal and manual patience state, while synchronized gradients keep model replicas equivalent.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>PyTorch documents that a DDP <code dir="ltr">no_sync()</code> context should include the forward pass; here <code dir="ltr">model(...)</code> occurs before the context and only <code dir="ltr">backward()</code> is inside. Consequently the intended communication-saving behavior may not take effect. Moving the forward inside would also require handling the final partial accumulation window so its gradients are synchronized before stepping.</li>
+<li>Like <code dir="ltr">train.py</code>, a partial accumulation window is divided by the full <code dir="ltr">accum_steps</code>, reducing its magnitude.</li>
+<li>Manual ID striping is not a <code dir="ltr">DistributedSampler</code>: each rank&#x27;s membership is fixed, and <code dir="ltr">shuffle=True</code> only permutes within that stripe.</li>
+<li>All ranks use the same seed. That is deterministic, but any rank-independent augmentation stream can be correlated across ranks.</li>
+<li>DDP manual patience state is resumable; non-DDP still has the upstream stopper-counter ambiguity described in the single-process walkthrough.</li>
+<li>The DDP path assumes CUDA/NCCL. <code dir="ltr">WORLD_SIZE&gt;1</code> on a CPU-only machine still selects NCCL and CUDA and will fail.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why may the current <code dir="ltr">no_sync()</code> block fail to suppress intermediate gradient communication?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>PyTorch requires the forward pass to occur inside the context, but this source places only <code dir="ltr">backward()</code> inside it.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">How can fixed striping and identical seeds reduce augmentation diversity across ranks?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Each rank always owns the same subset and starts equivalent random streams, so rank-independent augmentation operations can become correlated even though samples differ.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">Why does setting <code dir="ltr">WORLD_SIZE&gt;1</code> on a CPU-only machine fail rather than using a CPU distributed backend?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The distributed path unconditionally selects CUDA devices and the NCCL backend, both of which require supported NVIDIA GPU execution.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-3"><a href="#imports-and-ddp-model">Imports and DDP model</a></li><li class="toc-level-3"><a href="#distributed-helpers">Distributed helpers</a></li><li class="toc-level-3"><a href="#cli-and-graph-selection">CLI and graph selection</a></li><li class="toc-level-3"><a href="#ddp-friendly-validation-and-synchronization-context">DDP-friendly validation and synchronization context</a></li><li class="toc-level-3"><a href="#process-group-startup-and-wb">Process-group startup and W&amp;B</a></li><li class="toc-level-3"><a href="#global-data-lists-rank-shards-and-model-wrapping">Global data lists, rank shards, and model wrapping</a></li><li class="toc-level-3"><a href="#training-accumulation-and-reductions">Training, accumulation, and reductions</a></li><li class="toc-level-3"><a href="#lockstep-early-stopping-and-teardown">Lockstep early stopping and teardown</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

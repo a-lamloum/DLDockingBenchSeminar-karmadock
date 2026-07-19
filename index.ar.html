@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="index.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>KarmaDock — التسليم الأولي | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="index.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="index.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html" aria-current="page">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="karmadock--prototype-submission"><bdi dir="ltr">KarmaDock</bdi> — التسليم الأولي</h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<p><strong>مقارنة أدوات الإرساء المعتمدة على التعلم العميق</strong> · جامعة سارلاند، صيف <bdi dir="ltr">2026</bdi> المشرفان: <bdi dir="ltr">Hamza</bdi> <bdi dir="ltr">Ibrahim</bdi> و<bdi dir="ltr">Andrea</bdi> <bdi dir="ltr">Volkamer</bdi> · <strong>الفريق (<bdi dir="ltr">KarmaDock</bdi>): <bdi dir="ltr">Ahmed</bdi> و<bdi dir="ltr">Abdullah</bdi></strong></p>
+<p>الإرساء يعني التنبؤ بالوضعية ثلاثية الأبعاد (<bdi dir="ltr">3D</bdi>) التي ترتبط بها جزيئة صغيرة (ربيطة) داخل جيب بروتيني. يُعد <bdi dir="ltr">KarmaDock</bdi> برنامج إرساء بالتعلم العميق: فهو يبني رسومًا بيانية للبروتين والربيطة، ويرمّزها باستخدام <bdi dir="ltr">GVP</bdi> ومحوّل رسومي، ثم <strong>يحرّك</strong> الربيطة داخل الجيب بواسطة شبكة عصبية بيانية متكافئة <bdi dir="ltr">E</bdi>(<bdi dir="ltr">n</bdi>) يعاد استخدامها ×<bdi dir="ltr">3</bdi>، ويمنح الوضعية درجة بواسطة شبكة الكثافة الخليطية (<bdi dir="ltr">MDN</bdi>). يولّد البرنامج الوضعية مباشرة بدل البحث، ولذلك فهو أسرع من الإرساء التقليدي بنحو <bdi dir="ltr">100</bdi>–<bdi dir="ltr">1000×.</bdi> الورقة العلمية: <bdi dir="ltr">Zhang</bdi> <bdi dir="ltr">et</bdi> <bdi dir="ltr">al.,</bdi> <em><bdi dir="ltr">Nat.</bdi> <bdi dir="ltr">Comput.</bdi> <bdi dir="ltr">Sci.</bdi></em> <strong><bdi dir="ltr">3</bdi></strong>, <bdi dir="ltr">789</bdi>–<bdi dir="ltr">804</bdi> (<bdi dir="ltr">2023</bdi>)، <a class="content-link external" href="https://doi.org/10.1038/s43588-023-00511-5"><bdi dir="ltr">doi:10.1038/s43588-023-00511-5</bdi><span class="external-mark" aria-hidden="true">↗</span><span class="sr-only"> (رابط خارجي)</span></a>.</p>
+<hr>
+<h2 id="1-what-we-did-and-why-changes-vs-upstream-karmadock"><bdi dir="ltr">1.</bdi> ما الذي أنجزناه، ولماذا؟ (التغييرات مقارنةً بـ <bdi dir="ltr">KarmaDock</bdi> الأصلي)</h2>
+<p>يوفّر <bdi dir="ltr">KarmaDock</bdi> العام <strong>الاستدلال والأوزان المنشورة فقط، ولا يوفّر برنامج تدريب.</strong> تتمثل مساهمتنا في كل ما يلزم لتدريبه وقياسه بصورة قابلة لإعادة الإنتاج على تقسيم الندوة. استُخدمت <strong>الشيفرة الأصلية للنموذج والمعالجة المسبقة والإرساء دون تعديل</strong> كي تظل المقارنة وفية للطريقة المنشورة.</p>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف (من عملنا)</th>
+<th>ما هو؟</th>
+<th>لماذا وُجد؟</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="content-link" href="walkthrough-train.ar.html"><strong><code dir="ltr">scripts/train.py</code></strong></a></td>
+<td>حلقة تدريب كاملة مع نقاط تحقق، تجمع خسارتي <bdi dir="ltr">MDN</bdi> و<bdi dir="ltr">RMSD</bdi> للإرساء ضمن بروتوكول من مرحلتين (<bdi dir="ltr">2-stage</bdi>)</td>
+<td><strong>أثرنا البرمجي الرئيس</strong>؛ لا يوفّر المشروع الأصلي مدرّبًا، وهذا الملف ضروري للتدريب من الصفر أو للضبط الدقيق</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-train.ar.html"><code dir="ltr">scripts/run_train.sh &lt;scratch/finetune&gt;</code></a></td>
+<td>معالجة مسبقة ثم تدريب: <code dir="ltr">scratch</code> = البروتوكول ذي المرحلتين <bdi dir="ltr">2-stage</bdi> (<strong><bdi dir="ltr">P2</bdi></strong>)، و<code dir="ltr">finetune</code> = مرحلة واحدة انطلاقًا من الأوزان المنشورة (<strong><bdi dir="ltr">P3</bdi></strong>)</td>
+<td>إعادة إنتاج <em>بروتوكول التدريب</em> في الورقة (<bdi dir="ltr">Methods,</bdi> <bdi dir="ltr">p.801</bdi>)</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-convert-seminar-to-karmadock.ar.html"><code dir="ltr">scripts/convert_seminar_to_karmadock.py</code></a></td>
+<td>تحويل تخطيط بيانات الندوة إلى تخطيط <bdi dir="ltr">KarmaDock</bdi></td>
+<td>يجب إعادة ترتيب ملفات <code dir="ltr">&lt;id&gt;_ligand_refined.sdf</code> و<code dir="ltr">&lt;id&gt;_protein_refined.pdb</code> كي تلائم <code dir="ltr">pre_processing.py</code></td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-convert-karmadock-to-seminar.ar.html"><code dir="ltr">scripts/convert_karmadock_to_seminar.py</code></a></td>
+<td>تحويل وضعيات <bdi dir="ltr">KarmaDock</bdi> إلى <code dir="ltr">results/&lt;ds&gt;/&lt;id&gt;_pred.sdf</code> مع أفضل وضعية أولًا</td>
+<td>إنتاج التنسيق الدقيق الذي يتوقعه <code dir="ltr">evaluation.py</code></td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-infer.ar.html"><code dir="ltr">scripts/run_infer.sh</code></a></td>
+<td>معالجة مسبقة ثم إرساء ثم تصدير <strong>متغيرات الوضعية <bdi dir="ltr">3</bdi></strong>: الخام و<bdi dir="ltr">FF</bdi> والمحاذاة</td>
+<td>إنتاج الوضعيات المتنبأ بها على العنقود</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-evaluate.ar.html"><code dir="ltr">scripts/evaluate.sh</code></a></td>
+<td>تشغيل <code dir="ltr">evaluation.py</code> لكل مسار × متغير، بوصفه خطوة تقييم مستقلة</td>
+<td>إنتاج ملفات <bdi dir="ltr">RMSD</bdi> الرسمية بصيغة <bdi dir="ltr">CSV</bdi></td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/</code></a><code dir="ltr">*.sub</code></td>
+<td>ملفات إرسال <bdi dir="ltr">HTCondor</bdi> في بيئة <bdi dir="ltr">Docker:</bdi> <bdi dir="ltr">3</bdi> مهام إرساء + <bdi dir="ltr">1</bdi> تقييم + <bdi dir="ltr">2</bdi> تدريب</td>
+<td>تشغيل المنظومة على عنقود <bdi dir="ltr">SIC</bdi></td>
+</tr>
+<tr>
+<td><a class="content-link" href="reference.ar.html#authorship--provenance"><code dir="ltr">Dockerfile</code></a></td>
+<td>الصورة <code dir="ltr">ahlamloum/karmadock-seminar:v6</code></td>
+<td>بيئة قابلة لإعادة الإنتاج تضم <bdi dir="ltr">KarmaDock</bdi> و<bdi dir="ltr">RDKit</bdi> و<bdi dir="ltr">Torch</bdi> وبقية الاعتماديات</td>
+</tr>
+</tbody></table></div>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">ما المساهمة المركزية لهذا المشروع الدراسي التي تتجاوز <bdi dir="ltr">KarmaDock</bdi> الأصلي؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يضيف المشروع حلقة التدريب القابلة لإعادة الإنتاج، ومحولات البيانات، وأغلفة التشغيل، وتنظيم مهام العنقود، مع إبقاء شيفرة النموذج الأصلية بلا تعديل.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">لماذا يُعد إبقاء شيفرة نموذج <bdi dir="ltr">KarmaDock</bdi> والإرساء الأصليين بلا تعديل مهمًا للمقارنة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يحافظ ذلك على وفاء المقارنة للطريقة المنشورة، فتُنسب الفروق إلى منظومة التدريب والتقييم المضافة لا إلى نموذج عُدّل داخليًا.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">ما الأثر البرمجي الرئيس للمشروع، وما نمطا التدريب اللذان تدعمهما المنظومة المحيطة به؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>الأثر الرئيس هو <code dir="ltr">scripts/train.py</code>؛ وتدعم المنظومة تدريب <bdi dir="ltr">P2</bdi> من الصفر على مرحلتين، وضبط الأوزان المنشورة دقيقًا لإنتاج <bdi dir="ltr">P3.</bdi></p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#1-what-we-did-and-why-changes-vs-upstream-karmadock"><bdi dir="ltr">1.</bdi> ما الذي أنجزناه، ولماذا؟ (التغييرات مقارنةً بـ <bdi dir="ltr">KarmaDock</bdi> الأصلي)</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

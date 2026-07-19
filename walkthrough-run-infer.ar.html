@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="walkthrough-run-infer.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>شرح `scripts/run_infer.sh` | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="walkthrough-run-infer.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-run-infer.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html" aria-current="page">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsruninfersh">شرح <code dir="ltr">scripts/run_infer.sh</code></h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="purpose">الغرض</h2>
+<p>يشغّل هذا البرنامج مسار توليد الوضعيات الكامل لزوج واحد من مجموعة البيانات ونقطة التحقق. يحوّل البنى، وينشئ الجيوب والرسوم البيانية، ويستدعي إرساء <bdi dir="ltr">KarmaDock</bdi> الأصلي، ويصدّر الوضعيات الخام والمصغرة بحقل القوة والمصححة بالمحاذاة بتنسيق الندوة.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">لماذا يوصف هذا البرنامج بأنه مسار كامل لتوليد الوضعيات، لا مسار تقييم؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأنه يحوّل المدخلات ويبني الجيوب والرسوم ويرسي الوضعيات ويقيّمها ويصدّر التنبؤات، لكنه يترك حساب المقاييس عمدًا لـ<code dir="ltr">evaluate.sh</code> أو <code dir="ltr">evaluation.py</code>.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">لماذا تُصدّر المخرجات الخام والمصححة بحقل القوة والمحاذاة كلها؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأنها تتيح للمعيار التمييز بين تنبؤ الشبكة المباشر وتأثيري المعالجة اللاحقة المختلفين.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">ما الذي يجعل استدعاءً واحدًا خاصًا بتجربة نموذج؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تختار وسائط مجموعة البيانات ونقطة التحقق ووسم المخرجات بنى الإدخال وأوزان النموذج ونطاق أسماء النتائج.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">موقعه في المنظومة</h2>
+<p>تستدعيه ملفات إرسال الاستدلال الخمسة المدرجة بثلاث وسائط موضعية: اسم المجموعة، ومسار أو اسم نقطة التحقق، ووسم الخرج. يقرأ <code dir="ltr">&lt;dataset&gt;.csv</code> و<code dir="ltr">&lt;dataset&gt;/</code> من صندوق المهمة الحالي، وينشئ بيانات وسيطة مؤقتة، ويكتب <code dir="ltr">results/&lt;tag&gt;/&lt;dataset&gt;{,_ff,_align}/&lt;id&gt;_pred.sdf</code>. يحدث التقييم لاحقًا في <code dir="ltr">evaluate.sh</code> أو <code dir="ltr">evaluation.py</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">لماذا تمرر ملفات إرسال الاستدلال الاسم الأساسي لنقطة التحقق في بعض الحالات ومسارًا مطلقًا في حالات أخرى؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تصل نقاط التحقق المنقولة إلى الصندوق وتُحل بالنسبة إلى <code dir="ltr">$PWD</code>، بينما يمكن الرجوع إلى نقاط التحقق المنشورة مباشرة داخل صورة الحاوية.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">ما عقد المخرجات الدائم الذي يوفّره البرنامج للتقييم اللاحق؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يكتب ملفات <bdi dir="ltr">SDF</bdi> جاهزة للمقيّم تحت <code dir="ltr">results/&lt;tag&gt;/&lt;dataset&gt;</code>، مع شجرتين شقيقتين باللاحقتين <code dir="ltr">_ff</code> و<code dir="ltr">_align</code> للنسخ المصححة.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">لماذا لا تكون الرسوم الوسيطة جزءًا من عقد المخرجات؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأنها توجد فقط لدعم تشغيل الإرساء الحالي داخل دليل مؤقت، وتُحذف عند الخروج.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">شرح الشيفرة</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># run_infer.sh &lt;dataset&gt; &lt;model_file&gt; &lt;tag&gt;
+</span><span class="tok-comment"># ...
+</span>set -euo pipefail
+set -x
+
+DATASET=$<span class="tok-number">1</span>
+MODEL=$<span class="tok-number">2</span>
+TAG=$<span class="tok-number">3</span></code></pre></div>
+<p>يوقف الوضع الصارم المسارات الجزئية، ويجعل التتبع سجل العنقود قابلًا لإعادة الإنتاج. بخلاف <code dir="ltr">run_train.sh</code>، لا تستخدم هذه المتغيرات <code dir="ltr">${1:?...}</code>؛ ومع <code dir="ltr">set -u</code> يؤدي غياب أي منها إلى إخفاق فوري، لكن بلا رسالة استخدام مخصصة.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">SUBMIT=<span class="tok-string">&quot;$PWD&quot;</span>
+<span class="tok-keyword">case</span> <span class="tok-string">&quot;$MODEL&quot;</span> <span class="tok-keyword">in</span> /*) : ;; *) MODEL=<span class="tok-string">&quot;$SUBMIT/$MODEL&quot;</span> ;; <span class="tok-keyword">esac</span>
+
+KD=/app/KarmaDock
+WORK=<span class="tok-string">&quot;$(mktemp -d -t kd-XXXXXX)&quot;</span>
+trap <span class="tok-string">&#x27;rm -rf &quot;$WORK&quot;&#x27;</span> EXIT
+KIN=<span class="tok-string">&quot;$WORK/kin&quot;</span>; GRAPH=<span class="tok-string">&quot;$WORK/graphs&quot;</span>; KDOUT=<span class="tok-string">&quot;$WORK/kdout&quot;</span>
+mkdir -p <span class="tok-string">&quot;$KIN&quot;</span> <span class="tok-string">&quot;$GRAPH&quot;</span> <span class="tok-string">&quot;$KDOUT&quot;</span></code></pre></div>
+<p>يميز <code dir="ltr">case</code> المسارات المطلقة <code dir="ltr">/*</code> من أسماء نقاط التحقق المنقولة. تُحل النقاط النسبية قبل تغيير المجلد لاحقًا. يعزل <code dir="ltr">mktemp -d</code> التشغيل، ويحذف <code dir="ltr">trap</code> المقتبس المساحة عند الخروج الطبيعي أو معظم الأخطاء. لا تبقى إلا النتائج المصدرة.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">echo <span class="tok-string">&quot;=== [$TAG] dock $DATASET with $MODEL ===&quot;</span>
+
+python3 <span class="tok-string">&quot;$SUBMIT/scripts/convert_seminar_to_karmadock.py&quot;</span> \
+    --csv <span class="tok-string">&quot;$SUBMIT/$DATASET.csv&quot;</span> --src_dir <span class="tok-string">&quot;$SUBMIT/$DATASET&quot;</span> --out_dir <span class="tok-string">&quot;$KIN&quot;</span>
+
+cd <span class="tok-string">&quot;$KD/utils&quot;</span>
+python3 -u pre_processing.py  --complex_file_dir <span class="tok-string">&quot;$KIN&quot;</span>
+python3 -u generate_graph.py  --complex_file_dir <span class="tok-string">&quot;$KIN&quot;</span> --graph_file_dir <span class="tok-string">&quot;$GRAPH&quot;</span>
+echo <span class="tok-string">&quot;=== [$TAG] graphs built: $(ls &quot;</span>$GRAPH<span class="tok-string">&quot; | wc -l) ===&quot;</span></code></pre></div>
+<p>يغير الأمر الأول التسمية والتخطيط فقط. تحدد المعالجة الأصلية الجيب، ثم يحول توليد الرسم الذرات والبقايا وعلاقاتها إلى موترات رسوم <bdi dir="ltr">DGL.</bdi> العدد فحص سريع للتغطية، وليس تحققًا من نجاح كل معرّف متوقع.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">python3 -u ligand_docking.py \
+    --graph_file_dir <span class="tok-string">&quot;$GRAPH&quot;</span> \
+    --model_file <span class="tok-string">&quot;$MODEL&quot;</span> \
+    --out_dir <span class="tok-string">&quot;$KDOUT&quot;</span> \
+    --docking True --scoring True --correct True \
+    --batch_size <span class="tok-number">64</span> --random_seed <span class="tok-number">2023</span></code></pre></div>
+<p>هذه نقطة دخول الاستدلال الأصلية في <bdi dir="ltr">KarmaDock.</bdi> تتنبأ <code dir="ltr">--docking True</code> بالإحداثيات، وتقيّم <code dir="ltr">--scoring True</code> الوضعيات برأس <bdi dir="ltr">MDN</bdi>، وتطلب <code dir="ltr">--correct True</code> الأشكال الثلاثة. الخرج الخام غير مصحح؛ ويجري تصحيح <bdi dir="ltr">FF</bdi> استرخاءً بالميكانيكا الجزيئية، بينما تضع المحاذاة الإحداثيات فوق إطار مرجعي. تجعل البذرة الثابتة الوضعيات الابتدائية والتكرارات العشوائية قابلة لإعادة الإنتاج ضمن بيئة البرامج والعتاد نفسها.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">export_variant () {
+    local mode=$<span class="tok-number">1</span> suffix=$<span class="tok-number">2</span>
+    local out=<span class="tok-string">&quot;$SUBMIT/results/$TAG/${DATASET}${suffix}&quot;</span>
+    mkdir -p <span class="tok-string">&quot;$out&quot;</span>
+    python3 <span class="tok-string">&quot;$SUBMIT/scripts/convert_karmadock_to_seminar.py&quot;</span> \
+        --input_dir <span class="tok-string">&quot;$KDOUT&quot;</span> --csv <span class="tok-string">&quot;$SUBMIT/$DATASET.csv&quot;</span> --out_dir <span class="tok-string">&quot;$out&quot;</span> --mode <span class="tok-string">&quot;$mode&quot;</span>
+    echo <span class="tok-string">&quot;=== [$TAG] ${mode}: $(ls &quot;</span>$out<span class="tok-string">&quot;/*_pred.sdf 2&gt;/dev/null | wc -l) poses -&gt; ${out#$SUBMIT/} ===&quot;</span>
+}
+export_variant uncorrected     <span class="tok-string">&quot;&quot;</span>
+export_variant ff_corrected    <span class="tok-string">&quot;_ff&quot;</span>
+export_variant align_corrected <span class="tok-string">&quot;_align&quot;</span>
+
+echo <span class="tok-string">&quot;=== [$TAG] inference done (3 pose variants in results/$TAG/) ===&quot;</span></code></pre></div>
+<p>تجمع الدالة استدعاءات المحول المتكررة. تزيل <code dir="ltr">${out#$SUBMIT/}</code> بادئة مجلد الإرسال للتسجيل الأنظف فقط. يرتب المحول تكرارات الإرساء وفق الدرجة، ولذلك تكون سجلات <bdi dir="ltr">SDF</bdi> الناتجة مرتبة من الأفضل. تنشئ الاستدعاءات الثلاثة أشجار نتائج متوازية لمقارنة المعالجة اللاحقة بعدل.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">لماذا يُحل مسار نقطة التحقق النسبي قبل الانتقال إلى دليل أدوات <bdi dir="ltr">KarmaDock</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تحويله إلى مسار من جذر الصندوق يمنع أوامر <code dir="ltr">cd</code> اللاحقة من تغيير ما يشير إليه اسم النموذج النسبي.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">ما الأعمال المختلفة التي تنفذها <code dir="ltr">pre_processing.py</code> و<code dir="ltr">generate_graph.py</code> و<code dir="ltr">ligand_docking.py</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تتعرف على الجيوب وتطبّعها، ثم تسلسل العلاقات الجزيئية كموترات رسوم، ثم تتنبأ بوضعيات الربيطة وتقيّمها وتصححها باستخدام نقطة التحقق المحددة.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">كيف تحوّل <code dir="ltr">export_variant</code> مخرجات التكرار الأصلية إلى أشجار نتائج عادلة قابلة للمقارنة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تستدعي محوّل الترتيب بالدرجات نفسه مع نمط ولاحقة مختلفين لكل نسخة، فتنتج ملفات <bdi dir="ltr">SDF</bdi> متعددة السجلات وأفضلها أولًا تحت أدلة متوازية.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">تنبيهات وملاحظات</h2>
+<ul>
+<li>تُحذف الرسوم المؤقتة وخرج <bdi dir="ltr">KarmaDock</bdi> الأصلي دائمًا عند الخروج، ولذلك يتطلب تصحيحها تعديل البرنامج أو نسخها قبل الخروج.</li>
+<li>تستخدم أوامر عد الرسوم والوضعيات خطوط أنابيب مع <code dir="ltr">pipefail</code>؛ يخفي <code dir="ltr">2&gt;/dev/null</code> تشخيص عدم مطابقة النمط، لكن مجلد الوضعيات الفارغ قد يجعل استبدال الأمر يفشل.</li>
+<li>يدعم <code dir="ltr">seminar_csv.py</code> الحالي <code dir="ltr">ligand_file_name</code> أو أعمدة البيانات الوصفية الكاملة الأربعة، بينما يستخدم <code dir="ltr">data/posebusters_filtered.csv</code> المرفق <code dir="ltr">ligand_file</code>. لذلك قد يرفع مسار إرسال <bdi dir="ltr">PoseBusters</bdi> خطأ عمود مفقود قبل الاستدلال.</li>
+<li>تستخدم المحاذاة الوضعية أو الإطار المرجعي، ولذلك ينبغي تفسيرها كتشخيص معالجة لاحقة لا كخرج إرساء أعمى مستقل عن الإجابة.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">لماذا يصعب فحص مخرجات الإرساء الأصلية المؤقتة بعد فشل؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأن فخ <code dir="ltr">EXIT</code> يحذف مساحة العمل المؤقتة عند الخروج الطبيعي وعند معظم الأخطاء، ما لم يُعدّل البرنامج للاحتفاظ بها أو نسخها.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">كيف يمكن لأمر تشخيصي لعدّ الوضعيات أن يوقف البرنامج بنفسه؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يشغّل تعبير ملفات وخط أنابيب تحت <code dir="ltr">pipefail</code> الصارم؛ وقد تنتج النتيجة الفارغة مكوّنًا غير صفري مع أن خرج التشخيص معاد التوجيه.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">لماذا لا ينبغي تفسير نجاح المحاذاة على أنه دقة إرساء أعمى مستقلة عن المرجع؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تستخدم المحاذاة الوضعية أو الإطار المرجعي لتركيب الإحداثيات، فهي تشخيص معالجة لاحقة يصل إلى معلومات لا تتاح للمخرج الأعمى.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#purpose">الغرض</a></li><li class="toc-level-2"><a href="#how-it-fits-in">موقعه في المنظومة</a></li><li class="toc-level-2"><a href="#walkthrough">شرح الشيفرة</a></li><li class="toc-level-2"><a href="#gotchas--notes">تنبيهات وملاحظات</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

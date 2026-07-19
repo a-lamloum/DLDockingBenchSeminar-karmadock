@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="walkthrough-evaluation.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>`evaluation/evaluation.py` | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="walkthrough-evaluation.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-evaluation.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html" aria-current="page">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="evaluationevaluationpy"><code dir="ltr">evaluation/evaluation.py</code></h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="purpose">الغرض</h2>
+<p>هذا مقيّم الإرساء على مستوى مجموعة البيانات في المستودع. يربط صفوف <bdi dir="ltr">CSV</bdi> بالبنى المرجعية والمتنبأ بها، ويحسب <bdi dir="ltr">RMSD</bdi> للذرات الثقيلة مع مراعاة التناظر للوضعيات المرتبة، ويشغّل اختياريًا فحوص الصلاحية الفيزيائية من <bdi dir="ltr">PoseBusters</bdi>، ويطبع إحصاءات <bdi dir="ltr">top-1</bdi> والأفضل من <bdi dir="ltr">N</bdi>، ويكتب صف نتيجة لكل وضعية مقيّمة.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">لماذا ينتج المقيّم صفًا لكل وضعية بدل صف ملخص واحد لكل معقّد؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تحفظ صفوف الوضعيات الرتبة وعتبات <bdi dir="ltr">RMSD</bdi> والمسارات وفحوص الصلاحية الاختيارية، فتتيح اشتقاق ملخصات <bdi dir="ltr">top-1</bdi> والأفضل من <bdi dir="ltr">N</bdi> لاحقًا.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">ما الجانبان المختلفان لجودة الإرساء اللذان يقيّمهما <bdi dir="ltr">RMSD</bdi> و<bdi dir="ltr">PoseBusters</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يقارن <bdi dir="ltr">RMSD</bdi> هندسة الربيطة المتنبأ بها بالمرجعية، بينما يفحص <bdi dir="ltr">PoseBusters</bdi> معقولية الوضعية فيزيائيًا وكيميائيًا ضمن سياقها الشرطي.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">لماذا تهم مراعاة التناظر عند مقارنة إحداثيات الربيطة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>ينبغي ألا تعاقب تبديلات الذرات المتكافئة كيميائيًا وضعية مطابقة، لذلك يبحث المقيّم في التعيينات المتكافئة عن أقل <bdi dir="ltr">RMSD.</bdi></p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">موقعه في المنظومة</h2>
+<p>يستهلك <code dir="ltr">data/&lt;dataset&gt;.csv</code> والملفات المرجعية تحت <code dir="ltr">data/&lt;dataset&gt;/</code> والتنبؤات تحت <code dir="ltr">results/&lt;dataset&gt;/&lt;complex_id&gt;_pred.sdf</code>. تستدعيه <code dir="ltr">scripts/evaluate.sh</code> مرارًا عبر روابط رمزية مؤقتة لمقارنات النموذج الأولي، ويمكن للمستخدم تشغيله مباشرة. تتطلب واجهة <bdi dir="ltr">CLI</bdi> ‏<code dir="ltr">--dataset</code>، وتقبل <code dir="ltr">--top_n</code> و<code dir="ltr">--no_pb_valid</code> و<code dir="ltr">--output_csv</code>، ويكون الخرج الافتراضي <code dir="ltr">results/&lt;dataset&gt;_evaluation.csv</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">كيف يحدد اسم مجموعة البيانات مواقع مدخلات المقيّم؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يختار <code dir="ltr">data/&lt;dataset&gt;.csv</code> والبنى المرجعية تحت <code dir="ltr">data/&lt;dataset&gt;/</code> والتنبؤات المرتبة تحت <code dir="ltr">results/&lt;dataset&gt;/</code>.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">لماذا تستطيع <code dir="ltr">scripts/evaluate.sh</code> إعادة استخدام واجهة الأدلة الثابتة لعدة مسارات للنموذج الأولي؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>ينشئ الغلاف عروض روابط رمزية مؤقتة تعرض دليل وضعيات كل مسار تحت الاسم <code dir="ltr">results/proto_test</code> الذي يتوقعه المقيّم.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">ما الذي يتغير عند تمرير <code dir="ltr">--no_pb_valid</code>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تُعطّل فحوص <bdi dir="ltr">PoseBusters</bdi>، لكن تحميل الوضعيات المرتبة وحساب <bdi dir="ltr">RMSD</bdi> المصحح للتناظر والإحصاءات المجمعة وخرج <bdi dir="ltr">CSV</bdi> تستمر.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">شرح الشيفرة</h2>
+<h3 id="module-setup-and-logging">إعداد الوحدة والتسجيل</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-comment">#!/usr/bin/env python3</span>
+<span class="tok-string">&quot;&quot;&quot;
+updated_evaluation.py — Updated evaluation script for pocket-conditioned molecular docking tools.
+
+This script evaluates docking predictions against reference structures using CSV-based dataset mapping.
+Supports multiple dataset variants (proto_test, posebusters_filtered, full_test) with different naming conventions.
+
+Computes symmetry-corrected heavy-atom RMSD and runs PoseBusters physical validity checks.
+&quot;&quot;&quot;</span>
+
+<span class="tok-keyword">import</span> argparse
+<span class="tok-keyword">import</span> logging
+<span class="tok-keyword">import</span> sys
+<span class="tok-keyword">from</span> pathlib <span class="tok-keyword">import</span> Path
+<span class="tok-keyword">from</span> typing <span class="tok-keyword">import</span> Dict, List, Optional, Tuple
+
+<span class="tok-keyword">import</span> numpy <span class="tok-keyword">as</span> np
+<span class="tok-keyword">import</span> pandas <span class="tok-keyword">as</span> pd
+<span class="tok-keyword">from</span> rdkit <span class="tok-keyword">import</span> Chem
+<span class="tok-keyword">from</span> rdkit.Chem <span class="tok-keyword">import</span> AllChem, rdMolAlign
+
+logging.basicConfig(
+    level=logging.INFO,
+    format=<span class="tok-string">&quot;%(asctime)s [%(levelname)s] %(message)s&quot;</span>,
+    datefmt=<span class="tok-string">&quot;%H:%M:%S&quot;</span>,
+)
+logger = logging.getLogger(__name__)</code></pre></div>
+<p>يوفّر <code dir="ltr">Path</code> مسارات قابلة للتركيب؛ وتصف تلميحات الأنواع القواميس والقوائم والجزيئات أو المسارات الاختيارية والثلاثيات المتوقعة، لكنها لا تفرض الأنواع وقت التشغيل. تحلل <bdi dir="ltr">RDKit</bdi> الجزيئات وتجري محاذاة الذرات. ويمنح مسجّل الوحدة طوابع زمنية ومستويات شدة مفيدة في تقييمات العنقود الطويلة.</p>
+<h3 id="symmetry-corrected-rmsd"><bdi dir="ltr">RMSD</bdi> المصحح للتناظر</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> calc_symmetry_rmsd(pred_mol: Chem.Mol, ref_mol: Chem.Mol) -&gt; float:
+    <span class="tok-string">&quot;&quot;&quot;
+    Compute symmetry-corrected heavy-atom RMSD between predicted and reference mol.
+
+    Uses RDKit&#x27;s GetBestRMS which accounts for molecular symmetry.
+    &quot;&quot;&quot;</span>
+    <span class="tok-keyword">try</span>:
+        pred_noH = AllChem.RemoveHs(pred_mol)
+        ref_noH = AllChem.RemoveHs(ref_mol)
+        rmsd = rdMolAlign.GetBestRMS(pred_noH, ref_noH)
+        <span class="tok-keyword">return</span> rmsd
+    <span class="tok-keyword">except</span> Exception <span class="tok-keyword">as</span> e:
+        logger.warning(f&quot;RMSD calculation failed: {e}&quot;)
+        <span class="tok-keyword">return</span> float(<span class="tok-string">&quot;nan&quot;</span>)</code></pre></div>
+<p><bdi dir="ltr">RMSD</bdi> هو الجذر التربيعي لمتوسط مربع المسافة بين الذرات المتناظرة. تُزال ذرات الهيدروجين لأن مواضعها وأعدادها متغيرة ولأن معايير الإرساء تركز عادة على الذرات الثقيلة. يأخذ <strong>تصحيح التناظر</strong> تعيينات الذرات المتكافئة كيميائيًا في الحسبان؛ فلا ينبغي لتبديل ذرات لا يمكن تمييزها في مجموعة متناظرة أن يجعل وضعية مطابقة تبدو خاطئة. تختار <code dir="ltr">GetBestRMS</code> التعيين والمحاذاة الصلبة ذوي أقل <bdi dir="ltr">RMSD.</bdi> ويصبح أي عدم تطابق أو فشل في <bdi dir="ltr">RDKit</bdi> قيمة <bdi dir="ltr">NaN</bdi> كي لا ينهي جزيء واحد تقييم المجموعة.</p>
+<p>من المهم أن <code dir="ltr">GetBestRMS</code> تجري محاذاة مكانية مثلى للمسبار إلى المرجع. يزيل ذلك الانتقال والدوران العامين قبل التقييم، مع أن <bdi dir="ltr">RMSD</bdi> للإرساء المشروط بالجيب يُقاس غالبًا في إطار البروتين الثابت. لذلك يقيس هذا التطبيق اتفاق الشكل والتكوين بعد التركيب، لا خطأ التموضع في الجيب وحده.</p>
+<h3 id="loading-predicted-and-reference-molecules">تحميل الجزيئات المتنبأ بها والمرجعية</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> load_pred_poses(sdf_path: Path, top_n: int) -&gt; List[Chem.Mol]:
+    <span class="tok-string">&quot;&quot;&quot;Load up to top_n conformers from a multi-conformer SDF file.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> sdf_path.exists():
+        <span class="tok-keyword">return</span> []
+
+    supplier = Chem.SDMolSupplier(str(sdf_path), removeHs=<span class="tok-keyword">False</span>, sanitize=<span class="tok-keyword">False</span>)
+    poses = []
+    <span class="tok-keyword">for</span> i, mol <span class="tok-keyword">in</span> enumerate(supplier):
+        <span class="tok-keyword">if</span> i &gt;= top_n:
+            <span class="tok-keyword">break</span>
+        <span class="tok-keyword">if</span> mol <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:
+            poses.append(mol)
+        <span class="tok-keyword">else</span>:
+            logger.warning(f&quot;  Pose {i+<span class="tok-number">1</span>} in {sdf_path.name} could not be parsed, skipping.&quot;)
+    <span class="tok-keyword">return</span> poses</code></pre></div>
+<p>قد يحتوي <bdi dir="ltr">SDF</bdi> عدة سجلات جزيئية، ويعامل المشروع ترتيبها في الملف بوصفه الرتبة. تحلل مورّدات <bdi dir="ltr">RDKit</bdi> السجلات كسولًا. يمنع <code dir="ltr">sanitize=False</code> رفض الهندسات المتنبأ بها بسبب فحوص الكيمياء، فيتيح محاولة <bdi dir="ltr">RMSD</bdi> على مخرجات غير مثالية؛ ويحفظ <code dir="ltr">removeHs=False</code> السجل أولًا ثم تُزال ذرات الهيدروجين صراحة عند حساب <bdi dir="ltr">RMSD.</bdi> تُتجاوز السجلات غير الصالحة، لذلك ينضغط موضع القائمة المعادة مع أن رتبة التحذير تعرض موضع السجل الأصلي.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> load_ref_ligand(sdf_path: Path) -&gt; Optional[Chem.Mol]:
+    <span class="tok-string">&quot;&quot;&quot;Load single-conformer reference ligand from SDF.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> sdf_path.exists():
+        <span class="tok-keyword">return</span> <span class="tok-keyword">None</span>
+
+    supplier = Chem.SDMolSupplier(str(sdf_path), removeHs=<span class="tok-keyword">False</span>, sanitize=<span class="tok-keyword">False</span>)
+    <span class="tok-keyword">for</span> mol <span class="tok-keyword">in</span> supplier:
+        <span class="tok-keyword">if</span> mol <span class="tok-keyword">is</span> <span class="tok-keyword">not</span> <span class="tok-keyword">None</span>:
+            <span class="tok-keyword">return</span> mol
+    <span class="tok-keyword">return</span> <span class="tok-keyword">None</span></code></pre></div>
+<p>يُستخدم أول سجل مرجعي قابل للتحليل فقط. ويعطي إرجاع <code dir="ltr">None</code> المستدعي إشارة واحدة واضحة إلى الفقد أو تعذر التحليل.</p>
+<h3 id="dataset-schemas-and-paths">مخططات مجموعة البيانات ومساراتها</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> get_complex_identifier(ligand_filename: str, dataset_name: str) -&gt; str:
+    <span class="tok-string">&quot;&quot;&quot;Extract complex identifier from ligand filename based on dataset naming convention.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> dataset_name <span class="tok-keyword">in</span> [<span class="tok-string">&quot;proto_test&quot;</span>, <span class="tok-string">&quot;full_test&quot;</span>, <span class="tok-string">&quot;proto_train&quot;</span>, <span class="tok-string">&quot;full_train&quot;</span>]:
+        <span class="tok-keyword">return</span> ligand_filename.replace(<span class="tok-string">&quot;_ligand_refined.sdf&quot;</span>, <span class="tok-string">&quot;&quot;</span>)
+    <span class="tok-keyword">elif</span> dataset_name == <span class="tok-string">&quot;posebusters_filtered&quot;</span>:
+        <span class="tok-keyword">return</span> ligand_filename.replace(<span class="tok-string">&quot;_ligand.sdf&quot;</span>, <span class="tok-string">&quot;&quot;</span>)
+    <span class="tok-keyword">else</span>:
+        <span class="tok-keyword">for</span> suffix <span class="tok-keyword">in</span> [<span class="tok-string">&quot;_ligand_refined.sdf&quot;</span>, <span class="tok-string">&quot;_ligand.sdf&quot;</span>, <span class="tok-string">&quot;.sdf&quot;</span>]:
+            <span class="tok-keyword">if</span> ligand_filename.endswith(suffix):
+                <span class="tok-keyword">return</span> ligand_filename.replace(suffix, <span class="tok-string">&quot;&quot;</span>)
+        <span class="tok-keyword">return</span> ligand_filename</code></pre></div>
+<p>يربط معرّف المعقّد صفوف <bdi dir="ltr">CSV</bdi> بـ<code dir="ltr">&lt;id&gt;_pred.sdf</code>. تستخدم مجموعات المقرر المنقحة و<bdi dir="ltr">PoseBusters</bdi> لواحق مختلفة. وفرع الرجوع دفاعي مع أن <bdi dir="ltr">argparse</bdi> يقصر الاستدعاءات حاليًا على أسماء معروفة. تزيل <code dir="ltr">replace</code> كل ظهور للنص المحدد، لا الظهور النهائي فقط؛ وتحتويه أسماء الملفات المقصودة مرة واحدة عند النهاية.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> load_dataset_csv(csv_path: Path) -&gt; pd.DataFrame:
+    <span class="tok-string">&quot;&quot;&quot;Load and standardize dataset CSV file.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> csv_path.exists():
+        <span class="tok-keyword">raise</span> FileNotFoundError(f&quot;CSV file not found: {csv_path}&quot;)
+
+    df = pd.read_csv(csv_path)
+
+    <span class="tok-keyword">if</span> <span class="tok-string">&quot;ligand_file_name&quot;</span> <span class="tok-keyword">in</span> df.columns:
+        df = df.rename(columns={
+            <span class="tok-string">&quot;ligand_file_name&quot;</span>: <span class="tok-string">&quot;ligand_file&quot;</span>,
+            <span class="tok-string">&quot;protein_file_name&quot;</span>: <span class="tok-string">&quot;protein_file&quot;</span>
+        })
+    <span class="tok-keyword">elif</span> <span class="tok-string">&quot;ligand_name&quot;</span> <span class="tok-keyword">in</span> df.columns:
+        <span class="tok-keyword">pass</span>
+    <span class="tok-keyword">else</span>:
+        <span class="tok-keyword">raise</span> ValueError(f&quot;Unrecognized CSV format in {csv_path}&quot;)
+
+    <span class="tok-keyword">return</span> df</code></pre></div>
+<p>تتوقع الشيفرة اللاحقة عمودي <code dir="ltr">ligand_file</code> و<code dir="ltr">protein_file</code> القياسيين. تُعاد تسمية ملفات <bdi dir="ltr">CSV</bdi> لتقييم النموذج الأولي والبيانات الكاملة؛ أما <bdi dir="ltr">PoseBusters</bdi> فلديه العمودان ويُتعرف عليه عبر <code dir="ltr">ligand_name</code>. تفشل المخططات المجهولة مبكرًا بدل بناء مسارات خاطئة.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> get_file_paths(row: pd.Series, dataset_name: str, data_dir: Path, results_dir: Path) -&gt; Tuple[Path, Path, Path]:
+    <span class="tok-string">&quot;&quot;&quot;Get file paths for reference protein, reference ligand, and predicted poses.&quot;&quot;&quot;</span>
+    ligand_file = row[<span class="tok-string">&quot;ligand_file&quot;</span>]
+    protein_file = row[<span class="tok-string">&quot;protein_file&quot;</span>]
+
+    ref_ligand_path = data_dir / dataset_name / ligand_file
+    ref_protein_path = data_dir / dataset_name / protein_file
+
+    complex_id = get_complex_identifier(ligand_file, dataset_name)
+    pred_sdf_path = results_dir / dataset_name / f&quot;{complex_id}_pred.sdf&quot;
+
+    <span class="tok-keyword">return</span> ref_protein_path, ref_ligand_path, pred_sdf_path</code></pre></div>
+<p>تمركز هذه الدالة اصطلاح الأدلة الثابت. يأتي البروتين أولًا في ثلاثية الإرجاع لأن <bdi dir="ltr">PoseBusters</bdi> يشترط الصلاحية على الجيب، بينما يحتاج <bdi dir="ltr">RMSD</bdi> إلى مساري الربيطة فقط.</p>
+<h3 id="posebusters-integration">تكامل <bdi dir="ltr">PoseBusters</bdi></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> run_posebusters_check(pred_sdf: Path, ref_sdf: Path, protein_pdb: Path) -&gt; pd.DataFrame:
+    <span class="tok-string">&quot;&quot;&quot;Run PoseBusters validity checks on predicted poses.&quot;&quot;&quot;</span>
+    <span class="tok-keyword">try</span>:
+        <span class="tok-keyword">from</span> posebusters <span class="tok-keyword">import</span> PoseBusters
+
+        buster = PoseBusters(config=<span class="tok-string">&quot;dock&quot;</span>)
+        results = buster.bust(
+            mol_pred=str(pred_sdf),
+            mol_true=str(ref_sdf),
+            mol_cond=str(protein_pdb),
+        )
+        <span class="tok-keyword">return</span> results
+    <span class="tok-keyword">except</span> ImportError:
+        logger.error(<span class="tok-string">&quot;PoseBusters not installed. Install with: pip install posebusters&quot;</span>)
+        sys.exit(<span class="tok-number">1</span>)
+    <span class="tok-keyword">except</span> Exception <span class="tok-keyword">as</span> e:
+        logger.warning(f&quot;PoseBusters check failed: {e}&quot;)
+        <span class="tok-keyword">return</span> pd.DataFrame()</code></pre></div>
+<p>يفحص <bdi dir="ltr">PoseBusters</bdi> معقولية الوضعية فيزيائيًا وكيميائيًا، مثل الهندسة الداخلية والتصادمات، باستخدام الربيطة المتنبأ بها والربيطة الحقيقية والبروتين الشرطي. يختار إعداد <code dir="ltr">dock</code> حزمة اختبارات الإرساء. تُعامل الحزمة المفقودة كخطأ إعداد ينهي التنفيذ، بينما يعيد فشل وقت التشغيل لمعقّد واحد <bdi dir="ltr">DataFrame</bdi> فارغًا كي يستمر التقييم.</p>
+<h3 id="evaluating-one-complex">تقييم معقّد واحد</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> evaluate_complex(
+    row: pd.Series,
+    dataset_name: str,
+    data_dir: Path,
+    results_dir: Path,
+    top_n: int,
+    run_pb: bool
+) -&gt; List[Dict]:
+    <span class="tok-string">&quot;&quot;&quot;Evaluate all poses for a single complex.&quot;&quot;&quot;</span>
+
+    ref_protein_path, ref_ligand_path, pred_sdf_path = get_file_paths(
+        row, dataset_name, data_dir, results_dir
+    )
+
+    complex_id = get_complex_identifier(row[<span class="tok-string">&quot;ligand_file&quot;</span>], dataset_name)</code></pre></div>
+<p>صف <bdi dir="ltr">CSV</bdi> واحد هو وحدة التقييم. تُشتق المسارات والمعرّف مرة واحدة وتُستخدم في التشخيص وحقول النتائج.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    missing_files = []
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> pred_sdf_path.exists():
+        missing_files.append(f&quot;predicted poses: {pred_sdf_path}&quot;)
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> ref_ligand_path.exists():
+        missing_files.append(f&quot;reference ligand: {ref_ligand_path}&quot;)
+    <span class="tok-keyword">if</span> run_pb <span class="tok-keyword">and</span> <span class="tok-keyword">not</span> ref_protein_path.exists():
+        missing_files.append(f&quot;reference protein: {ref_protein_path}&quot;)
+
+    <span class="tok-keyword">if</span> missing_files:
+        logger.warning(f&quot;  [{complex_id}] Missing files: {<span class="tok-string">&#x27;, &#x27;</span>.join(missing_files)}&quot;)
+        <span class="tok-keyword">return</span> []</code></pre></div>
+<p>لا يُطلب البروتين إلا لـ<bdi dir="ltr">PoseBusters</bdi>، لا لـ<bdi dir="ltr">RMSD</bdi> الخاص بالربيطة. ويمنح جمع المسارات المفقودة تحذيرًا واحدًا قابلًا للتنفيذ بدل التوقف عند أول مسار.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    ref_mol = load_ref_ligand(ref_ligand_path)
+    <span class="tok-keyword">if</span> ref_mol <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+        logger.warning(f&quot;  [{complex_id}] Could not parse reference ligand&quot;)
+        <span class="tok-keyword">return</span> []
+
+    pred_poses = load_pred_poses(pred_sdf_path, top_n)
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> pred_poses:
+        logger.warning(f&quot;  [{complex_id}] No valid predicted poses found&quot;)
+        <span class="tok-keyword">return</span> []</code></pre></div>
+<p>يبطل المرجع غير القابل للتحليل المقارنات كلها. ويجب أن يُحلل سجل متنبأ به واحد على الأقل داخل البادئة المطلوبة.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    results = []
+    <span class="tok-keyword">for</span> rank, pose <span class="tok-keyword">in</span> enumerate(pred_poses, start=<span class="tok-number">1</span>):
+        rmsd = calc_symmetry_rmsd(pose, ref_mol)
+
+        result_row = {
+            <span class="tok-string">&quot;complex_id&quot;</span>: complex_id,
+            <span class="tok-string">&quot;dataset&quot;</span>: dataset_name,
+            <span class="tok-string">&quot;pose_rank&quot;</span>: rank,
+            <span class="tok-string">&quot;rmsd&quot;</span>: round(rmsd, <span class="tok-number">4</span>) <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> np.isnan(rmsd) <span class="tok-keyword">else</span> np.nan,
+            <span class="tok-string">&quot;rmsd_lt2&quot;</span>: rmsd &lt; <span class="tok-number">2.0</span> <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> np.isnan(rmsd) <span class="tok-keyword">else</span> <span class="tok-keyword">False</span>,
+            <span class="tok-string">&quot;rmsd_lt1&quot;</span>: rmsd &lt; <span class="tok-number">1.0</span> <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> np.isnan(rmsd) <span class="tok-keyword">else</span> <span class="tok-keyword">False</span>,
+            <span class="tok-string">&quot;ligand_file&quot;</span>: row[<span class="tok-string">&quot;ligand_file&quot;</span>],
+            <span class="tok-string">&quot;protein_file&quot;</span>: row[<span class="tok-string">&quot;protein_file&quot;</span>]
+        }
+
+        results.append(result_row)</code></pre></div>
+<p>عتبة نجاح الإرساء المتعارف عليها هي <bdi dir="ltr">RMSD</bdi> أقل من <bdi dir="ltr">2</bdi> Å، وأقل من <bdi dir="ltr">1</bdi> Å أشد. لا تُعد <bdi dir="ltr">NaN</bdi> نجاحًا. يُخزن <bdi dir="ltr">RMSD</bdi> إلى أربع منازل عشرية، بينما تُحسب القيم المنطقية من القيمة غير المقربة. وبعد تجاوز سجلات <bdi dir="ltr">SDF</bdi> غير الصالحة، تُعاد ترقيم الرتب تتابعيًا من القائمة القابلة للتحليل بدل حفظ فهارس السجلات الأصلية.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> run_pb:
+        pb_results = run_posebusters_check(pred_sdf_path, ref_ligand_path, ref_protein_path)
+
+        <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> pb_results.empty:
+            <span class="tok-keyword">for</span> rank_idx <span class="tok-keyword">in</span> range(min(len(results), len(pb_results))):
+                pb_row = pb_results.iloc[rank_idx]
+
+                bool_cols = pb_row.index[pb_row.apply(<span class="tok-keyword">lambda</span> x: isinstance(x, (bool, np.bool_)))]
+                pb_valid = bool(pb_row[bool_cols].all()) <span class="tok-keyword">if</span> len(bool_cols) &gt; <span class="tok-number">0</span> <span class="tok-keyword">else</span> <span class="tok-keyword">False</span>
+                results[rank_idx][<span class="tok-string">&quot;pb_valid&quot;</span>] = pb_valid
+
+                <span class="tok-keyword">for</span> col <span class="tok-keyword">in</span> bool_cols:
+                    <span class="tok-keyword">if</span> col <span class="tok-keyword">not</span> <span class="tok-keyword">in</span> results[rank_idx]:
+                        results[rank_idx][col] = bool(pb_row[col])
+        <span class="tok-keyword">else</span>:
+            <span class="tok-keyword">for</span> result_row <span class="tok-keyword">in</span> results:
+                result_row[<span class="tok-string">&quot;pb_valid&quot;</span>] = <span class="tok-keyword">None</span>
+
+    <span class="tok-keyword">return</span> results</code></pre></div>
+<p>يُشغّل <bdi dir="ltr">PoseBusters</bdi> مرة على ملف <bdi dir="ltr">SDF</bdi> المتنبأ به كله، ثم تقترن الصفوف بحسب الموضع مع الوضعيات المقيّمة. تكون <strong><bdi dir="ltr">PB-Valid</bdi></strong> صحيحة فقط إذا نجح كل اختبار منطقي من <bdi dir="ltr">PoseBusters</bdi> في الصف؛ وتُنسخ القيم المنطقية المنفردة أيضًا ما لم يستبدل اسمها مفتاح نتيجة موجودًا. يسجل خرج الفحص الفارغ صلاحية مجهولة باستخدام <code dir="ltr">None</code>، وهي متميزة عن الفشل الحقيقي، أي <code dir="ltr">False</code>.</p>
+<h3 id="evaluating-a-dataset-and-summarizing">تقييم مجموعة بيانات وتلخيصها</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> evaluate_dataset(
+    dataset_name: str,
+    data_dir: Path,
+    results_dir: Path,
+    top_n: int,
+    run_pb: bool,
+    output_csv: Optional[Path] = <span class="tok-keyword">None</span>
+) -&gt; pd.DataFrame:
+    <span class="tok-string">&quot;&quot;&quot;Run evaluation on a complete dataset.&quot;&quot;&quot;</span>
+
+    csv_path = data_dir / f&quot;{dataset_name}.csv&quot;
+    df = load_dataset_csv(csv_path)
+
+    logger.info(f&quot;Loaded {len(df)} complexes from {csv_path}&quot;)
+    logger.info(f&quot;Dataset: {dataset_name} | Top-N: {top_n} | PoseBusters: {run_pb}&quot;)
+
+    all_results = []
+    n_skipped = <span class="tok-number">0</span>
+
+    <span class="tok-keyword">for</span> i, (_, row) <span class="tok-keyword">in</span> enumerate(df.iterrows(), start=<span class="tok-number">1</span>):
+        <span class="tok-keyword">if</span> i % <span class="tok-number">50</span> == <span class="tok-number">0</span> <span class="tok-keyword">or</span> i == len(df):
+            logger.info(f&quot;  Progress: {i}/{len(df)}&quot;)
+
+        results = evaluate_complex(row, dataset_name, data_dir, results_dir, top_n, run_pb)
+        <span class="tok-keyword">if</span> results:
+            all_results.extend(results)
+        <span class="tok-keyword">else</span>:
+            n_skipped += <span class="tok-number">1</span></code></pre></div>
+<p>يمر المقيّم بصفوف <bdi dir="ltr">pandas</bdi> بترتيب <bdi dir="ltr">CSV</bdi> ويعرض التقدم كل <bdi dir="ltr">50.</bdi> تُسطح <code dir="ltr">all_results</code> لأن المعقّد قد ينتج عدة صفوف وضعيات. ولا يُعد المعقّد متجاوزًا إلا إذا لم ينتج أي صف؛ أما وضعية <bdi dir="ltr">RMSD</bdi> بقيمة <bdi dir="ltr">NaN</bdi> فتظل مقيّمة.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> all_results:
+        logger.error(<span class="tok-string">&quot;No results produced. Check your predicted poses and data paths.&quot;</span>)
+        <span class="tok-keyword">return</span> pd.DataFrame()
+
+    results_df = pd.DataFrame(all_results)
+    n_evaluated = results_df[<span class="tok-string">&quot;complex_id&quot;</span>].nunique()
+    logger.info(f&quot;Evaluated {n_evaluated} complexes ({n_skipped} skipped)&quot;)</code></pre></div>
+<p>لا يعد إرجاع <bdi dir="ltr">DataFrame</bdi> فارغ فشلًا للعملية بذاته. وإلا تكوّن <bdi dir="ltr">pandas</bdi> اتحاد المفاتيح، فتتحول أعمدة <bdi dir="ltr">PoseBusters</bdi> الغائبة عن بعض الصفوف إلى قيم مفقودة.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    top1 = results_df[results_df[<span class="tok-string">&quot;pose_rank&quot;</span>] == <span class="tok-number">1</span>]
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> top1.empty:
+        rmsd_lt2_pct = top1[<span class="tok-string">&quot;rmsd_lt2&quot;</span>].mean() * <span class="tok-number">100</span>
+        rmsd_lt1_pct = top1[<span class="tok-string">&quot;rmsd_lt1&quot;</span>].mean() * <span class="tok-number">100</span>
+        median_rmsd = top1[<span class="tok-string">&quot;rmsd&quot;</span>].median()
+
+        logger.info(f&quot;Top-1 Results:&quot;)
+        logger.info(f&quot;  RMSD &lt; 2.0 Å: {rmsd_lt2_pct:.1f}%&quot;)
+        logger.info(f&quot;  RMSD &lt; 1.0 Å: {rmsd_lt1_pct:.1f}%&quot;)
+        logger.info(f&quot;  Median RMSD: {median_rmsd:.2f} Å&quot;)
+
+        <span class="tok-keyword">if</span> <span class="tok-string">&quot;pb_valid&quot;</span> <span class="tok-keyword">in</span> top1.columns:
+            pb_valid_pct = top1[<span class="tok-string">&quot;pb_valid&quot;</span>].mean() * <span class="tok-number">100</span>
+            logger.info(f&quot;  PB-Valid: {pb_valid_pct:.1f}%&quot;)</code></pre></div>
+<p>تعني <bdi dir="ltr">top-1</bdi> أول سجل خرج حُمّل بنجاح. ومتوسط القيم المنطقية في <bdi dir="ltr">pandas</bdi> هو نسبة القيم الصحيحة، بينما يتجاهل الوسيط قيم <bdi dir="ltr">NaN</bdi> لـ<bdi dir="ltr">RMSD.</bdi> تتحول <code dir="ltr">None</code> الخاصة بـ<bdi dir="ltr">PB</bdi> إلى قيمة مفقودة وتُستبعد عادة من متوسطها، لذلك قد لا تُحسب الفحوص الفاشلة على أنها غير صالحة في المقام.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> top_n &gt; <span class="tok-number">1</span> <span class="tok-keyword">and</span> <span class="tok-keyword">not</span> results_df.empty:
+        best_poses = results_df.loc[results_df.groupby(<span class="tok-string">&quot;complex_id&quot;</span>)[<span class="tok-string">&quot;rmsd&quot;</span>].idxmin()]
+        best_lt2_pct = best_poses[<span class="tok-string">&quot;rmsd_lt2&quot;</span>].mean() * <span class="tok-number">100</span>
+        best_lt1_pct = best_poses[<span class="tok-string">&quot;rmsd_lt1&quot;</span>].mean() * <span class="tok-number">100</span>
+
+        logger.info(f&quot;Best-of-{top_n} Results:&quot;)
+        logger.info(f&quot;  RMSD &lt; 2.0 Å: {best_lt2_pct:.1f}%&quot;)
+        logger.info(f&quot;  RMSD &lt; 1.0 Å: {best_lt1_pct:.1f}%&quot;)
+
+        <span class="tok-keyword">if</span> <span class="tok-string">&quot;pb_valid&quot;</span> <span class="tok-keyword">in</span> best_poses.columns:
+            best_pb_pct = best_poses[<span class="tok-string">&quot;pb_valid&quot;</span>].mean() * <span class="tok-number">100</span>
+            logger.info(f&quot;  PB-Valid: {best_pb_pct:.1f}%&quot;)</code></pre></div>
+<p>الأفضل من <bdi dir="ltr">N</bdi> مقياس وسيط مثالي؛ إذ يختار لكل معقّد الوضعية ذات أقل <bdi dir="ltr">RMSD</bdi> مرجعي، لا الأعلى ترتيبًا لدى النموذج. ويقيس ذلك وجود وضعية جيدة ضمن أول <bdi dir="ltr">N.</bdi> ثم تُعرض صلاحية <bdi dir="ltr">PB</bdi> للوضعية المختارة بحسب <bdi dir="ltr">RMSD.</bdi></p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    <span class="tok-keyword">if</span> output_csv:
+        output_csv.parent.mkdir(parents=<span class="tok-keyword">True</span>, exist_ok=<span class="tok-keyword">True</span>)
+        results_df.to_csv(output_csv, index=<span class="tok-keyword">False</span>)
+        logger.info(f&quot;Results saved to {output_csv}&quot;)
+
+    <span class="tok-keyword">return</span> results_df</code></pre></div>
+<p>تُنشأ الأدلة الأم تكراريًا، ويُكتب جدول الوضعيات المسطح من دون عمود فهرس <bdi dir="ltr">pandas.</bdi> كما يجعل إرجاعه الدالة قابلة للاستخدام برمجيًا.</p>
+<h3 id="command-line-interface-and-entry-point">واجهة سطر الأوامر ونقطة الدخول</h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> parse_args() -&gt; argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=<span class="tok-string">&quot;Evaluate docking predictions using CSV-based dataset mapping.&quot;</span>,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=<span class="tok-string">&quot;&quot;&quot;
+Examples:
+  python evaluation.py --dataset proto_test
+  python evaluation.py --dataset proto_test --no_pb_valid
+  python evaluation.py --dataset posebusters_filtered --top_n 5
+
+Expected file structure (from repository root):
+  data/{dataset}.csv
+  data/{dataset}/{ligand_file}
+  data/{dataset}/{protein_file}
+  results/{dataset}/{complex_id}_pred.sdf
+        &quot;&quot;&quot;</span>,
+    )
+
+    parser.add_argument(
+        <span class="tok-string">&quot;--dataset&quot;</span>, type=str, required=<span class="tok-keyword">True</span>,
+        choices=[<span class="tok-string">&quot;proto_test&quot;</span>, <span class="tok-string">&quot;proto_train&quot;</span>, <span class="tok-string">&quot;posebusters_filtered&quot;</span>, <span class="tok-string">&quot;full_test&quot;</span>, <span class="tok-string">&quot;full_train&quot;</span>],
+        help=<span class="tok-string">&quot;Dataset name to evaluate&quot;</span>
+    )
+    parser.add_argument(<span class="tok-string">&quot;--top_n&quot;</span>, type=int, default=<span class="tok-number">1</span>,
+                        help=<span class="tok-string">&quot;Number of ranked poses to evaluate per complex (default: 1)&quot;</span>)
+    parser.add_argument(<span class="tok-string">&quot;--no_pb_valid&quot;</span>, action=<span class="tok-string">&quot;store_true&quot;</span>,
+                        help=<span class="tok-string">&quot;Skip PoseBusters physical validity checks (PB validation is enabled by default)&quot;</span>)
+    parser.add_argument(<span class="tok-string">&quot;--output_csv&quot;</span>, type=Path, default=<span class="tok-keyword">None</span>,
+                        help=<span class="tok-string">&quot;Output CSV path (default: results/{dataset}_evaluation.csv)&quot;</span>)
+
+    <span class="tok-keyword">return</span> parser.parse_args()</code></pre></div>
+<p>يحافظ تنسيق الوصف الخام على مثال الاستخدام متعدد الأسطر. وتقيّد اختيارات مجموعة البيانات منطق الأدلة والمخطط. يجعل العلم السلبي <bdi dir="ltr">PoseBusters</bdi> مفعّلًا افتراضيًا، وتحول <code dir="ltr">type=Path</code> وسيط المسار هذا وحده تلقائيًا.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python"><span class="tok-keyword">def</span> main():
+    args = parse_args()
+
+    data_dir = Path(<span class="tok-string">&quot;data&quot;</span>)
+    results_dir = Path(<span class="tok-string">&quot;results&quot;</span>)
+
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> data_dir.exists():
+        logger.error(f&quot;Data directory does not exist: {data_dir}&quot;)
+        sys.exit(<span class="tok-number">1</span>)
+
+    csv_path = data_dir / f&quot;{args.dataset}.csv&quot;
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> csv_path.exists():
+        logger.error(f&quot;Dataset CSV not found: {csv_path}&quot;)
+        sys.exit(<span class="tok-number">1</span>)
+
+    dataset_dir = data_dir / args.dataset
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> dataset_dir.exists():
+        logger.error(f&quot;Dataset directory does not exist: {dataset_dir}&quot;)
+        sys.exit(<span class="tok-number">1</span>)
+
+    results_dataset_dir = results_dir / args.dataset
+    <span class="tok-keyword">if</span> <span class="tok-keyword">not</span> results_dataset_dir.exists():
+        logger.warning(f&quot;Results directory does not exist: {results_dataset_dir}&quot;)
+        logger.warning(<span class="tok-string">&quot;Evaluation will skip all complexes without predicted poses.&quot;</span>)</code></pre></div>
+<p>كل المسارات نسبية إلى دليل العمل الحالي، لذلك يجب تشغيل الأمر من جذر المستودع أو الجذر الاصطناعي في <code dir="ltr">evaluate.sh</code>. غياب بيانات الإدخال قاتل، أما غياب التنبؤات فتحذير فقط كي يبلغ منطق التجاوز لكل معقّد عن التغطية.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-python">    output_csv = args.output_csv
+    <span class="tok-keyword">if</span> output_csv <span class="tok-keyword">is</span> <span class="tok-keyword">None</span>:
+        output_csv = results_dir / f&quot;{args.dataset}_evaluation.csv&quot;
+
+    evaluate_dataset(
+        dataset_name=args.dataset,
+        data_dir=data_dir,
+        results_dir=results_dir,
+        top_n=args.top_n,
+        run_pb=<span class="tok-keyword">not</span> args.no_pb_valid,
+        output_csv=output_csv
+    )
+
+    logger.info(<span class="tok-string">&quot;Evaluation complete.&quot;</span>)
+
+
+<span class="tok-keyword">if</span> __name__ == <span class="tok-string">&quot;__main__&quot;</span>:
+    main()</code></pre></div>
+<p>يقع ملف <bdi dir="ltr">CSV</bdi> الافتراضي مباشرة تحت <code dir="ltr">results/</code>، منفصلًا عن أدلة الوضعيات لكل معقّد. وتحول <code dir="ltr">not args.no_pb_valid</code> العلم السلبي إلى وسيط الدالة الإيجابي. يمنع حارس الوحدة آثار الاستيراد الجانبية باستثناء إعداد التسجيل.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">لماذا قد تعرض <code dir="ltr">GetBestRMS</code> نتيجة إرساء متفائلة لربيطة موضوعة خطأ في جيب البروتين؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>لأنها تحاذي المسبار مع المرجع قبل حساب <bdi dir="ltr">RMSD</bdi>، فتزيل الانتقال والدوران العامين بدل حفظ إطار البروتين الثابت.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">ماذا يحدث للرتبة المعروضة إذا تعذر تحليل سجل <bdi dir="ltr">SDF</bdi> مبكر؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تُتجاوز السجلات غير الصالحة وتُضغط القائمة القابلة للتحليل، فتحصل الوضعيات المقيّمة على رتب متتالية قد تختلف عن مواضع سجلاتها الأصلية.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">لماذا تُشتق النسب العامة من المجاميع وصفوف النتائج بدل معاملة المعقّدات المفقودة كإخفاقات؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يتجاوز المقيّم المعقّدات التي لا تنتج صفوف وضعيات؛ وتُحسب المتوسطات والوسائط على الصفوف التي بلغت التقييم فقط، لذلك يجب عرض التغطية منفصلة.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q4">
+<p class="quiz-question">كيف يختلف الأفضل من <bdi dir="ltr">N</bdi> عن ترتيب <bdi dir="ltr">top-1</bdi> الخاص بالنموذج؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يستخدم الأفضل من <bdi dir="ltr">N</bdi> قيمة <bdi dir="ltr">RMSD</bdi> المرجعية لاختيار أقل وضعية خطأ بين أول <bdi dir="ltr">N</bdi>، فهو مقياس وسيط لوجود مرشح جيد لا لقدرة النموذج على وضعه أولًا.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">محاذير وملاحظات</h2>
+<ul>
+<li>تحاذي <code dir="ltr">GetBestRMS</code> الربيطة المتنبأ بها مع المرجع محاذاة مثلى. في الإرساء الأعمى قد يخفي ذلك أخطاء الانتقال والدوران نسبة إلى جيب البروتين، وينتج أرقامًا أكثر تفاؤلًا بكثير من <bdi dir="ltr">RMSD</bdi> في إطار ثابت.</li>
+<li>تستخدم النسب المجمعة المعقّدات التي أنتجت صفوف نتائج فقط. تُتجاوز التنبؤات والمراجع المفقودة بدل عدّها إخفاقات، لذلك يجب عرض التغطية مع نسب النجاح.</li>
+<li>يقرأ <bdi dir="ltr">PoseBusters</bdi> ملف <bdi dir="ltr">SDF</bdi> كاملًا، بينما يتوقف تحميل <bdi dir="ltr">RMSD</bdi> عند <code dir="ltr">top_n</code> ويسقط السجلات غير الصالحة. قد يسيء إقران صفوف <bdi dir="ltr">PoseBusters</bdi> بصفوف <bdi dir="ltr">RMSD</bdi> المضغوطة بحسب الموضع المحاذاة إذا كانت سجلات <bdi dir="ltr">SDF</bdi> المبكرة غير صالحة، كما يفترض حفظ <bdi dir="ltr">PoseBusters</bdi> لترتيب السجلات.</li>
+<li>لا يُتحقق من أن <code dir="ltr">top_n</code> موجب. تحمل القيمة الصفرية أو السالبة صفر وضعيات وتجعل كل معقّد متجاوزًا.</li>
+<li>إذا فشل <bdi dir="ltr">PoseBusters</bdi> وضبط <code dir="ltr">pb_valid=None</code>، تستبعد متوسطات <bdi dir="ltr">pandas</bdi> عادة تلك القيم المفقودة بدل عدها غير صالحة.</li>
+<li>يستخدم الأفضل من <bdi dir="ltr">N</bdi> الدالة <code dir="ltr">idxmin</code>؛ وقد تسبب المجموعات التي تكون قيم <bdi dir="ltr">RMSD</bdi> فيها كلها <bdi dir="ltr">NaN</bdi> اختيارًا إشكاليًا بحسب سلوك <bdi dir="ltr">pandas.</bdi></li>
+<li>تسمي سلسلة توثيق الوحدة <code dir="ltr">updated_evaluation.py</code>، بينما المسار الفعلي هو <code dir="ltr">evaluation/evaluation.py</code>؛ وهذا أثر تسمية لا ملف ثانٍ.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">لماذا قد تقترن صلاحية <bdi dir="ltr">PoseBusters</bdi> بوضعية <bdi dir="ltr">RMSD</bdi> خاطئة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يعالج <bdi dir="ltr">PoseBusters</bdi> ملف <bdi dir="ltr">SDF</bdi> كله بترتيب السجلات، بينما يسقط تحميل <bdi dir="ltr">RMSD</bdi> السجلات غير الصالحة ويتوقف عند <code dir="ltr">top_n</code>، لذلك قد يختلف الاقتران الموضعي.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">كيف قد ترفع الملفات المتجاوزة نسبة النجاح المعروضة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تُحذف المعقّدات المفقودة أو غير القابلة للتحليل من المقام بدل عدها إخفاقات، فلا يبقى في التجميع إلا معقّدات لها صفوف نتائج.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">لماذا لا تكافئ <code dir="ltr">pb_valid=None</code> فشل فحص <bdi dir="ltr">PoseBusters</bdi>؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تعني غياب خرج الفحص، وتستبعدها <bdi dir="ltr">pandas</bdi> عادة من المتوسطات المنطقية، بينما تمثل <code dir="ltr">False</code> نتيجة صلاحية فاشلة فعلًا.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#purpose">الغرض</a></li><li class="toc-level-2"><a href="#how-it-fits-in">موقعه في المنظومة</a></li><li class="toc-level-2"><a href="#walkthrough">شرح الشيفرة</a></li><li class="toc-level-3"><a href="#module-setup-and-logging">إعداد الوحدة والتسجيل</a></li><li class="toc-level-3"><a href="#symmetry-corrected-rmsd"><bdi dir="ltr">RMSD</bdi> المصحح للتناظر</a></li><li class="toc-level-3"><a href="#loading-predicted-and-reference-molecules">تحميل الجزيئات المتنبأ بها والمرجعية</a></li><li class="toc-level-3"><a href="#dataset-schemas-and-paths">مخططات مجموعة البيانات ومساراتها</a></li><li class="toc-level-3"><a href="#posebusters-integration">تكامل <bdi dir="ltr">PoseBusters</bdi></a></li><li class="toc-level-3"><a href="#evaluating-one-complex">تقييم معقّد واحد</a></li><li class="toc-level-3"><a href="#evaluating-a-dataset-and-summarizing">تقييم مجموعة بيانات وتلخيصها</a></li><li class="toc-level-3"><a href="#command-line-interface-and-entry-point">واجهة سطر الأوامر ونقطة الدخول</a></li><li class="toc-level-2"><a href="#gotchas--notes">محاذير وملاحظات</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

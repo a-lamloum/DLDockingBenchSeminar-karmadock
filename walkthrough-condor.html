@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-condor.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>condor/.sub | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-condor.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-condor.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html" aria-current="page">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="condorsub"><code dir="ltr">condor/*.sub</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>These 12 files describe repository jobs to HTCondor: prototype/full training, single- and multi-GPU Stage-2 experiments, inference, and evaluation. They do not implement ML logic themselves; they select a Docker environment, stage files, reserve resources, invoke a shell wrapper with arguments/environment, and route outputs and logs.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why are the submit files not considered implementations of the machine-learning algorithms?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They configure execution conditions and invoke wrappers; model training, docking, conversion, and scoring logic lives in the Python and shell programs they launch.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">What problem does keeping job resources and file staging in the submit files solve?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It makes each cluster job declare the environment, inputs, outputs, hardware needs, and logs needed to reproduce that execution separately from the program logic.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">Why are there separate submit files for prototype, full-data, inference, evaluation, and Stage-2 experiments?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Those jobs require different wrappers, inputs, checkpoints, resources, persistence strategies, and output routes even though they share the same container image.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p>Users submit one with <code dir="ltr">condor_submit &lt;file&gt;.sub</code>. HTCondor matches it to a worker, transfers declared inputs into a temporary job sandbox, runs the declared shell executable inside <code dir="ltr">ahlamloum/karmadock-seminar:v6</code>, and transfers declared outputs back. Inference jobs call <code dir="ltr">scripts/run_infer.sh</code>, training jobs call one of the training wrappers, DDP jobs call a Stage-2 launcher, and the CPU evaluation job calls <code dir="ltr">scripts/evaluate.sh</code> after predictions exist.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">What happens between <code dir="ltr">condor_submit</code> and execution of a repository wrapper?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>HTCondor matches a worker, creates a temporary sandbox, stages declared inputs, starts the wrapper inside the Docker image, and later transfers declared outputs and logs back.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">Why must <code dir="ltr">condor/evaluate.sub</code> run after the inference jobs?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Its inputs are the pose directories produced by inference, so it cannot construct the prototype scoring matrix until those predictions exist.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">How do the inference, training, DDP, and evaluation submit files connect to the lower orchestration layer?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They call <code dir="ltr">run_infer.sh</code>, a training wrapper, a Stage-2 DDP launcher, or <code dir="ltr">evaluate.sh</code> respectively, passing the arguments and environment each wrapper expects.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<h3 id="shared-htcondor-submit-file-vocabulary">Shared HTCondor submit-file vocabulary</h3>
+<p>A submit file is a list of <code dir="ltr">key = value</code> directives plus <code dir="ltr">queue</code>. The common directives here mean:</p>
+<ul>
+<li><code dir="ltr">universe = docker</code> runs the executable inside <code dir="ltr">docker_image</code>. The image supplies KarmaDock, Python, PyTorch, RDKit, and other dependencies.</li>
+<li><code dir="ltr">executable</code> is the staged program; <code dir="ltr">arguments</code> supplies its positional command line. <code dir="ltr">environment</code> injects job-specific environment variables.</li>
+<li><code dir="ltr">request_gpus</code>, <code dir="ltr">request_cpus</code>, and <code dir="ltr">request_memory</code> advertise required resources to matching/scheduling and tell the worker how much to allocate. These are per job, not per process.</li>
+<li><code dir="ltr">requirements</code> is an HTCondor ClassAd expression. Every file requires Saarland&#x27;s CS UID domain and excludes <code dir="ltr">idun.hpc.uni-saarland.de</code>, a node documented in the repository as problematic. <code dir="ltr">+WantGPUHomeMounted = true</code> is a site-specific custom attribute requesting the submitter&#x27;s home inside the container.</li>
+<li><code dir="ltr">gpus_minimum_capability</code> and <code dir="ltr">gpus_minimum_memory</code> further constrain GPU matching. Compute capability 8.0 or newer and at least 32,000 MB are requested only by the final 2-GPU job.</li>
+<li><code dir="ltr">should_transfer_files = YES</code> enables file staging. <code dir="ltr">transfer_input_files</code> lists code/data copied into the sandbox; directories are transferred recursively. <code dir="ltr">when_to_transfer_output = ON_EXIT</code> waits until normal job termination, and <code dir="ltr">transfer_output_files</code> restricts what is copied back. Jobs that persist results directly in a mounted home do not need large output transfers.</li>
+<li><code dir="ltr">output</code> captures program standard output, <code dir="ltr">error</code> captures standard error, and <code dir="ltr">log</code> is HTCondor&#x27;s lifecycle/event log. <code dir="ltr">$(ClusterId)</code> and <code dir="ltr">$(ProcId)</code> prevent jobs from sharing log filenames.</li>
+<li><code dir="ltr">queue 1</code> materializes one process from the description. This is unrelated to DDP process count: a single Condor job can start multiple local GPU processes with <code dir="ltr">torchrun</code>.</li>
+</ul>
+<h3 id="evaluate-sub"><code dir="ltr">condor/evaluate.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># evaluate.sub  —  the scoring step (run AFTER the p1/p2/p3 docking jobs).
+</span><span class="tok-comment"># Runs scripts/evaluate.sh, which calls `evaluation/evaluation.py --dataset proto_test`
+</span><span class="tok-comment"># over every pipeline x pose-variant in results/ and writes the *_evaluation.csv files
+</span><span class="tok-comment">#
+</span><span class="tok-comment">#   condor_submit condor/evaluate.sub
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/evaluate.sh
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, evaluation, data/proto_test.csv, data/prototype_model_data/proto_test, results
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/evaluate.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/evaluate.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/evaluate.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">4</span>
+<span class="tok-keyword">request_memory</span> = 16GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>This is the sole CPU-only job: there is no <code dir="ltr">request_gpus</code>. It stages all prototype results in, runs the 3×3 RMSD matrix, and returns the augmented <code dir="ltr">results</code> tree. Four CPUs and 16 GB serve RDKit/evaluation rather than model inference. It must run after inference because its entire input is the poses those jobs produce.</p>
+<h3 id="full-stage2-2gpu-sub"><code dir="ltr">condor/full_stage2_2gpu.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># full_stage2_2gpu.sub — COPY of full_stage2_mgpu.sub for the 2x A100 DDP Stage-2 run.
+</span><span class="tok-comment"># Changes vs the original (which is left untouched):
+</span><span class="tok-comment">#   request_gpus 4 -&gt; 2 ; cpus 16 -&gt; 8 ; memory 64GB -&gt; 16GB
+</span><span class="tok-comment">#   + GPU selector (cap &gt;=8.0 &amp; &gt;=32 GB) so 2 A100s/L40S/H200 are picked, never a 16 GB OOM card
+</span><span class="tok-comment">#   environment S2_BATCH=8 S2_ACCUM=4 -&gt; effective batch 2*8*4 = 64 (paper)
+</span><span class="tok-comment">#   executable + transfer use run_full_stage2_ddp_v2.sh (wd 0, patience 70)
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = run_full_stage2_ddp_v2.sh
+<span class="tok-keyword">environment</span>   = <span class="tok-string">&quot;S2_BATCH=8 S2_ACCUM=4 STAGE1_CKPT=/home/bdldt_team002/repro_test/work_full/ckpt/p_stage1/karmadock_team002.pkl&quot;</span>
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = train_ddp.py, seminar_csv.py, run_full_stage2_ddp_v2.sh
+
+<span class="tok-keyword">output</span> = logs/s2_2gpu.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/s2_2gpu.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/s2_2gpu.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">2</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 16GB
+gpus_minimum_capability = <span class="tok-number">8.0</span>
+gpus_minimum_memory     = <span class="tok-number">32000</span>
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>This is the concrete final two-GPU experiment. Environment overrides maintain global effective batch 64 and point directly to the final Stage-1 best checkpoint. The v2 launcher changes Stage-2 weight decay/patience. GPU constraints avoid known 16 GB out-of-memory devices. Code alone is transferred because data, graphs, checkpoint, and outputs live on the mounted home. The hard-coded <code dir="ltr">/home/bdldt_team002/...</code> makes this submit file account-specific despite the launcher itself having overrideable paths.</p>
+<h3 id="full-stage2-mgpu-sub"><code dir="ltr">condor/full_stage2_mgpu.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># full_stage2_mgpu.sub — ISOLATED multi-GPU (DDP) Stage-2 TEST on the full dataset.
+</span><span class="tok-comment"># Separate from the prototype submission and from the running full job (167960):
+</span><span class="tok-comment">#   - reads ~/repro_test/work_full graphs (read-only) + a Stage-1 snapshot,
+</span><span class="tok-comment">#   - writes only to ~/stage2_mgpu_test/work (its own dir).
+</span><span class="tok-comment"># ... setup and smoke-test comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = run_full_stage2_ddp.sh
+<span class="tok-comment"># Per-GPU batch 8 x accum 2 x 4 GPUs = effective batch 64. Override here if relocating data:
+</span><span class="tok-comment">#   environment = &quot;S2_BATCH=8 S2_ACCUM=2 STAGE1_CKPT=/path/to/stage1.pkl&quot;
+</span>
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = train_ddp.py, seminar_csv.py, run_full_stage2_ddp.sh
+<span class="tok-comment"># data, graphs, checkpoints all live on the mounted home -- nothing large is transferred
+</span>
+<span class="tok-keyword">output</span> = logs/s2mgpu.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/s2mgpu.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/s2mgpu.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">4</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">16</span>
+<span class="tok-keyword">request_memory</span> = 64GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>This is the original four-GPU Stage-2 test using <code dir="ltr">run_full_stage2_ddp.sh</code> defaults: batch 8 × accumulation 2 × four ranks = 64. It requests more CPUs/memory but imposes no GPU generation/memory constraint, unlike the 2-GPU copy. It expects submission from a deployment directory containing the three bare transferred filenames and a pre-created Stage-1 snapshot in the mounted home.</p>
+<h3 id="full-test-infer-sub"><code dir="ltr">condor/full_test_infer.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># full_test_infer.sub  —  dock the 6,183-complex full_test set with the FULL-DATA
+</span><span class="tok-comment"># (multi-GPU Stage-2 trained) checkpoint. Produces the 3 pose variants
+</span><span class="tok-comment"># (uncorrected / FF / align) in results/full_scratch/full_test{,_ff,_align}/.
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = full_test full_scratch_karmadock_team002.pkl full_scratch
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, model/full_scratch_karmadock_team002.pkl, data/full_test.csv, data/full_test
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/full_test_infer.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/full_test_infer.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/full_test_infer.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>This stages the 6,183-complex full test set and the repository&#x27;s full-data checkpoint, then tags output <code dir="ltr">full_scratch</code>. The checkpoint is passed as a basename because HTCondor stages it into the sandbox; <code dir="ltr">run_infer.sh</code> resolves that basename against <code dir="ltr">$PWD</code>. It is one-GPU inference, not DDP.</p>
+<h3 id="full-train-scratch-sub"><code dir="ltr">condor/full_train_scratch.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># full_train_scratch.sub  —  FULL-dataset training FROM SCRATCH (next phase, long job).
+</span><span class="tok-comment"># Trains the paper&#x27;s 2-stage protocol on full_train (23,483) / full_val (2,609) on one GPU.
+</span><span class="tok-comment"># ... mounted-home rationale and prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_full_train.sh
+<span class="tok-keyword">arguments</span>     = scratch
+<span class="tok-comment"># Data/work default to $HOME/repro_test/{full_data,work_full}, resolved inside the container
+</span><span class="tok-comment"># via the mounted home (portable across accounts). To relocate, uncomment and edit -- do NOT
+</span><span class="tok-comment"># hardcode another user&#x27;s home:
+</span><span class="tok-comment">#   environment = &quot;FULL_DATA_DIR=/path/to/full_data FULL_WORK_DIR=/path/to/work_full&quot;
+</span>
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts
+<span class="tok-comment"># data, graphs and checkpoints live on the mounted home -- nothing large is transferred
+</span>
+<span class="tok-keyword">output</span> = logs/full_train.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/full_train.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/full_train.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 64GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>This calls the single-GPU full-data wrapper in <code dir="ltr">scratch</code> mode, which performs both stages. Only code is staged; the roughly 14 GB data, generated graphs, and resumable checkpoints remain on the mounted home. It asks for substantially more host memory than inference because graph preprocessing/training loaders are heavier.</p>
+<h3 id="p1-baseline-sub"><code dir="ltr">condor/p1_baseline.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p1_baseline.sub  —  PIPELINE 1 (released weights) docking on proto_test.
+</span><span class="tok-comment"># Produces the 3 pose variants (uncorrected / FF / align) in results/p1_baseline/.
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = proto_test /app/KarmaDock/trained_models/karmadock_screening.pkl p1_baseline
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, data/proto_test.csv, data/prototype_model_data/proto_test
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/p1_baseline.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p1_baseline.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p1_baseline.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>P1 is inference-only with the absolute released checkpoint baked into the Docker image, so no model file is transferred. Its structures, CSV, scripts, and resulting <code dir="ltr">results</code> directory otherwise mirror P2/P3 for a controlled comparison.</p>
+<h3 id="p2-scratch-infer-sub"><code dir="ltr">condor/p2_scratch_infer.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p2_scratch_infer.sub  —  PIPELINE 2 (from-scratch model) docking on proto_test.
+</span><span class="tok-comment"># ... description and prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = proto_test p2_scratch_karmadock_team002.pkl p2_scratch
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, model/p2_scratch_karmadock_team002.pkl, data/proto_test.csv, data/prototype_model_data/proto_test
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/p2_scratch.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p2_scratch.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p2_scratch.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>P2 differs from P1 only in checkpoint source/tag: it stages the team&#x27;s prototype from-scratch model and resolves its basename. Holding data, image, random seed (inside the wrapper), and resources constant isolates the effect of weights.</p>
+<h3 id="p2-train-scratch-sub"><code dir="ltr">condor/p2_train_scratch.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p2_train_scratch.sub  —  PIPELINE 2 training FROM SCRATCH (BONUS / long path).
+</span><span class="tok-comment"># Preprocesses proto_train (712) then runs the paper&#x27;s 2-stage protocol on one GPU.
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_train.sh
+<span class="tok-keyword">arguments</span>     = scratch
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, data/prototype_model_data/proto_train.csv, data/prototype_model_data/proto_train
+<span class="tok-keyword">transfer_output_files</span>   = ckpt
+
+<span class="tok-keyword">output</span> = logs/p2_train.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p2_train.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p2_train.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 48GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>This stages the compact prototype training set and requests <code dir="ltr">scratch</code>, causing MDN-only Stage 1 followed by combined Stage 2. Only <code dir="ltr">ckpt</code> is returned. The wrapper also creates <code dir="ltr">work_train</code>, but that directory is not listed as an output, so it is useful within a rescheduled sandbox only if the site&#x27;s rescheduling preserves that working state; ordinary completion transfers no graphs back.</p>
+<h3 id="p3-finetune-sub"><code dir="ltr">condor/p3_finetune.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p3_finetune.sub  —  PIPELINE 3 fine-tune training (BONUS / long path).
+</span><span class="tok-comment"># ... description and prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_train.sh
+<span class="tok-keyword">arguments</span>     = finetune
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, data/prototype_model_data/proto_train.csv, data/prototype_model_data/proto_train
+<span class="tok-keyword">transfer_output_files</span>   = ckpt
+
+<span class="tok-keyword">output</span> = logs/p3_train.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p3_train.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p3_train.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 48GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>This is resource/data-identical to P2 training but passes <code dir="ltr">finetune</code>, so the wrapper initializes from released image weights and runs only the combined-loss stage. That symmetry makes P2/P3 training differences attributable to protocol rather than scheduling resources.</p>
+<h3 id="p3-finetune-infer-sub"><code dir="ltr">condor/p3_finetune_infer.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># p3_finetune_infer.sub  —  PIPELINE 3 (fine-tuned model) docking on proto_test.
+</span><span class="tok-comment"># ... description and prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = proto_test p3_finetune_karmadock_team002.pkl p3_finetune
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, model/p3_finetune_karmadock_team002.pkl, data/proto_test.csv, data/prototype_model_data/proto_test
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/p3_finetune.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/p3_finetune.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/p3_finetune.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>P3 inference is structurally identical to P2 inference but stages the fine-tuned checkpoint and selects the <code dir="ltr">p3_finetune</code> result tag.</p>
+<h3 id="posebusters-infer-sub"><code dir="ltr">condor/posebusters_infer.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># posebusters_infer.sub  —  dock the 308-complex PoseBusters set with the FULL-DATA
+</span><span class="tok-comment"># (multi-GPU Stage-2 trained) checkpoint. Produces the 3 pose variants
+</span><span class="tok-comment"># (uncorrected / FF / align) in results/full_scratch/posebusters_filtered{,_ff,_align}/.
+</span><span class="tok-comment"># ... prerequisite comments unchanged ...
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = scripts/run_infer.sh
+<span class="tok-keyword">arguments</span>     = posebusters_filtered full_scratch_karmadock_team002.pkl full_scratch
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = scripts, model/full_scratch_karmadock_team002.pkl, data/posebusters_filtered.csv, data/posebusters_filtered
+<span class="tok-keyword">transfer_output_files</span>   = results
+
+<span class="tok-keyword">output</span> = logs/posebusters_infer.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/posebusters_infer.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/posebusters_infer.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">1</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 32GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>This reuses the full-data model on the smaller PoseBusters benchmark. The submit file is internally clear, but the called converter currently does not recognize the checked-in PoseBusters CSV&#x27;s <code dir="ltr">ligand_file</code> schema; see Gotchas.</p>
+<h3 id="smoke-2gpu-sub"><code dir="ltr">condor/smoke_2gpu.sub</code></h3>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-condor"><span class="tok-comment"># smoke_2gpu.sub — SMOKE TEST of the DDP Stage-2 path: 2 GPUs, 3 epochs.
+</span><span class="tok-comment"># Validates torchrun + NCCL + id-shard + all-reduce + rank-0 ckpt on real GPUs, and measures
+</span><span class="tok-comment"># per-epoch wall time so the full run can be estimated. Isolated (writes ~/stage2_mgpu_test/work).
+</span><span class="tok-keyword">universe</span>      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+<span class="tok-keyword">requirements</span>  = UidDomain == <span class="tok-string">&quot;cs.uni-saarland.de&quot;</span> &amp;&amp; (Machine =!= <span class="tok-string">&quot;idun.hpc.uni-saarland.de&quot;</span>)
+
+<span class="tok-keyword">executable</span>    = run_full_stage2_ddp.sh
+<span class="tok-keyword">environment</span>   = <span class="tok-string">&quot;S2_EPOCHS=3&quot;</span>
+
+<span class="tok-keyword">should_transfer_files</span>   = YES
+<span class="tok-keyword">when_to_transfer_output</span> = ON_EXIT
+<span class="tok-keyword">transfer_input_files</span>    = train_ddp.py, seminar_csv.py, run_full_stage2_ddp.sh
+
+<span class="tok-keyword">output</span> = logs/smoke.$(ClusterId).$(ProcId).out
+<span class="tok-keyword">error</span>  = logs/smoke.$(ClusterId).$(ProcId).err
+<span class="tok-keyword">log</span>    = logs/smoke.$(ClusterId).<span class="tok-keyword">log</span>
+
+<span class="tok-keyword">request_gpus</span>   = <span class="tok-number">2</span>
+<span class="tok-keyword">request_cpus</span>   = <span class="tok-number">8</span>
+<span class="tok-keyword">request_memory</span> = 48GB
+
+<span class="tok-keyword">queue</span> <span class="tok-number">1</span></code></pre></div>
+<p>The smoke test caps training at three epochs to validate process launch, NCCL communication, ID sharding, metric reductions, and rank-0 checkpointing before spending days on a full run. Because it otherwise uses original launcher defaults (<code dir="ltr">BS=8</code>, <code dir="ltr">ACC=2</code>), its two-GPU effective batch is 32, not 64; its purpose is systems validation rather than a paper-faithful training result.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">Why does <code dir="ltr">queue 1</code> not imply that a DDP job uses only one GPU process?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It creates one Condor job, but that job can reserve multiple GPUs and let <code dir="ltr">torchrun</code> start one local process per GPU inside the single sandbox.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">Why do full-data and DDP jobs rely on a mounted home instead of transferring all inputs and checkpoints?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Their data and graph artifacts are large and their checkpoints must persist during long runs, so the mounted home avoids repeated transfers and <code dir="ltr">ON_EXIT</code> persistence risk.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">How do the two-GPU final job and the smoke job use resource settings for different goals?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The final job constrains capable high-memory GPUs and sets accumulation for effective batch 64, while the three-epoch smoke job accepts effective batch 32 because it tests launch, NCCL, sharding, reductions, and checkpointing rather than final training quality.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>Submit paths are interpreted relative to the directory where <code dir="ltr">condor_submit</code> is run, not necessarily the <code dir="ltr">.sub</code> file&#x27;s directory. Prototype files expect repository-root submission; the DDP files with bare names expect a deployment directory containing those files.</li>
+<li>The <code dir="ltr">logs/</code> parent directory generally needs to exist on the submit side; these files do not create it.</li>
+<li><code dir="ltr">ON_EXIT</code> does not continuously copy sandbox checkpoints back. Full-data/DDP jobs avoid that risk by writing into the mounted home, while prototype jobs depend on sandbox/reschedule behavior until exit.</li>
+<li>Only <code dir="ltr">full_stage2_2gpu.sub</code> constrains GPU capability/memory. Other GPU jobs can match any site GPU satisfying the generic request, including cards with different memory/performance.</li>
+<li><code dir="ltr">posebusters_infer.sub</code> stages <code dir="ltr">data/posebusters_filtered.csv</code>, whose actual columns are <code dir="ltr">ligand_name,ligand_file,protein_file</code>. <code dir="ltr">run_infer.sh</code> calls <code dir="ltr">seminar_csv.complex_records</code>, which does not support that schema and instead looks for full metadata columns. As checked in, this route can fail with a pandas <code dir="ltr">KeyError</code>; the submit-file comment claiming <code dir="ltr">ligand_file</code> is read is inconsistent with the code.</li>
+<li>The abbreviated <code dir="ltr"># ... comments unchanged ...</code> lines above only elide prose comments; every executable directive from all 12 source files is reproduced.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why can submitting from the wrong directory break an otherwise valid <code dir="ltr">.sub</code> file?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Relative submit paths are resolved from the directory where <code dir="ltr">condor_submit</code> runs, and different files assume either the repository root or a deployment directory with bare staged files.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">Why is <code dir="ltr">ON_EXIT</code> insufficient protection for prototype checkpoints during a long interrupted job?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It transfers outputs only after normal job termination, so checkpoints inside the sandbox may not be copied continuously or survive ordinary interruption and rescheduling behavior.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">Why can <code dir="ltr">posebusters_infer.sub</code> fail before docking even though its staging directives are coherent?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The staged CSV uses <code dir="ltr">ligand_file</code>, but <code dir="ltr">seminar_csv.complex_records</code> recognizes <code dir="ltr">ligand_file_name</code> or the four-column full schema and can raise a pandas missing-column error.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-3"><a href="#shared-htcondor-submit-file-vocabulary">Shared HTCondor submit-file vocabulary</a></li><li class="toc-level-3"><a href="#evaluate-sub">condor/evaluate.sub</a></li><li class="toc-level-3"><a href="#full-stage2-2gpu-sub">condor/fullstage22gpu.sub</a></li><li class="toc-level-3"><a href="#full-stage2-mgpu-sub">condor/fullstage2mgpu.sub</a></li><li class="toc-level-3"><a href="#full-test-infer-sub">condor/fulltestinfer.sub</a></li><li class="toc-level-3"><a href="#full-train-scratch-sub">condor/fulltrainscratch.sub</a></li><li class="toc-level-3"><a href="#p1-baseline-sub">condor/p1baseline.sub</a></li><li class="toc-level-3"><a href="#p2-scratch-infer-sub">condor/p2scratchinfer.sub</a></li><li class="toc-level-3"><a href="#p2-train-scratch-sub">condor/p2trainscratch.sub</a></li><li class="toc-level-3"><a href="#p3-finetune-sub">condor/p3finetune.sub</a></li><li class="toc-level-3"><a href="#p3-finetune-infer-sub">condor/p3finetuneinfer.sub</a></li><li class="toc-level-3"><a href="#posebusters-infer-sub">condor/posebustersinfer.sub</a></li><li class="toc-level-3"><a href="#smoke-2gpu-sub">condor/smoke2gpu.sub</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

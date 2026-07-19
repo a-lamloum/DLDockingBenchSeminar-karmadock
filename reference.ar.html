@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-counterpart="reference.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>المرجع | KarmaDock موقع المقرر</title>
+  <link rel="alternate" hreflang="en" href="reference.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.ar.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="إظهار أو إخفاء تنقّل المقرر" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.ar.html"><bdi dir="ltr">KarmaDock</bdi> <span>موقع المقرر</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="reference.html" hreflang="en" data-language="en" aria-label="التبديل إلى الإنجليزية">الإنجليزية</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="فتح البحث">بحث <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="التبديل إلى السمة الداكنة" aria-pressed="false" data-label-light="التبديل إلى السمة الفاتحة" data-label-dark="التبديل إلى السمة الداكنة">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html" aria-current="page">المرجع</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="reference">المرجع</h1>
+<aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="6-repository-layout"><bdi dir="ltr">6.</bdi> تخطيط المستودع</h2>
+<div class="table-scroll"><table><thead><tr>
+<th>المسار</th>
+<th>الوصف</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="content-link" href="index.ar.html"><code dir="ltr">README.md</code></a></td>
+<td>ملف العرض الرئيس</td>
+</tr>
+<tr>
+<td><a class="content-link" href="reference.ar.html#authorship--provenance"><code dir="ltr">Dockerfile</code></a></td>
+<td>صورة <code dir="ltr">ahlamloum/karmadock-seminar:v6</code></td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthroughs.ar.html"><code dir="ltr">scripts/</code></a></td>
+<td><code dir="ltr">train.py</code>، وهو الأثر الرئيس، والمحولات، و<code dir="ltr">run_infer.sh</code>، و<code dir="ltr">evaluate.sh</code>، و<code dir="ltr">run_train.sh</code></td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/</code></a></td>
+<td>ملفات إرسال <bdi dir="ltr">HTCondor</bdi> قابلة للنقل: <bdi dir="ltr">3</bdi> للإرساء + <bdi dir="ltr">1</bdi> للتقييم + <bdi dir="ltr">2</bdi> للتدريب</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-evaluation.ar.html"><code dir="ltr">evaluation/evaluation.py</code></a></td>
+<td>مقيّم الندوة الرسمي من دون تعديل</td>
+</tr>
+<tr>
+<td><a class="content-link" href="reference.ar.html#6-repository-layout"><code dir="ltr">model/</code></a></td>
+<td>نقاط تحقق <bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3</bdi> المدرّبة، بحجم يقارب ~<bdi dir="ltr">15</bdi> <bdi dir="ltr">MB</bdi> لكل منها</td>
+</tr>
+<tr>
+<td><a class="content-link" href="assets/downloads/results_and_comparison.ipynb"><code dir="ltr">notebooks/results_and_comparison.ipynb</code></a></td>
+<td>الجداول والرسوم</td>
+</tr>
+<tr>
+<td><a class="content-link" href="results.ar.html"><code dir="ltr">results/</code></a></td>
+<td><code dir="ltr">proto_test/</code> = وضعيات <bdi dir="ltr">P2</bdi> التي يقيّمها <code dir="ltr">evaluation.py --dataset proto_test</code>؛ و<code dir="ltr">&lt;pipeline&gt;/proto_test{,_ff,_align}/</code> = المسارات <bdi dir="ltr">3</bdi> × المتغيرات <bdi dir="ltr">3</bdi>؛ و<code dir="ltr">*_evaluation.csv</code> = <bdi dir="ltr">RMSD</bdi> الرسمي لكل مركّب ومتغير</td>
+</tr>
+<tr>
+<td><a class="content-link" href="training.ar.html"><code dir="ltr">docs/</code></a></td>
+<td>سجلات التدريب والأشكال</td>
+</tr>
+<tr>
+<td><a class="content-link" href="assets/downloads/proto_test.csv"><code dir="ltr">data/proto_test.csv</code></a></td>
+<td>تعيين <bdi dir="ltr">proto_test</bdi> الذي يضم <bdi dir="ltr">136</bdi> مركّبًا</td>
+</tr>
+<tr>
+<td><span class="unbundled"><code dir="ltr">data/prototype_model_data.zip</code> <span class="annotation">(متاح في المستودع وغير مضمّن في الموقع)</span></span></td>
+<td>البنى المرجعية: <bdi dir="ltr">proto</bdi><em><bdi dir="ltr">test</bdi> و<bdi dir="ltr">proto</bdi></em><bdi dir="ltr">train</bdi> وملفات <bdi dir="ltr">SDF/PDB</bdi> المنقحة</td>
+</tr>
+<tr>
+<td><a class="content-link" href="reference.ar.html"><code dir="ltr">scripts/README.md</code></a></td>
+<td>مصدر الشيفرة: عملنا مقارنةً بـ<bdi dir="ltr">KarmaDock</bdi> الأصلي</td>
+</tr>
+</tbody></table></div>
+<p><strong>صورة <bdi dir="ltr">Docker:</bdi></strong> ‏<code dir="ltr">ahlamloum/karmadock-seminar:v6</code> على <bdi dir="ltr">Docker</bdi> <bdi dir="ltr">Hub.</bdi></p>
+<h2 id="7-issues--fixes"><bdi dir="ltr">7.</bdi> المشكلات والإصلاحات</h2>
+<ul>
+<li><strong>مشكلة العقدة:</strong> كانت عقد <bdi dir="ltr">GPU</bdi> في عنقود <bdi dir="ltr">idun</bdi> تعيد خطأ أحيانًا أثناء التشغيل، لذلك استُبعدت</li>
+</ul>
+<p>العقدة المحددة في متطلبات ملفات الإرسال. الإصلاح: <code dir="ltr">requirements = … &amp;&amp; (Machine =!= &quot;idun.hpc.uni-saarland.de&quot;)</code>. <strong>[<bdi dir="ltr">solved</bdi>]</strong>.</p>
+<ul>
+<li><strong>قيود الموارد:</strong> بقيت مهام <code dir="ltr">request_gpus=2/4</code> خاملة أيامًا. يعمل النموذج الأولي على <bdi dir="ltr">GPU</bdi> واحد؛</li>
+</ul>
+<p>تعذر تشغيله على <bdi dir="ltr">2</bdi> <bdi dir="ltr">GPU</bdi>، لذلك غُيّر الطلب إلى <bdi dir="ltr">1</bdi> <bdi dir="ltr">GPU.</bdi> لم يُحسم ما إذا كان ذلك ملائمًا للبيانات الكاملة بسبب طول زمن التشغيل. الإصلاح: طلب <bdi dir="ltr">1</bdi> <bdi dir="ltr">GPU.</bdi> <strong>[<bdi dir="ltr">solved</bdi>]</strong>.</p>
+<h2 id="authorship--provenance">التأليف ومصدر الشيفرة</h2>
+<p><strong>النقطة الأساسية:</strong> يوفّر <bdi dir="ltr">KarmaDock</bdi> العام (<code dir="ltr">schrojunzhang/KarmaDock</code>) شيفرة الاستدلال والأوزان المدرّبة مسبقًا فقط، <strong>ولا يوفّر برنامج تدريب</strong>. مساهمتنا في الندوة هي حلقة التدريب، ومحولات البيانات، وأغلفة التشغيل، ومنظومة <bdi dir="ltr">HTCondor</bdi> الكاملة المبنية حول <bdi dir="ltr">KarmaDock.</bdi> نستدعي وحدات <bdi dir="ltr">KarmaDock</bdi> كما هي، بما يشمل النموذج والمعالجة المسبقة والإرساء، ولم نعدّل أي ملف داخل <code dir="ltr">KarmaDock/</code> الأصلي؛ يستنسخه <code dir="ltr">Dockerfile</code> من جديد، وتوجد شيفرتنا كلها في <code dir="ltr">scripts/</code>.</p>
+<h3 id="files-we-created">الملفات التي أنشأناها</h3>
+<h3 id="scripts"><code dir="ltr">scripts/</code></h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>وظيفته</th>
+<th>أجزاء <bdi dir="ltr">KarmaDock</bdi> التي يستدعيها</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">train.py</code></td>
+<td><strong>أثرنا الرئيس</strong>: حلقة كاملة للتدريب والضبط الدقيق مع نقاط تحقق، ومُحسّن، وإيقاف مبكر، وتجميع تدرجات، وتقسيم تحقق، و<bdi dir="ltr">W</bdi>&amp;<bdi dir="ltr">B</bdi>، و<code dir="ltr">--resume</code></td>
+<td>يستورد نموذج <code dir="ltr">KarmaDock</code> الأصلي، و<code dir="ltr">PDBBindGraphDataset</code>، و<code dir="ltr">PassNoneDataLoader</code>، و<code dir="ltr">set_random_seed</code>/<code dir="ltr">Early_stopper</code>؛ ويستخدم خسائر <code dir="ltr">forward()</code> الخاصة بالنموذج</td>
+</tr>
+<tr>
+<td><code dir="ltr">convert_seminar_to_karmadock.py</code></td>
+<td>يحول تخطيط بيانات الندوة إلى تخطيط <bdi dir="ltr">KarmaDock</bdi></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code dir="ltr">convert_karmadock_to_seminar.py</code></td>
+<td>يحول الوضعيات المرساة إلى <code dir="ltr">&lt;id&gt;_pred.sdf</code> في تنسيق الندوة، بدءًا من الأفضل</td>
+<td>يقرأ ملفات <bdi dir="ltr">SDF</bdi> للوضعيات باستخدام <bdi dir="ltr">RDKit</bdi></td>
+</tr>
+<tr>
+<td><code dir="ltr">run_infer.sh</code></td>
+<td>إرساء قابل للنقل: معالجة مسبقة، ثم إرساء، ثم تصدير المتغيرات <bdi dir="ltr">3:</bdi> الخام و<bdi dir="ltr">FF</bdi> والمحاذاة</td>
+<td>يستدعي <code dir="ltr">pre_processing.py</code> و<code dir="ltr">generate_graph.py</code> و<code dir="ltr">ligand_docking.py</code> الأصليين، إلى جانب محولاتنا</td>
+</tr>
+<tr>
+<td><code dir="ltr">evaluate.sh</code></td>
+<td>خطوة تقييم منفصلة تشغّل <code dir="ltr">evaluation.py</code> لكل مسار × متغير</td>
+<td>تستدعي <code dir="ltr">evaluation/evaluation.py</code> الرسمي</td>
+</tr>
+<tr>
+<td><code dir="ltr">run_train.sh</code></td>
+<td>تدريب قابل للنقل: <code dir="ltr">scratch</code> = المسار <bdi dir="ltr">P2</bdi> ذو المرحلتين (<bdi dir="ltr">2-stage</bdi>)، و<code dir="ltr">finetune</code> = المسار <bdi dir="ltr">P3</bdi> من الأوزان المنشورة؛ يعالج <code dir="ltr">proto_train</code> مسبقًا</td>
+<td>يستدعي <code dir="ltr">train.py</code> الخاص بنا</td>
+</tr>
+</tbody></table></div>
+<h3 id="condor-our-work"><code dir="ltr">condor/</code> (عملنا)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>المهمة</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">p1_baseline.sub</code></td>
+<td>استدلال <bdi dir="ltr">P1</bdi> بالأوزان المنشورة + تقييم</td>
+</tr>
+<tr>
+<td><code dir="ltr">p2_scratch_infer.sub</code></td>
+<td>استدلال <bdi dir="ltr">P2</bdi> بنقطة التحقق المدرّبة من الصفر + تقييم</td>
+</tr>
+<tr>
+<td><code dir="ltr">p3_finetune_infer.sub</code></td>
+<td>استدلال <bdi dir="ltr">P3</bdi> بنقطة التحقق المضبوطة دقيقًا + تقييم</td>
+</tr>
+<tr>
+<td><code dir="ltr">p2_train_scratch.sub</code></td>
+<td>تدريب <bdi dir="ltr">P2</bdi> من الصفر على مرحلتين (<bdi dir="ltr">2-stage</bdi>)</td>
+</tr>
+<tr>
+<td><code dir="ltr">p3_finetune.sub</code></td>
+<td>تدريب الضبط الدقيق <bdi dir="ltr">P3</bdi></td>
+</tr>
+<tr>
+<td><code dir="ltr">evaluate.sub</code></td>
+<td>تشغيل البرنامج النصي <bdi dir="ltr">evaluate.sh</bdi></td>
+</tr>
+</tbody></table></div>
+<h3 id="other-ours">أعمال أخرى لنا</h3>
+<ul>
+<li>يبني <code dir="ltr">Dockerfile</code> الصورة <code dir="ltr">ahlamloum/karmadock-seminar:v6</code>؛ إذ يستنسخ <bdi dir="ltr">KarmaDock</bdi>، ويثبت بيئة</li>
+</ul>
+<p><bdi dir="ltr">conda</bdi> المحزّمة من المؤلفين، ويضيف <code dir="ltr">scripts/</code> الخاصة بنا.</p>
+<ul>
+<li>نقاط التحقق في <code dir="ltr">model/</code> للمسارين <bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3</bdi>، ودفتر النتائج، وكل الوثائق، وسجلات التدريب في <code dir="ltr">docs/</code>.</li>
+</ul>
+<h2 id="summary">الخلاصة</h2>
+<ul>
+<li><strong>عمل المؤلفين:</strong> نموذج <bdi dir="ltr">KarmaDock</bdi>، وأدوات المعالجة المسبقة والإرساء، والأوزان المنشورة؛ استُخدمت كما هي.</li>
+<li><strong>عملنا:</strong> <code dir="ltr">train.py</code>، إذ لم يكن هناك مدرّب، ومحولات البيانات، وأغلفة التشغيل، وكل ملف <code dir="ltr">.sub</code></li>
+</ul>
+<p>في <bdi dir="ltr">Condor</bdi>، وبناء <bdi dir="ltr">Docker</bdi>، وكل التحليلات والوثائق. <strong>لم يُعدّل أي ملف مصدر في <bdi dir="ltr">KarmaDock.</bdi></strong></p>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">اختبر فهمك</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">ما الأجزاء التي تعود إلى <bdi dir="ltr">KarmaDock</bdi> الأصلي، وما الأجزاء التي أنجزها فريق الندوة؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>يوفر المشروع الأصلي النموذج وأدوات المعالجة المسبقة والإرساء والأوزان المنشورة؛ بينما يوفر الفريق التدريب والمحولات والأغلفة ومهام <bdi dir="ltr">Condor</bdi> وبناء <bdi dir="ltr">Docker</bdi> ووثائق التحليل.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">لماذا كان خفض عدد وحدات <bdi dir="ltr">GPU</bdi> المطلوبة إصلاحًا عمليًا على العنقود؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>بقيت المهام التي تطلب عدة وحدات <bdi dir="ltr">GPU</bdi> خاملة أيامًا، في حين أمكن تشغيل النموذج الأولي على <bdi dir="ltr">GPU</bdi> واحد، فجعل الطلب الأصغر الجدولة ممكنة.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">ما الدليل الموجود في المستودع الذي يساعد على تمييز الشيفرة المؤلفة عن الشيفرة الأصلية المعاد استخدامها؟</p>
+<details>
+<summary>اعرض الإجابة</summary>
+<div class="quiz-answer"><p>تسرد جداول المصدر البرامج النصية وملفات الإرسال التي أنشأها الفريق، وتوضح الوحدات الأصلية التي تستدعيها، وتؤكد عدم تعديل أي مصدر داخل <code dir="ltr">KarmaDock/</code> الأصلي.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#6-repository-layout"><bdi dir="ltr">6.</bdi> تخطيط المستودع</a></li><li class="toc-level-2"><a href="#7-issues--fixes"><bdi dir="ltr">7.</bdi> المشكلات والإصلاحات</a></li><li class="toc-level-2"><a href="#authorship--provenance">التأليف ومصدر الشيفرة</a></li><li class="toc-level-3"><a href="#files-we-created">الملفات التي أنشأناها</a></li><li class="toc-level-3"><a href="#scripts"><bdi dir="ltr">scripts/</bdi></a></li><li class="toc-level-3"><a href="#condor-our-work"><bdi dir="ltr">condor/</bdi> (عملنا)</a></li><li class="toc-level-3"><a href="#other-ours">أعمال أخرى لنا</a></li><li class="toc-level-2"><a href="#summary">الخلاصة</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
+    <div class="search-head"><h2 id="search-title">البحث في موقع المقرر</h2><button class="icon-button" id="search-close" type="button" aria-label="إغلاق البحث">×</button></div>
+    <label for="search-input">ابحث في العناوين والنصوص التوضيحية</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="جرّب «pos_r» أو «PoseBusters»">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

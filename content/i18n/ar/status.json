@@ -1,0 +1,22 @@
+{
+  "index": "draft",
+  "pipelines": "draft",
+  "reference": "draft",
+  "reproduce": "draft",
+  "results": "draft",
+  "training": "draft",
+  "walkthrough-condor": "draft",
+  "walkthrough-convert-karmadock-to-seminar": "draft",
+  "walkthrough-convert-seminar-to-karmadock": "draft",
+  "walkthrough-run-full-stage2-ddp": "draft",
+  "walkthrough-run-full-stage2-ddp-v2": "draft",
+  "walkthrough-run-full-train": "draft",
+  "walkthrough-run-infer": "draft",
+  "walkthrough-run-train": "draft",
+  "walkthrough-seminar-csv": "draft",
+  "walkthrough-train": "draft",
+  "walkthrough-train-ddp": "draft",
+  "walkthrough-evaluate": "draft",
+  "walkthrough-evaluation": "draft",
+  "walkthroughs": "draft"
+}

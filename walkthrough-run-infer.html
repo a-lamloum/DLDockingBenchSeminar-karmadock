@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="walkthrough-run-infer.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>scripts/runinfer.sh | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="walkthrough-run-infer.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="walkthrough-run-infer.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html" aria-current="page">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="scriptsruninfersh"><code dir="ltr">scripts/run_infer.sh</code></h1>
+<h2 id="purpose">Purpose</h2>
+<p>This script runs the complete pose-generation path for one dataset/checkpoint pair. It converts structures, creates pockets and graphs, calls upstream KarmaDock docking, and exports raw, force-field-minimized, and alignment-corrected poses in seminar format.</p>
+<section class="quiz" aria-labelledby="quiz-purpose-title">
+<h3 class="quiz-title" id="quiz-purpose-title">Check your understanding</h3>
+<ol>
+<li id="quiz-purpose-q1">
+<p class="quiz-question">Why is this script described as a complete pose-generation path rather than an evaluation path?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It converts inputs, builds pockets and graphs, docks and scores poses, and exports predictions, but metric scoring is deliberately left to <code dir="ltr">evaluate.sh</code> or <code dir="ltr">evaluation.py</code>.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q2">
+<p class="quiz-question">Why are raw, force-field, and aligned outputs all exported?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They allow the benchmark to distinguish the network&#x27;s direct prediction from two different postprocessing effects.</p></div>
+</details>
+</li>
+<li id="quiz-purpose-q3">
+<p class="quiz-question">What makes one invocation specific to a model experiment?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The dataset, checkpoint, and output tag arguments select the input structures, model weights, and result namespace.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="how-it-fits-in">How it fits in</h2>
+<p>Five listed inference submit files call it with three positional arguments: dataset name, checkpoint path/basename, and output tag. It reads <code dir="ltr">&lt;dataset&gt;.csv</code> and <code dir="ltr">&lt;dataset&gt;/</code> from the current job sandbox, creates temporary intermediate data, and writes <code dir="ltr">results/&lt;tag&gt;/&lt;dataset&gt;{,_ff,_align}/&lt;id&gt;_pred.sdf</code>. Scoring happens later in <code dir="ltr">evaluate.sh</code> or <code dir="ltr">evaluation.py</code>.</p>
+<section class="quiz" aria-labelledby="quiz-how-it-fits-in-title">
+<h3 class="quiz-title" id="quiz-how-it-fits-in-title">Check your understanding</h3>
+<ol>
+<li id="quiz-how-it-fits-in-q1">
+<p class="quiz-question">Why do inference submit files pass a checkpoint basename in some cases and an absolute path in others?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Transferred checkpoints arrive in the sandbox and are resolved against <code dir="ltr">$PWD</code>, while released checkpoints can be referenced directly inside the container image.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q2">
+<p class="quiz-question">What persistent output contract does the script provide to later scoring?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It writes evaluator-ready SDFs below <code dir="ltr">results/&lt;tag&gt;/&lt;dataset&gt;</code>, with <code dir="ltr">_ff</code> and <code dir="ltr">_align</code> sibling trees for corrected variants.</p></div>
+</details>
+</li>
+<li id="quiz-how-it-fits-in-q3">
+<p class="quiz-question">Why are intermediate graphs not part of that output contract?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They exist only to support the current docking run inside a temporary directory and are removed at exit.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="walkthrough">Walkthrough</h2>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash"><span class="tok-comment">#!/usr/bin/env bash
+</span><span class="tok-comment"># run_infer.sh &lt;dataset&gt; &lt;model_file&gt; &lt;tag&gt;
+</span><span class="tok-comment"># ...
+</span>set -euo pipefail
+set -x
+
+DATASET=$<span class="tok-number">1</span>
+MODEL=$<span class="tok-number">2</span>
+TAG=$<span class="tok-number">3</span></code></pre></div>
+<p>Strict mode stops partial pipelines, and tracing makes the cluster log reproducible. Unlike <code dir="ltr">run_train.sh</code>, these positional variables do not use <code dir="ltr">${1:?...}</code>; with <code dir="ltr">set -u</code>, a missing one still fails immediately, but without the custom usage text.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">SUBMIT=<span class="tok-string">&quot;$PWD&quot;</span>
+<span class="tok-keyword">case</span> <span class="tok-string">&quot;$MODEL&quot;</span> <span class="tok-keyword">in</span> /*) : ;; *) MODEL=<span class="tok-string">&quot;$SUBMIT/$MODEL&quot;</span> ;; <span class="tok-keyword">esac</span>
+
+KD=/app/KarmaDock
+WORK=<span class="tok-string">&quot;$(mktemp -d -t kd-XXXXXX)&quot;</span>
+trap <span class="tok-string">&#x27;rm -rf &quot;$WORK&quot;&#x27;</span> EXIT
+KIN=<span class="tok-string">&quot;$WORK/kin&quot;</span>; GRAPH=<span class="tok-string">&quot;$WORK/graphs&quot;</span>; KDOUT=<span class="tok-string">&quot;$WORK/kdout&quot;</span>
+mkdir -p <span class="tok-string">&quot;$KIN&quot;</span> <span class="tok-string">&quot;$GRAPH&quot;</span> <span class="tok-string">&quot;$KDOUT&quot;</span></code></pre></div>
+<p>The <code dir="ltr">case</code> distinguishes absolute paths (<code dir="ltr">/*</code>) from transferred checkpoint basenames. Relative checkpoints are resolved before the script later changes directory. <code dir="ltr">mktemp -d</code> isolates a run; the quoted <code dir="ltr">trap</code> removes it on normal exit or most errors. Only exported results persist.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">echo <span class="tok-string">&quot;=== [$TAG] dock $DATASET with $MODEL ===&quot;</span>
+
+python3 <span class="tok-string">&quot;$SUBMIT/scripts/convert_seminar_to_karmadock.py&quot;</span> \
+    --csv <span class="tok-string">&quot;$SUBMIT/$DATASET.csv&quot;</span> --src_dir <span class="tok-string">&quot;$SUBMIT/$DATASET&quot;</span> --out_dir <span class="tok-string">&quot;$KIN&quot;</span>
+
+cd <span class="tok-string">&quot;$KD/utils&quot;</span>
+python3 -u pre_processing.py  --complex_file_dir <span class="tok-string">&quot;$KIN&quot;</span>
+python3 -u generate_graph.py  --complex_file_dir <span class="tok-string">&quot;$KIN&quot;</span> --graph_file_dir <span class="tok-string">&quot;$GRAPH&quot;</span>
+echo <span class="tok-string">&quot;=== [$TAG] graphs built: $(ls &quot;</span>$GRAPH<span class="tok-string">&quot; | wc -l) ===&quot;</span></code></pre></div>
+<p>The first command performs naming/layout conversion only. Upstream preprocessing then identifies the binding pocket and graph generation turns atoms/residues and their relationships into DGL graph tensors. The count is a quick coverage diagnostic, not a validation that every expected ID succeeded.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">python3 -u ligand_docking.py \
+    --graph_file_dir <span class="tok-string">&quot;$GRAPH&quot;</span> \
+    --model_file <span class="tok-string">&quot;$MODEL&quot;</span> \
+    --out_dir <span class="tok-string">&quot;$KDOUT&quot;</span> \
+    --docking True --scoring True --correct True \
+    --batch_size <span class="tok-number">64</span> --random_seed <span class="tok-number">2023</span></code></pre></div>
+<p>This is upstream KarmaDock&#x27;s inference entry point. <code dir="ltr">--docking True</code> predicts coordinates, <code dir="ltr">--scoring True</code> evaluates poses with the MDN head, and <code dir="ltr">--correct True</code> requests all three pose forms. The raw network output is “uncorrected”; FF correction performs molecular mechanics relaxation; alignment correction superimposes coordinates into a reference frame. The fixed random seed makes stochastic start poses/repeats reproducible within the same software/hardware environment.</p>
+<div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="language-bash">export_variant () {
+    local mode=$<span class="tok-number">1</span> suffix=$<span class="tok-number">2</span>
+    local out=<span class="tok-string">&quot;$SUBMIT/results/$TAG/${DATASET}${suffix}&quot;</span>
+    mkdir -p <span class="tok-string">&quot;$out&quot;</span>
+    python3 <span class="tok-string">&quot;$SUBMIT/scripts/convert_karmadock_to_seminar.py&quot;</span> \
+        --input_dir <span class="tok-string">&quot;$KDOUT&quot;</span> --csv <span class="tok-string">&quot;$SUBMIT/$DATASET.csv&quot;</span> --out_dir <span class="tok-string">&quot;$out&quot;</span> --mode <span class="tok-string">&quot;$mode&quot;</span>
+    echo <span class="tok-string">&quot;=== [$TAG] ${mode}: $(ls &quot;</span>$out<span class="tok-string">&quot;/*_pred.sdf 2&gt;/dev/null | wc -l) poses -&gt; ${out#$SUBMIT/} ===&quot;</span>
+}
+export_variant uncorrected     <span class="tok-string">&quot;&quot;</span>
+export_variant ff_corrected    <span class="tok-string">&quot;_ff&quot;</span>
+export_variant align_corrected <span class="tok-string">&quot;_align&quot;</span>
+
+echo <span class="tok-string">&quot;=== [$TAG] inference done (3 pose variants in results/$TAG/) ===&quot;</span></code></pre></div>
+<p>The function packages the repeated converter invocation. <code dir="ltr">${out#$SUBMIT/}</code> removes a leading submit-directory prefix only for cleaner logging. The converter ranks docking repeats by score, so each resulting multi-record SDF is best-first. Three calls create parallel result trees for fair postprocessing comparisons.</p>
+<section class="quiz" aria-labelledby="quiz-walkthrough-title">
+<h3 class="quiz-title" id="quiz-walkthrough-title">Check your understanding</h3>
+<ol>
+<li id="quiz-walkthrough-q1">
+<p class="quiz-question">Why is a relative checkpoint resolved before changing into KarmaDock&#x27;s utility directory?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Turning it into a sandbox-root path prevents later <code dir="ltr">cd</code> operations from changing what the relative model name refers to.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q2">
+<p class="quiz-question">What distinct work do <code dir="ltr">pre_processing.py</code>, <code dir="ltr">generate_graph.py</code>, and <code dir="ltr">ligand_docking.py</code> perform?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>They identify and normalize pockets, serialize molecular relationships as graph tensors, and then predict, score, and correct ligand poses using the selected checkpoint.</p></div>
+</details>
+</li>
+<li id="quiz-walkthrough-q3">
+<p class="quiz-question">How does <code dir="ltr">export_variant</code> turn native repeat outputs into fair comparable result trees?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It invokes the same score-ranking converter with a different mode and suffix for each variant, producing best-first multi-record SDFs under parallel directories.</p></div>
+</details>
+</li>
+</ol>
+</section>
+<h2 id="gotchas--notes">Gotchas / notes</h2>
+<ul>
+<li>Temporary graphs and native KarmaDock output are always deleted at exit, so debugging them requires changing the script or copying them before exit.</li>
+<li>The graph-count and pose-count commands use pipelines under <code dir="ltr">pipefail</code>; the explicit <code dir="ltr">2&gt;/dev/null</code> hides “no glob matches” diagnostics, but an empty pose directory can still make that command substitution fail under strict pipeline semantics.</li>
+<li>The current <code dir="ltr">seminar_csv.py</code> supports <code dir="ltr">ligand_file_name</code> or the four full metadata columns, but the checked-in <code dir="ltr">data/posebusters_filtered.csv</code> instead has <code dir="ltr">ligand_file</code>. Therefore the listed PoseBusters submit route is inconsistent with this converter as written and can raise a missing-column error before inference.</li>
+<li>Alignment uses the reference pose/frame and should be interpreted carefully as a postprocessing diagnostic, not a blind-docking output independent of the answer.</li>
+</ul>
+<section class="quiz" aria-labelledby="quiz-gotchas--notes-title">
+<h3 class="quiz-title" id="quiz-gotchas--notes-title">Check your understanding</h3>
+<ol>
+<li id="quiz-gotchas--notes-q1">
+<p class="quiz-question">Why are temporary native docking outputs difficult to inspect after a failure?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>The EXIT trap removes the temporary workspace on normal exits and most errors unless the script is changed to preserve or copy it.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q2">
+<p class="quiz-question">How can a diagnostic pose-count command itself stop the script?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>It runs a glob and pipeline under strict <code dir="ltr">pipefail</code>; an empty result can produce a nonzero component even though diagnostics are redirected.</p></div>
+</details>
+</li>
+<li id="quiz-gotchas--notes-q3">
+<p class="quiz-question">Why should aligned success not be interpreted as reference-independent blind docking accuracy?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Alignment uses the reference pose or frame to superimpose coordinates, making it a postprocessing diagnostic with access to information unavailable to blind output.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#purpose">Purpose</a></li><li class="toc-level-2"><a href="#how-it-fits-in">How it fits in</a></li><li class="toc-level-2"><a href="#walkthrough">Walkthrough</a></li><li class="toc-level-2"><a href="#gotchas--notes">Gotchas / notes</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-counterpart="training.ar.html">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Training | KarmaDock Course Site</title>
+  <link rel="alternate" hreflang="ar" href="training.ar.html">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script defer src="assets/search-normalization-fixtures.js"></script>
+  <script defer src="assets/search-index.en.js"></script>
+  <script defer src="assets/app.js"></script>
+  <script defer src="assets/search.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="Toggle course navigation" aria-expanded="false" aria-controls="sidebar">☰</button>
+    <a class="site-title" href="index.html"><bdi dir="ltr">KarmaDock</bdi> <span>Course Site</span></a>
+    <div class="header-actions">
+      <a class="text-button language-toggle" id="language-toggle" href="training.ar.html" hreflang="ar" data-language="ar" aria-label="Switch to Arabic">Arabic</a>
+      <button class="text-button" id="search-trigger" type="button" aria-label="Open search">Search <kbd dir="ltr">/</kbd></button>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false" data-label-light="Switch to light theme" data-label-dark="Switch to dark theme">◐</button>
+    </div>
+  </header>
+  <div class="page-shell">
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html" aria-current="page">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <main id="main-content" tabindex="-1"><article><h1 id="5-training-information--parameters-from-the-paper">5. Training information &amp; parameters (from the paper)</h1>
+<p><a class="content-link" href="walkthrough-train.html"><code dir="ltr">train.py</code></a> implements the KarmaDock paper&#x27;s <em>Training protocol</em>. Effective batch = 64 in all runs (<code dir="ltr">batch_size 4 × accum_steps 16</code>); train/val split is deterministic (<code dir="ltr">val_frac 0.1</code>, <code dir="ltr">seed 42</code>).</p>
+<p><strong>P2 — from scratch (2 stages, paper protocol):</strong></p>
+<div class="table-scroll"><table><thead><tr>
+<th>stage</th>
+<th>objective</th>
+<th><code dir="ltr">pos_r</code></th>
+<th>optimizer</th>
+<th>lr</th>
+<th>weight_decay</th>
+<th>patience</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>scoring / MDN only (EGNN docking skipped)</td>
+<td>0</td>
+<td>Adam</td>
+<td>1e-3</td>
+<td>1e-5</td>
+<td>70</td>
+</tr>
+<tr>
+<td>2</td>
+<td>docking + scoring (init from Stage-1 best)</td>
+<td>1</td>
+<td>Adam</td>
+<td>1e-4</td>
+<td>1e-4</td>
+<td>20</td>
+</tr>
+</tbody></table></div>
+<p><strong>P3 — fine-tune (bonus, single stage, init = released weights):</strong> <code dir="ltr">pos_r 1</code>, Adam, <code dir="ltr">lr 1e-4</code>, <code dir="ltr">weight_decay 0</code>, <code dir="ltr">patience 30</code>, eff. batch 64, <code dir="ltr">val_frac 0.1</code>, <code dir="ltr">seed 42</code>.</p>
+<p><strong>pos_r</strong> is the scalar weight on the RMSD (coordinate/docking) loss in KarmaDock&#x27;s <code dir="ltr">training objective loss = pos_r * rmsd_loss + mdn_loss</code> — it acts as a positional-refinement switch that is set to 0 in Stage 1 (train only the MDN interaction-distance loss) and 1 in Stage 2 (turn on the RMSD term to refine predicted ligand coordinates toward the crystal pose).</p>
+<p>Per-epoch training curves are in <a class="content-link" href="assets/downloads/p2_stage1_train_log.csv"><code dir="ltr">docs/p2_stage1_train_log.csv</code></a>, <a class="content-link" href="assets/downloads/p2_stage2_train_log.csv"><code dir="ltr">docs/p2_stage2_train_log.csv</code></a> and <a class="content-link" href="assets/downloads/p3_finetune_train_log.csv"><code dir="ltr">docs/p3_finetune_train_log.csv</code></a>.</p>
+<h2 id="training-log-summary">Training-log summary</h2>
+<p>Computed directly from the checked-in per-epoch logs. Best values are minima.</p>
+<div class="table-scroll"><table><thead><tr>
+<th>run</th>
+<th class="align-right">epochs</th>
+<th class="align-right">best val loss</th>
+<th class="align-right">best val RMSD</th>
+<th class="align-right">final val loss</th>
+<th class="align-right">logged time</th>
+<th>CSV</th>
+</tr></thead><tbody>
+<tr>
+<td>Full-data Stage 2</td>
+<td class="align-right">470</td>
+<td class="align-right">3.55414 (epoch 399)</td>
+<td class="align-right">2.81194 (epoch 399)</td>
+<td class="align-right">3.62990</td>
+<td class="align-right">81.50 h</td>
+<td><a class="content-link" href="assets/downloads/full_stage2_train_log.csv"><code dir="ltr">full_stage2_train_log.csv</code></a></td>
+</tr>
+<tr>
+<td>P2 Stage 1</td>
+<td class="align-right">370</td>
+<td class="align-right">1.20531 (epoch 299)</td>
+<td class="align-right">N/A (<code dir="ltr">pos_r=0</code>)</td>
+<td class="align-right">1.21701</td>
+<td class="align-right">1.95 h</td>
+<td><a class="content-link" href="assets/downloads/p2_stage1_train_log.csv"><code dir="ltr">p2_stage1_train_log.csv</code></a></td>
+</tr>
+<tr>
+<td>P2 Stage 2</td>
+<td class="align-right">146</td>
+<td class="align-right">6.16796 (epoch 125)</td>
+<td class="align-right">4.94560 (epoch 125)</td>
+<td class="align-right">6.24452</td>
+<td class="align-right">3.42 h</td>
+<td><a class="content-link" href="assets/downloads/p2_stage2_train_log.csv"><code dir="ltr">p2_stage2_train_log.csv</code></a></td>
+</tr>
+<tr>
+<td>P3 fine-tune</td>
+<td class="align-right">68</td>
+<td class="align-right">3.48925 (epoch 37)</td>
+<td class="align-right">2.58530 (epoch 37)</td>
+<td class="align-right">3.59316</td>
+<td class="align-right">1.57 h</td>
+<td><a class="content-link" href="assets/downloads/p3_finetune_train_log.csv"><code dir="ltr">p3_finetune_train_log.csv</code></a></td>
+</tr>
+</tbody></table></div>
+<section class="quiz" aria-labelledby="quiz-page-title">
+<h3 class="quiz-title" id="quiz-page-title">Check your understanding</h3>
+<ol>
+<li id="quiz-page-q1">
+<p class="quiz-question">Why is <code dir="ltr">pos_r</code> set to 0 in P2 Stage 1 and to 1 in Stage 2?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Stage 1 trains only the MDN interaction-distance objective; Stage 2 turns on the RMSD coordinate term so the model also refines ligand poses.</p></div>
+</details>
+</li>
+<li id="quiz-page-q2">
+<p class="quiz-question">How is the effective batch size of 64 obtained?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Each step uses <code dir="ltr">batch_size 4</code>, and gradients are accumulated for <code dir="ltr">accum_steps 16</code>, giving an effective batch of 4 × 16 = 64.</p></div>
+</details>
+</li>
+<li id="quiz-page-q3">
+<p class="quiz-question">Why is P2 Stage 1 validation RMSD reported as unavailable even though the log contains zeros?</p>
+<details>
+<summary>Show answer</summary>
+<div class="quiz-answer"><p>Because <code dir="ltr">pos_r=0</code> disables coordinate training in that stage, the logged zero is not a meaningful RMSD measurement to optimize or compare.</p></div>
+</details>
+</li>
+</ol>
+</section></article></main>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#training-log-summary">Training-log summary</a></li></ol></aside>
+  </div>
+  <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
+  <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
+    <div class="search-head"><h2 id="search-title">Search the course site</h2><button class="icon-button" id="search-close" type="button" aria-label="Close search">×</button></div>
+    <label for="search-input">Search titles, headings, and explanatory text</label>
+    <input id="search-input" type="search" dir="auto" autocomplete="off" spellcheck="false" placeholder="Try “pos_r” or “PoseBusters”">
+    <p class="search-status" id="search-status" role="status" aria-live="polite"></p>
+    <ol class="search-results" id="search-results"></ol>
+  </dialog>
+</body>
+</html>
