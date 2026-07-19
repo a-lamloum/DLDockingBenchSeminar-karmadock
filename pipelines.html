@@ -25,7 +25,13 @@
   </header>
   <div class="page-shell">
     <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html" aria-current="page">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
-    <main id="main-content" tabindex="-1"><article><h1 id="2-the-three-pipelines">2. The three pipelines</h1>
+    <main id="main-content" tabindex="-1"><article><h1 id="2-the-three-pipelines">2. Training pipelines</h1>
+<h2 id="final-full-data-pipeline">Final full-data pipeline (the submission)</h2>
+<p>The submitted <code dir="ltr">full_scratch</code> model retrains KarmaDock from scratch on <code dir="ltr">full_train</code> (23,483) with validation on <code dir="ltr">full_val</code> (2,609), following the paper&#x27;s two-stage protocol. Stage 1 (MDN scoring) ran on a single GPU. Stage 2 (docking) ran with DDP on 2× NVIDIA A100-40GB GPUs through <code dir="ltr">scripts/train_ddp.py</code> and <code dir="ltr">condor/full_stage2_2gpu.sub</code>; Condor job 169253 early-stopped at epoch 469 and exited 0.</p>
+<p>The resulting <code dir="ltr">model/full_scratch_karmadock_team002.pkl</code> was benchmarked head-to-head against the authors&#x27; released weights on the same <code dir="ltr">full_test</code> (6,183) and <code dir="ltr">posebusters_filtered</code> (308), scored by the official <code dir="ltr">evaluation.py</code>.</p>
+<p><strong>Data-scale contrast:</strong> prototype training/testing 712/136 → final training/validation 23,483/2,609 → final testing 6,183 + 308.</p>
+<h2 id="prototype-pipelines">Prototype pipelines (earlier phase, for context)</h2>
+<p>The P1/P2/P3 routes below belong to the earlier prototype phase: P2 and P3 trained on <code dir="ltr">proto_train</code> (712), and all three were scored on <code dir="ltr">proto_test</code> (136).</p>
 <div class="table-scroll"><table><thead><tr>
 <th>pipeline</th>
 <th>what it is</th>
@@ -48,7 +54,7 @@
 </tr>
 </tbody></table></div>
 <p><em>Fine-tuning (P3) is a bonus, not a core requirement and still under development.</em></p>
-<h3 id="workflow">Workflow</h3>
+<h3 id="workflow">Prototype workflow</h3>
 <p><strong>① Training — produces the P2 / P3 checkpoints:</strong></p>
 <figure class="workflow"><a href="assets/images/workflow_training.png"><img src="assets/images/workflow_training.png" alt="Training workflow" width="580"></a></figure>
 <p><em>Preprocess <code dir="ltr">proto_train</code> (712) into graphs, then train: <code dir="ltr">--init_model</code> picks the route — </em><em>P2</em><em> from scratch (Stage 1 MDN scoring → Stage 2 + docking RMSD) or </em><em>P3</em><em> fine-tune from the released weights; <code dir="ltr">Early_stopper</code> keeps the best epoch as the checkpoint.</em></p>
@@ -81,7 +87,7 @@
 </li>
 </ol>
 </section></article></main>
-    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-3"><a href="#workflow">Workflow</a></li></ol></aside>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#final-full-data-pipeline">Final full-data pipeline (the submission)</a></li><li class="toc-level-2"><a href="#prototype-pipelines">Prototype pipelines (earlier phase, for context)</a></li><li class="toc-level-3"><a href="#workflow">Prototype workflow</a></li></ol></aside>
   </div>
   <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
   <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">

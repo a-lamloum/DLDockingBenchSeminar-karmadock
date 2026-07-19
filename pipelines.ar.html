@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>2. مسارات العمل الثلاثة | KarmaDock موقع المقرر</title>
+  <title>2. مسارات التدريب | KarmaDock موقع المقرر</title>
   <link rel="alternate" hreflang="en" href="pipelines.html">
   <link rel="stylesheet" href="assets/styles.css">
   <script defer src="assets/search-normalization-fixtures.js"></script>
@@ -25,8 +25,14 @@
   </header>
   <div class="page-shell">
     <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html" aria-current="page">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
-    <main id="main-content" tabindex="-1"><article><h1 id="2-the-three-pipelines"><bdi dir="ltr">2.</bdi> مسارات العمل الثلاثة</h1>
+    <main id="main-content" tabindex="-1"><article><h1 id="2-the-three-pipelines"><bdi dir="ltr">2.</bdi> مسارات التدريب</h1>
 <aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
+<h2 id="final-full-data-pipeline">مسار البيانات الكاملة النهائي (مسار التسليم)</h2>
+<p>يعيد نموذج التسليم <code dir="ltr">full_scratch</code> تدريب <bdi dir="ltr">KarmaDock</bdi> من الصفر على <code dir="ltr">full_train</code> (<bdi dir="ltr">23,483</bdi>)، مع التحقق على <code dir="ltr">full_val</code> (<bdi dir="ltr">2,609</bdi>)، وفق بروتوكول الورقة ذي المرحلتين. شُغّلت المرحلة الأولى (تسجيل <bdi dir="ltr">MDN</bdi>) على وحدة <bdi dir="ltr">GPU</bdi> واحدة. وشُغّلت المرحلة الثانية (الإرساء) باستخدام <bdi dir="ltr">DDP</bdi> على وحدتي <bdi dir="ltr">NVIDIA A100-40GB</bdi> عبر <code dir="ltr">scripts/train_ddp.py</code> و<code dir="ltr">condor/full_stage2_2gpu.sub</code>؛ أوقفت مهمة <bdi dir="ltr">Condor 169253</bdi> التدريب مبكرًا عند الحقبة <bdi dir="ltr">469</bdi> وخرجت بالرمز <bdi dir="ltr">0</bdi>.</p>
+<p>قورنت نقطة التحقق الناتجة <code dir="ltr">model/full_scratch_karmadock_team002.pkl</code> مباشرةً بأوزان المؤلفين المنشورة على مجموعتي <code dir="ltr">full_test</code> (<bdi dir="ltr">6,183</bdi>) و<code dir="ltr">posebusters_filtered</code> (<bdi dir="ltr">308</bdi>) نفسيهما، باستخدام <code dir="ltr">evaluation.py</code> الرسمي.</p>
+<p><strong>الفرق في حجم البيانات:</strong> تدريب/اختبار النموذج الأولي <bdi dir="ltr">712/136</bdi> ← تدريب/تحقق نهائي <bdi dir="ltr">23,483/2,609</bdi> ← اختبار نهائي <bdi dir="ltr">6,183 + 308</bdi>.</p>
+<h2 id="prototype-pipelines">مسارات النموذج الأولي (المرحلة السابقة، للسياق)</h2>
+<p>تنتمي مسارات <bdi dir="ltr">P1/P2/P3</bdi> أدناه إلى مرحلة النموذج الأولي السابقة؛ دُرّب <bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3</bdi> على <code dir="ltr">proto_train</code> (<bdi dir="ltr">712</bdi>)، وقُيّمت المسارات الثلاثة على <code dir="ltr">proto_test</code> (<bdi dir="ltr">136</bdi>).</p>
 <div class="table-scroll"><table><thead><tr>
 <th>المسار</th>
 <th>ما هو؟</th>
@@ -49,7 +55,7 @@
 </tr>
 </tbody></table></div>
 <p><em>الضبط الدقيق (<bdi dir="ltr">P3</bdi>) إضافة غير مطلوبة في جوهر المهمة، وما زال قيد التطوير.</em></p>
-<h3 id="workflow">سير العمل</h3>
+<h3 id="workflow">سير عمل النموذج الأولي</h3>
 <p><strong>① التدريب — ينتج نقطتي تحقق <bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3:</bdi></strong></p>
 <figure class="workflow"><a href="assets/images/workflow_training.png"><img src="assets/images/workflow_training.png" alt="سير عمل التدريب" width="580"></a></figure>
 <p><em>تُعالج <code dir="ltr">proto_train</code> (<bdi dir="ltr">712</bdi>) إلى رسوم بيانية، ثم يبدأ التدريب. يحدد <code dir="ltr">--init_model</code> المسار: يبدأ </em><em><bdi dir="ltr">P2</bdi></em><em> من الصفر (المرحلة <bdi dir="ltr">1</bdi> لتسجيل <bdi dir="ltr">MDN</bdi>، ثم المرحلة <bdi dir="ltr">2</bdi> مع <bdi dir="ltr">RMSD</bdi> للإرساء)، بينما يضبط </em><em><bdi dir="ltr">P3</bdi></em><em> الأوزان المنشورة. تحتفظ <code dir="ltr">Early_stopper</code> بأفضل حقبة بوصفها نقطة التحقق.</em></p>
@@ -82,7 +88,7 @@
 </li>
 </ol>
 </section></article></main>
-    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-3"><a href="#workflow">سير العمل</a></li></ol></aside>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#final-full-data-pipeline">مسار البيانات الكاملة النهائي (مسار التسليم)</a></li><li class="toc-level-2"><a href="#prototype-pipelines">مسارات النموذج الأولي (المرحلة السابقة، للسياق)</a></li><li class="toc-level-3"><a href="#workflow">سير عمل النموذج الأولي</a></li></ol></aside>
   </div>
   <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
   <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">

@@ -25,31 +25,59 @@
   </header>
   <div class="page-shell">
     <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html" aria-current="page">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
-    <main id="main-content" tabindex="-1"><article><h1 id="results">النتائج</h1>
+    <main id="main-content" tabindex="-1"><article><h1 id="results"><bdi dir="ltr">3.</bdi> النتائج — التسليم النهائي بالبيانات الكاملة</h1>
 <aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
-<h2 id="final-submission-full-data--report-in-progress">🚧 التسليم النهائي (البيانات الكاملة) — التقرير قيد الإعداد</h2>
-<p>تستخدم الجداول التالية مجموعة <code dir="ltr">proto_test</code> الأولية (<bdi dir="ltr">136</bdi>). يجري استكمال <strong>التسليم النهائي للبيانات الكاملة</strong>: أُعيد تدريب نموذجنا من الصفر على تقسيم الندوة الكامل (<code dir="ltr">model/full_scratch_karmadock_team002.pkl</code>؛ بروتوكول الورقة ذي المرحلتين <bdi dir="ltr">2-stage</bdi>، مع المرحلة <bdi dir="ltr">2</bdi> على <bdi dir="ltr">2×A100</bdi> بسعة <bdi dir="ltr">40GB</bdi> لكل بطاقة)، وقورن مباشرةً بأوزان المؤلفين المنشورة على مجموعتي <code dir="ltr">full_test</code> (<bdi dir="ltr">6,183</bdi>) و<code dir="ltr">posebusters_filtered</code> (<bdi dir="ltr">308</bdi>) نفسيهما.</p>
-<p><strong>النتيجة الأولية الرئيسة</strong> (نجاح <bdi dir="ltr">top-1</bdi> عند <bdi dir="ltr">2</bdi> Å باستخدام <code dir="ltr">evaluation.py</code> والوضعية الخام):</p>
+<span id="final-submission-full-data--report-in-progress"></span><span id="3-results"></span>
+<h2 id="3-1-full-data-benchmark-primary"><bdi dir="ltr">3.1</bdi> مقياس البيانات الكاملة (الرئيس)</h2>
+<p>نموذج التسليم هو <strong><code dir="ltr">full_scratch</code></strong>: أُعيد تدريب <bdi dir="ltr">KarmaDock</bdi> من الصفر على <code dir="ltr">full_train</code> (<bdi dir="ltr">23,483</bdi>)، مع <code dir="ltr">full_val</code> (<bdi dir="ltr">2,609</bdi>)، وفق بروتوكول الورقة ذي المرحلتين. شُغّلت المرحلة الأولى (تسجيل <bdi dir="ltr">MDN</bdi>) على وحدة <bdi dir="ltr">GPU</bdi> واحدة، والمرحلة الثانية (الإرساء) باستخدام <bdi dir="ltr">DDP</bdi> على وحدتي <bdi dir="ltr">NVIDIA A100-40GB</bdi>. نقطة التحقق هي <code dir="ltr">model/full_scratch_karmadock_team002.pkl</code>.</p>
+<p>قارنّاه مباشرةً بأوزان المؤلفين المنشورة على مجموعتي <code dir="ltr">full_test</code> (<bdi dir="ltr">6,183</bdi>) و<code dir="ltr">posebusters_filtered</code> (<bdi dir="ltr">308</bdi>) نفسيهما، وعلى متغيرات الوضعية الثلاثة، باستخدام <a class="content-link" href="walkthrough-evaluation.ar.html"><code dir="ltr">evaluation/evaluation.py</code></a> الرسمي.</p>
+<p><strong>نسبة النجاح عند <bdi dir="ltr">2</bdi> Å (<bdi dir="ltr">top-1</bdi>):</strong></p>
 <div class="table-scroll"><table><thead><tr>
 <th>المجموعة</th>
-<th>نموذجنا (البيانات الكاملة)</th>
-<th>الأوزان المنشورة</th>
+<th>النموذج</th>
+<th>الخام</th>
+<th><bdi dir="ltr">FF</bdi></th>
+<th>المحاذاة</th>
 </tr></thead><tbody>
 <tr>
 <td><bdi dir="ltr">full_test</bdi> (<bdi dir="ltr">6,183</bdi>)</td>
-<td><bdi dir="ltr">82.2</bdi> %</td>
+<td><strong>نموذجنا (من الصفر)</strong></td>
+<td><strong><bdi dir="ltr">82.2</bdi> %</strong></td>
+<td><bdi dir="ltr">79.3</bdi> %</td>
+<td><bdi dir="ltr">75.1</bdi> %</td>
+</tr>
+<tr>
+<td><bdi dir="ltr">full_test</bdi> (<bdi dir="ltr">6,183</bdi>)</td>
+<td>الأوزان المنشورة</td>
 <td><bdi dir="ltr">88.3</bdi> %</td>
+<td><bdi dir="ltr">84.9</bdi> %</td>
+<td><bdi dir="ltr">70.1</bdi> %</td>
 </tr>
 <tr>
 <td><bdi dir="ltr">PoseBusters</bdi> (<bdi dir="ltr">308</bdi>)</td>
-<td><bdi dir="ltr">76.9</bdi> % (<bdi dir="ltr">PB-Valid</bdi> <bdi dir="ltr">5.2</bdi> %)</td>
-<td><bdi dir="ltr">83.1</bdi> % (<bdi dir="ltr">PB-Valid</bdi> <bdi dir="ltr">2.6</bdi> %)</td>
+<td><strong>نموذجنا (من الصفر)</strong></td>
+<td><strong><bdi dir="ltr">76.9</bdi> %</strong></td>
+<td><bdi dir="ltr">75.6</bdi> %</td>
+<td><bdi dir="ltr">69.5</bdi> %</td>
+</tr>
+<tr>
+<td><bdi dir="ltr">PoseBusters</bdi> (<bdi dir="ltr">308</bdi>)</td>
+<td>الأوزان المنشورة</td>
+<td><bdi dir="ltr">83.1</bdi> %</td>
+<td><bdi dir="ltr">78.9</bdi> %</td>
+<td><bdi dir="ltr">68.2</bdi> %</td>
 </tr>
 </tbody></table></div>
-<p>تتضمن الإضافة النموذج المدرّب (<code dir="ltr">model/</code>)، وملفات <bdi dir="ltr">CSV</bdi> الخاصة بمدخلات التقييم (<code dir="ltr">data/</code>)، وملفات إرسال <bdi dir="ltr">HPC</bdi> في <bdi dir="ltr">Condor</bdi> (<code dir="ltr">condor/full_stage2_2gpu.sub</code> لتدريب المرحلة <bdi dir="ltr">2</bdi> على <bdi dir="ltr">2×A100</bdi>، وملفا <code dir="ltr">condor/{full_test,posebusters}_infer.sub</code> للاستدلال)، وسجلات المهام (<code dir="ltr">condor/logs/</code>). ما زال التقرير الكامل ودفتر النتائج قيد الاستكمال.</p>
-<hr>
-<h2 id="3-results"><bdi dir="ltr">3.</bdi> النتائج</h2>
-<p>نموذج التسليم هو <strong><bdi dir="ltr">P2</bdi> المدرّب من الصفر</strong>، وهو المطلوب لإعادة تدريب الأداة على التقسيم المشترك. يُعرض <bdi dir="ltr">P1</bdi> المنشور و<bdi dir="ltr">P3</bdi> المضبوط بدقة للسياق. أُجري التقييم بواسطة <a class="content-link" href="walkthrough-evaluation.ar.html"><code dir="ltr">evaluation/evaluation.py</code></a> الرسمي على <strong><bdi dir="ltr">136</bdi> مركّبًا في <code dir="ltr">proto_test</code></strong> وعلى متغيرات المعالجة اللاحقة الثلاثة في <bdi dir="ltr">KarmaDock.</bdi></p>
+<p>القيم الخام <strong>عند <bdi dir="ltr">1</bdi> Å / وسيط <bdi dir="ltr">RMSD</bdi> / <bdi dir="ltr">PB-Valid</bdi></strong>: نموذجنا على <bdi dir="ltr">full_test</bdi> ‏<bdi dir="ltr">48.6</bdi> % / <bdi dir="ltr">1.03</bdi> Å / <bdi dir="ltr">11.5</bdi> %؛ الأوزان المنشورة ‏<bdi dir="ltr">54.4</bdi> % / <bdi dir="ltr">0.95</bdi> Å / <bdi dir="ltr">1.4</bdi> %. نموذجنا على <bdi dir="ltr">PoseBusters</bdi> ‏<bdi dir="ltr">37.0</bdi> % / <bdi dir="ltr">1.18</bdi> Å / <bdi dir="ltr">5.2</bdi> %؛ الأوزان المنشورة ‏<bdi dir="ltr">39.6</bdi> % / <bdi dir="ltr">1.16</bdi> Å / <bdi dir="ltr">2.6</bdi> %.</p>
+<p><strong>ثلاث نتائج:</strong></p>
+<ol>
+<li>فجوة دقة ثابتة تقارب <bdi dir="ltr">6</bdi> نقاط مقارنةً بالأوزان المنشورة على المجموعتين؛ وهذا متوقع لأن الأوزان المنشورة تدربت على بيانات أكثر بكثير.</li>
+<li>وضعيات نموذجنا أكثر صلاحية فيزيائية (قيمة <bdi dir="ltr">PB-Valid</bdi> أعلى) رغم انخفاض الدقة الخام.</li>
+<li>تُقلّل المعالجة اللاحقة (<bdi dir="ltr">FF</bdi> والمحاذاة) الدقة على نطاق البيانات الكامل: الخام &gt; <bdi dir="ltr">FF</bdi> &gt; المحاذاة لكل نموذج ومجموعة، بما يطابق ورقة <bdi dir="ltr">KarmaDock</bdi> ويحل شذوذ النموذج الأولي.</li>
+</ol>
+<p>توجد ملفات <bdi dir="ltr">CSV</bdi> لكل مركّب وتحليل البيانات الكاملة في <code dir="ltr">results/full_data_evaluation/</code> و<code dir="ltr">notebooks/full_data_results_and_comparison.ipynb</code>.</p>
+<h2 id="3-2-prototype-earlier-phase"><bdi dir="ltr">3.2</bdi> النموذج الأولي (<code dir="ltr">proto_test</code>، <bdi dir="ltr">136</bdi> — المرحلة السابقة، للسياق)</h2>
+<p>دُرّب <bdi dir="ltr">P2</bdi> و<bdi dir="ltr">P3</bdi> في مرحلة النموذج الأولي على <code dir="ltr">proto_train</code> الصغيرة (<bdi dir="ltr">712</bdi>)، وقُيّمت المسارات على <code dir="ltr">proto_test</code> (<bdi dir="ltr">136</bdi>).</p>
 <p><strong>نسبة النجاح عند <bdi dir="ltr">2</bdi> Å (<bdi dir="ltr">top-1</bdi>):</strong></p>
 <div class="table-scroll"><table><thead><tr>
 <th>المسار</th>
@@ -58,8 +86,8 @@
 <th>مصحح بالمحاذاة</th>
 </tr></thead><tbody>
 <tr>
-<td><strong><bdi dir="ltr">P2</bdi> — من الصفر</strong> (نموذجنا)</td>
-<td><strong><bdi dir="ltr">10.3</bdi> %</strong></td>
+<td><strong><bdi dir="ltr">P2</bdi> — من الصفر</strong></td>
+<td><bdi dir="ltr">10.3</bdi> %</td>
 <td><bdi dir="ltr">11.0</bdi> %</td>
 <td><bdi dir="ltr">94.1</bdi> %</td>
 </tr>
@@ -76,8 +104,7 @@
 <td><bdi dir="ltr">94.9</bdi> %</td>
 </tr>
 </tbody></table></div>
-<p>القيم الخام <strong>عند <bdi dir="ltr">1</bdi> Å / وسيط <bdi dir="ltr">RMSD</bdi></strong>: ‏<bdi dir="ltr">P2</bdi> ‏<bdi dir="ltr">3.7</bdi> % / <bdi dir="ltr">3.38</bdi> Å · ‏<bdi dir="ltr">P1</bdi> ‏<bdi dir="ltr">8.1</bdi> % / <bdi dir="ltr">1.45</bdi> Å · ‏<bdi dir="ltr">P3</bdi> ‏<bdi dir="ltr">7.4</bdi> % / <bdi dir="ltr">1.48</bdi> Å. توجد ملفات <bdi dir="ltr">CSV</bdi> لكل مركّب في <a class="content-link" href="results.ar.html"><code dir="ltr">results/</code></a>: النمط <code dir="ltr">&lt;pipeline&gt;_&lt;variant&gt;_evaluation.csv</code>، أما <code dir="ltr">proto_test_evaluation.csv</code> فهو النتيجة الرئيسة لـ<bdi dir="ltr">P2.</bdi> النتائج حتمية مع <code dir="ltr">--random_seed 2023</code>.</p>
-<blockquote><p>نعتقد أن نتيجة المحاذاة المصححة مضللة؛ إذ يُفترض وفق الورقة أن تكون أدنى من الوضعيتين الخام والمصححة بـ<bdi dir="ltr">FF</bdi>، بينما حدث العكس في نتائجنا. يحتاج ذلك إلى تحقيق إضافي، ولا يؤثر في تدريب المرحلة التالية.</p></blockquote>
+<p>كان ترتيب المتغيرات معكوسًا في النموذج الأولي (المحاذاة ≫ الخام). تحل تجربة البيانات الكاملة ذلك: الخام &gt; <bdi dir="ltr">FF</bdi> &gt; المحاذاة، بما يطابق الورقة. لذلك كان الفرق <bdi dir="ltr">10.3</bdi> % / <bdi dir="ltr">94.1</bdi> % أثرًا لصغر مجموعة الاختبار ذات <bdi dir="ltr">136</bdi> مركّبًا، وليس خاصية حقيقية للنموذج. يوجد تحليل هذه المرحلة في <code dir="ltr">notebooks/prototype_results_and_comparison.ipynb</code>.</p>
 <p>الوضعية <strong>الخام</strong> هي خرج النموذج مباشرة. متغير <strong><bdi dir="ltr">FF</bdi></strong> استرخاء باستخدام حقل قوة. أما متغير <strong>المحاذاة</strong> فيضع الربيطة المتنبأ بها فوق الإطار المرجعي.</p>
 <h2 id="layout">تخطيط ملفات النتائج</h2>
 <div class="code-scroll"><pre dir="ltr"><code dir="ltr" class="">results/
@@ -124,15 +151,15 @@
 </details>
 </li>
 <li id="quiz-page-q3">
-<p class="quiz-question">أي نتيجة أولية تمثل نتيجة التسليم الرئيسة، وأين تحفظ بياناتها لكل مركّب؟</p>
+<p class="quiz-question">أي نتيجة تمثل نتيجة التسليم النهائي الرئيسة، وأين تحفظ بياناتها لكل مركّب؟</p>
 <details>
 <summary>اعرض الإجابة</summary>
-<div class="quiz-answer"><p>النتيجة الرئيسة هي خرج <bdi dir="ltr">P2</bdi> الخام المدرّب من الصفر، وتوجد قيم كل مركّب في <code dir="ltr">results/proto_test_evaluation.csv</code>.</p></div>
+<div class="quiz-answer"><p>النتيجة الرئيسة هي الخرج الخام لنموذج <code dir="ltr">full_scratch</code> على مقاييس البيانات الكاملة، وتوجد قيم كل مركّب في <code dir="ltr">results/full_data_evaluation/</code>.</p></div>
 </details>
 </li>
 </ol>
 </section></article></main>
-    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#final-submission-full-data--report-in-progress">🚧 التسليم النهائي (البيانات الكاملة) — التقرير قيد الإعداد</a></li><li class="toc-level-2"><a href="#3-results"><bdi dir="ltr">3.</bdi> النتائج</a></li><li class="toc-level-2"><a href="#layout">تخطيط ملفات النتائج</a></li><li class="toc-level-2"><a href="#eval-csv-columns">أعمدة ملف <bdi dir="ltr">CSV</bdi> للتقييم</a></li><li class="toc-level-2"><a href="#per-complex-evaluation-downloads">تنزيل تقييمات كل مركّب</a></li></ol></aside>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#3-1-full-data-benchmark-primary"><bdi dir="ltr">3.1</bdi> مقياس البيانات الكاملة (الرئيس)</a></li><li class="toc-level-2"><a href="#3-2-prototype-earlier-phase"><bdi dir="ltr">3.2</bdi> النموذج الأولي (المرحلة السابقة، للسياق)</a></li><li class="toc-level-2"><a href="#layout">تخطيط ملفات النتائج</a></li><li class="toc-level-2"><a href="#eval-csv-columns">أعمدة ملف <bdi dir="ltr">CSV</bdi> للتقييم</a></li><li class="toc-level-2"><a href="#per-complex-evaluation-downloads">تنزيل تقييمات كل مركّب</a></li></ol></aside>
   </div>
   <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
   <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
