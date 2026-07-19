@@ -2,7 +2,7 @@
 
 ## الغرض {#purpose}
 
-تصف هذه الملفات الـ12 مهام المستودع لنظام HTCondor: تدريب النموذج الأولي والبيانات الكاملة، وتجارب المرحلة 2 على GPU واحدة أو عدة وحدات، والاستدلال، والتقييم. لا تنفذ منطق التعلم الآلي بنفسها؛ بل تختار بيئة Docker، وتنقل الملفات، وتحجز الموارد، وتستدعي غلاف shell بوسائط أو متغيرات بيئة، وتوجه المخرجات والسجلات.
+تصف هذه الملفات الـ13 مهام المستودع لنظام HTCondor: تدريب النموذج الأولي والبيانات الكاملة، وتجارب المرحلة 2 على GPU واحدة أو عدة وحدات، والاستدلال، والتقييم. لا تنفذ منطق التعلم الآلي بنفسها؛ بل تختار بيئة Docker، وتنقل الملفات، وتحجز الموارد، وتستدعي غلاف shell بوسائط أو متغيرات بيئة، وتوجه المخرجات والسجلات.
 
 ## موقعه في المنظومة {#how-it-fits-in}
 
@@ -53,6 +53,35 @@ queue 1
 ```
 
 هذه مهمة CPU الوحيدة، فلا يوجد `request_gpus`. تنقل جميع نتائج النموذج الأولي، وتشغّل مصفوفة RMSD ذات 3×3، وتعيد شجرة `results` الموسعة. تخدم أربع وحدات CPU و16 GB ‏RDKit والتقييم لا الاستدلال. يجب تشغيلها بعد الاستدلال لأن مدخلاتها كلها هي الوضعيات التي تنتجها تلك المهام.
+
+### `condor/full_eval_batch.sub` {#full-eval-batch-sub}
+
+```condor
+universe      = docker
+docker_image  = ahlamloum/karmadock-seminar:v6
++WantGPUHomeMounted = true
+requirements  = UidDomain == "cs.uni-saarland.de" && (Machine =!= "idun.hpc.uni-saarland.de")
+
+executable    = jobs/$(Item)/run.sh
+initialdir    = jobs/$(Item)
+
+should_transfer_files = NO
+
+output = /home/bdldt_team002/eval_full_data/logs/$(Item).out
+error  = /home/bdldt_team002/eval_full_data/logs/$(Item).err
+log    = /home/bdldt_team002/eval_full_data/logs/$(Item).log
+
+request_cpus   = 1
+request_memory = 4GB
+
+queue Item in (full_scratch__full_test__align__shard0,full_scratch__full_test__align__shard1,full_scratch__full_test__align__shard2,full_scratch__full_test__align__shard3,full_scratch__full_test__align__shard4,full_scratch__full_test__align__shard5,full_scratch__full_test__ff__shard0,full_scratch__full_test__ff__shard1,full_scratch__full_test__ff__shard2,full_scratch__full_test__ff__shard3,full_scratch__full_test__ff__shard4,full_scratch__full_test__ff__shard5,full_scratch__full_test__uncorrected__shard0,full_scratch__full_test__uncorrected__shard1,full_scratch__full_test__uncorrected__shard2,full_scratch__full_test__uncorrected__shard3,full_scratch__full_test__uncorrected__shard4,full_scratch__full_test__uncorrected__shard5,full_scratch__posebusters_filtered__align,full_scratch__posebusters_filtered__ff,full_scratch__posebusters_filtered__uncorrected,released_baseline__full_test__align__shard0,released_baseline__full_test__align__shard1,released_baseline__full_test__align__shard2,released_baseline__full_test__align__shard3,released_baseline__full_test__align__shard4,released_baseline__full_test__align__shard5,released_baseline__full_test__ff__shard0,released_baseline__full_test__ff__shard1,released_baseline__full_test__ff__shard2,released_baseline__full_test__ff__shard3,released_baseline__full_test__ff__shard4,released_baseline__full_test__ff__shard5,released_baseline__full_test__uncorrected__shard0,released_baseline__full_test__uncorrected__shard1,released_baseline__full_test__uncorrected__shard2,released_baseline__full_test__uncorrected__shard3,released_baseline__full_test__uncorrected__shard4,released_baseline__full_test__uncorrected__shard5,released_baseline__posebusters_filtered__align,released_baseline__posebusters_filtered__ff,released_baseline__posebusters_filtered__uncorrected)
+```
+
+هذه دفعة تقييم البيانات الكاملة: ملف إرسال واحد ينشئ 42 مهمة CPU متوازية بواسطة `queue Item in (...)`. يأتي العدد 42 من نموذجين (`full_scratch` و`released_baseline`)؛ لكل نموذج 18 مهمة لـ`full_test` (ست شظايا × ثلاثة متغيرات للوضعية) وثلاث مهام لـ`posebusters_filtered` غير المقسمة (ثلاثة متغيرات)، أي 21 مهمة لكل نموذج.
+
+يحدد الملف `executable = jobs/$(Item)/run.sh` و`initialdir = jobs/$(Item)`، ويستخدم `should_transfer_files = NO` لأن البيانات ونقاط التحقق موجودة في المنزل المثبت. تطلب كل مهمة وحدة CPU واحدة وذاكرة 4 GB فقط، وتذهب مسارات `output` و`error` و`log` إلى `/home/bdldt_team002/eval_full_data/logs/$(Item).{out,err,log}`.
+
+يشغّل `run.sh` الخاص بكل مهمة الأمر `evaluation.py --dataset <full_test|posebusters_filtered> --output_csv … --top_n 1 --shard_idx <i> --num_shards <6|1>`. تقسيم `full_test` إلى ست شظايا هو ما يجعل تقييم 6,183 مركّبًا ملائمًا للطابور. يحتوي الدليل المرافق `condor/full_eval_jobs/` على ملف `run.sh` لكل مهمة، وتوجد سجلات التشغيل تحت `condor/logs/full_data_eval/`، وتصب ملفات CSV المدمجة لكل مركّب في `results/full_data_evaluation/`.
 
 ### `condor/full_stage2_2gpu.sub` {#full-stage2-2gpu-sub}
 
@@ -424,4 +453,4 @@ queue 1
 - لا ينسخ `ON_EXIT` نقاط تحقق الصندوق باستمرار. تتجنب مهام البيانات الكاملة وDDP الخطر بالكتابة في المنزل المثبت، بينما تعتمد مهام النموذج الأولي على سلوك الصندوق وإعادة الجدولة حتى الخروج.
 - يقيد `full_stage2_2gpu.sub` وحده قدرة GPU وذاكرتها. قد تطابق بقية مهام GPU أي بطاقة تحقق الطلب العام، بما فيها بطاقات مختلفة الذاكرة والأداء.
 - ينقل `posebusters_infer.sub` الملف `data/posebusters_filtered.csv` ذي الأعمدة الفعلية `ligand_name,ligand_file,protein_file`. يستدعي `run_infer.sh` ‏`seminar_csv.complex_records` الذي لا يدعم هذا المخطط ويبحث بدلًا منه عن أعمدة البيانات الوصفية الكاملة. قد يفشل المسار كما هو بخطأ pandas من نوع `KeyError`؛ ويتعارض تعليق ملف الإرسال الذي يدعي قراءة `ligand_file` مع الشيفرة.
-- لا تختصر الأسطر `# ... comments unchanged ...` أعلاه إلا تعليقات نثرية؛ أُعيد إنتاج كل توجيه تنفيذي من ملفات المصدر الـ12.
+- لا تختصر الأسطر `# ... comments unchanged ...` أعلاه إلا تعليقات نثرية؛ أُعيد إنتاج كل توجيه تنفيذي من ملفات المصدر الـ13.
