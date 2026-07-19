@@ -2,7 +2,7 @@
 
 ## الغرض {#purpose}
 
-تصف هذه الملفات الـ12 مهام المستودع لنظام HTCondor: تدريب النموذج الأولي والبيانات الكاملة، وتجارب المرحلة 2 على GPU واحدة أو عدة وحدات، والاستدلال، والتقييم. لا تنفذ منطق التعلم الآلي بنفسها؛ بل تختار بيئة Docker، وتنقل الملفات، وتحجز الموارد، وتستدعي غلاف shell بوسائط أو متغيرات بيئة، وتوجه المخرجات والسجلات.
+تصف هذه الملفات الـ10 مهام المستودع لنظام HTCondor: تدريب النموذج الأولي والبيانات الكاملة، وتجارب المرحلة 2 على GPU واحدة أو عدة وحدات، والاستدلال، والتقييم. لا تنفذ منطق التعلم الآلي بنفسها؛ بل تختار بيئة Docker، وتنقل الملفات، وتحجز الموارد، وتستدعي غلاف shell بوسائط أو متغيرات بيئة، وتوجه المخرجات والسجلات.
 
 ## موقعه في المنظومة {#how-it-fits-in}
 
@@ -57,12 +57,9 @@ queue 1
 ### `condor/full_stage2_2gpu.sub` {#full-stage2-2gpu-sub}
 
 ```condor
-# full_stage2_2gpu.sub — COPY of full_stage2_mgpu.sub for the 2x A100 DDP Stage-2 run.
-# Changes vs the original (which is left untouched):
-#   request_gpus 4 -> 2 ; cpus 16 -> 8 ; memory 64GB -> 16GB
-#   + GPU selector (cap >=8.0 & >=32 GB) so 2 A100s/L40S/H200 are picked, never a 16 GB OOM card
-#   environment S2_BATCH=8 S2_ACCUM=4 -> effective batch 2*8*4 = 64 (paper)
-#   executable + transfer use run_full_stage2_ddp_v2.sh (wd 0, patience 70)
+# full_stage2_2gpu.sub — the 2x A100 DDP Stage-2 training job.
+# Per-GPU batch 8 x accum 4 x 2 ranks = effective batch 64; weight decay 0; patience 70.
+# GPU selector requires capability >=8.0 and >=32 GB.
 # ... prerequisite comments unchanged ...
 universe      = docker
 docker_image  = ahlamloum/karmadock-seminar:v6
@@ -89,42 +86,7 @@ gpus_minimum_memory     = 32000
 queue 1
 ```
 
-هذه تجربة وحدتي GPU النهائية الفعلية. تحافظ تجاوزات البيئة على دفعة عالمية فعلية 64 وتشير مباشرة إلى أفضل نقطة تحقق نهائية للمرحلة 1. يغيّر مشغّل v2 اضمحلال الأوزان وpatience للمرحلة 2. تتجنب قيود GPU الأجهزة ذات 16 GB المعروفة بنفاد الذاكرة. لا تنقل إلا الشيفرة لأن البيانات والرسوم ونقطة التحقق والمخرجات موجودة في المنزل المثبت. يجعل المسار الثابت `/home/bdldt_team002/...` الملف خاصًا بحساب رغم قابلية تجاوز المسارات في المشغّل.
-
-### `condor/full_stage2_mgpu.sub` {#full-stage2-mgpu-sub}
-
-```condor
-# full_stage2_mgpu.sub — ISOLATED multi-GPU (DDP) Stage-2 TEST on the full dataset.
-# Separate from the prototype submission and from the running full job (167960):
-#   - reads ~/repro_test/work_full graphs (read-only) + a Stage-1 snapshot,
-#   - writes only to ~/stage2_mgpu_test/work (its own dir).
-# ... setup and smoke-test comments unchanged ...
-universe      = docker
-docker_image  = ahlamloum/karmadock-seminar:v6
-+WantGPUHomeMounted = true
-requirements  = UidDomain == "cs.uni-saarland.de" && (Machine =!= "idun.hpc.uni-saarland.de")
-
-executable    = run_full_stage2_ddp.sh
-# Per-GPU batch 8 x accum 2 x 4 GPUs = effective batch 64. Override here if relocating data:
-#   environment = "S2_BATCH=8 S2_ACCUM=2 STAGE1_CKPT=/path/to/stage1.pkl"
-
-should_transfer_files   = YES
-when_to_transfer_output = ON_EXIT
-transfer_input_files    = train_ddp.py, seminar_csv.py, run_full_stage2_ddp.sh
-# data, graphs, checkpoints all live on the mounted home -- nothing large is transferred
-
-output = logs/s2mgpu.$(ClusterId).$(ProcId).out
-error  = logs/s2mgpu.$(ClusterId).$(ProcId).err
-log    = logs/s2mgpu.$(ClusterId).log
-
-request_gpus   = 4
-request_cpus   = 16
-request_memory = 64GB
-
-queue 1
-```
-
-هذه تجربة المرحلة 2 الأصلية على أربع وحدات GPU باستخدام قيم `run_full_stage2_ddp.sh` الافتراضية: دفعة 8 × تجميع 2 × أربع رتب = 64. تطلب CPU وذاكرة أكثر، لكنها لا تفرض قيدًا على جيل GPU أو ذاكرتها بخلاف نسخة 2-GPU. تتوقع الإرسال من مجلد نشر يحوي الملفات الثلاثة المنقولة بأسمائها المجردة ونسخة مرحلة 1 منشأة مسبقًا في المنزل المثبت.
+هذه تجربة وحدتي GPU النهائية الفعلية. تحافظ تجاوزات البيئة على دفعة عالمية فعلية 64 وتشير مباشرة إلى أفضل نقطة تحقق نهائية للمرحلة 1. يغيّر مشغّل v2 اضمحلال الأوزان وpatience للمرحلة 2. تتجنب قيود GPU الأجهزة ذات 16 GB المعروفة بنفاد الذاكرة. لا تنقل إلا الشيفرة لأن البيانات والرسوم ونقطة التحقق والمخرجات موجودة في المنزل المثبت؛ ويجري تجهيز `train_ddp.py` و`run_full_stage2_ddp_v2.sh` على العنقود، وهما غير مخزنين في هذا المستودع. يجعل المسار الثابت `/home/bdldt_team002/...` الملف خاصًا بحساب رغم قابلية تجاوز المسارات في المشغّل.
 
 ### `condor/full_test_infer.sub` {#full-test-infer-sub}
 
@@ -386,37 +348,6 @@ queue 1
 
 يعيد هذا استخدام نموذج البيانات الكاملة على معيار PoseBusters الأصغر. ملف الإرسال واضح داخليًا، لكن المحول المستدعى لا يتعرف حاليًا على مخطط `ligand_file` في CSV المرفق؛ راجع التنبيهات.
 
-### `condor/smoke_2gpu.sub` {#smoke-2gpu-sub}
-
-```condor
-# smoke_2gpu.sub — SMOKE TEST of the DDP Stage-2 path: 2 GPUs, 3 epochs.
-# Validates torchrun + NCCL + id-shard + all-reduce + rank-0 ckpt on real GPUs, and measures
-# per-epoch wall time so the full run can be estimated. Isolated (writes ~/stage2_mgpu_test/work).
-universe      = docker
-docker_image  = ahlamloum/karmadock-seminar:v6
-+WantGPUHomeMounted = true
-requirements  = UidDomain == "cs.uni-saarland.de" && (Machine =!= "idun.hpc.uni-saarland.de")
-
-executable    = run_full_stage2_ddp.sh
-environment   = "S2_EPOCHS=3"
-
-should_transfer_files   = YES
-when_to_transfer_output = ON_EXIT
-transfer_input_files    = train_ddp.py, seminar_csv.py, run_full_stage2_ddp.sh
-
-output = logs/smoke.$(ClusterId).$(ProcId).out
-error  = logs/smoke.$(ClusterId).$(ProcId).err
-log    = logs/smoke.$(ClusterId).log
-
-request_gpus   = 2
-request_cpus   = 8
-request_memory = 48GB
-
-queue 1
-```
-
-يقصر اختبار الدخان التدريب على ثلاث حقب للتحقق من بدء العمليات واتصال NCCL وتقسيم المعرّفات وتخفيض المقاييس وحفظ نقطة التحقق على rank-0 قبل إنفاق أيام على التشغيل الكامل. وبما أنه يستخدم قيم المشغّل الأصلية (`BS=8` و`ACC=2`)، فإن دفعته الفعلية على وحدتي GPU هي 32 لا 64؛ فغرضه التحقق من المنظومة لا إنتاج تدريب مطابق للورقة.
-
 ## تنبيهات وملاحظات {#gotchas--notes}
 
 - تُفسر مسارات الإرسال نسبة إلى المجلد الذي يُشغّل فيه `condor_submit`، لا بالضرورة مجلد ملف `.sub`. تتوقع ملفات النموذج الأولي الإرسال من جذر المستودع، بينما تتوقع ملفات DDP ذات الأسماء المجردة مجلد نشر يحتويها.
@@ -424,4 +355,4 @@ queue 1
 - لا ينسخ `ON_EXIT` نقاط تحقق الصندوق باستمرار. تتجنب مهام البيانات الكاملة وDDP الخطر بالكتابة في المنزل المثبت، بينما تعتمد مهام النموذج الأولي على سلوك الصندوق وإعادة الجدولة حتى الخروج.
 - يقيد `full_stage2_2gpu.sub` وحده قدرة GPU وذاكرتها. قد تطابق بقية مهام GPU أي بطاقة تحقق الطلب العام، بما فيها بطاقات مختلفة الذاكرة والأداء.
 - ينقل `posebusters_infer.sub` الملف `data/posebusters_filtered.csv` ذي الأعمدة الفعلية `ligand_name,ligand_file,protein_file`. يستدعي `run_infer.sh` ‏`seminar_csv.complex_records` الذي لا يدعم هذا المخطط ويبحث بدلًا منه عن أعمدة البيانات الوصفية الكاملة. قد يفشل المسار كما هو بخطأ pandas من نوع `KeyError`؛ ويتعارض تعليق ملف الإرسال الذي يدعي قراءة `ligand_file` مع الشيفرة.
-- لا تختصر الأسطر `# ... comments unchanged ...` أعلاه إلا تعليقات نثرية؛ أُعيد إنتاج كل توجيه تنفيذي من ملفات المصدر الـ12.
+- لا تختصر الأسطر `# ... comments unchanged ...` أعلاه إلا تعليقات نثرية؛ أُعيد إنتاج كل توجيه تنفيذي من ملفات المصدر الـ10.
