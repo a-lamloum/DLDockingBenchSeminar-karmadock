@@ -24,14 +24,14 @@
     </div>
   </header>
   <div class="page-shell">
-    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html" aria-current="page">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp.html">scripts/runfullstage2ddp.sh</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.html">scripts/runfullstage2ddpv2.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li><li><a href="walkthrough-train-ddp.html">scripts/trainddp.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="Course pages"><p class="nav-group">Course</p><ul><li><a href="index.html">Overview</a></li><li><a href="pipelines.html">Pipelines</a></li><li><a href="results.html">Results</a></li><li><a href="reproduce.html">Reproduce</a></li><li><a href="training.html">Training</a></li></ul><p class="nav-group">Code walkthroughs</p><ul class="walkthrough-nav"><li><a href="walkthroughs.html" aria-current="page">Code walkthroughs</a></li><li><a href="walkthrough-condor.html">condor/.sub</a></li><li><a href="walkthrough-evaluation.html">evaluation/evaluation.py</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.html">scripts/convertkarmadocktoseminar.py</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.html">scripts/convertseminartokarmadock.py</a></li><li><a href="walkthrough-evaluate.html">scripts/evaluate.sh</a></li><li><a href="walkthrough-run-full-train.html">scripts/runfulltrain.sh</a></li><li><a href="walkthrough-run-infer.html">scripts/runinfer.sh</a></li><li><a href="walkthrough-run-train.html">scripts/runtrain.sh</a></li><li><a href="walkthrough-seminar-csv.html">scripts/seminarcsv.py</a></li><li><a href="walkthrough-train.html">scripts/train.py</a></li></ul><p class="nav-group">Reference</p><ul><li><a href="reference.html">Reference</a></li></ul></nav></aside>
     <main id="main-content" tabindex="-1"><article><h1 id="code-walkthroughs">Code walkthroughs</h1>
 <p>These notes are a teaching companion to the repository&#x27;s executable code. They assume Python and basic machine-learning knowledge, but introduce molecular-docking, distributed-training, and HTCondor concepts where the code uses them. Each walkthrough quotes source and explains what it does, how it works, and why it exists.</p>
 <h2 id="how-these-files-fit-together">How these files fit together</h2>
 <p>The end-to-end flow is:</p>
 <ol>
 <li><strong>Convert the input layout.</strong> <code dir="ltr">seminar_csv.py</code> normalizes the supported CSV schemas. <code dir="ltr">convert_seminar_to_karmadock.py</code> copies each ligand/protein pair into upstream KarmaDock&#x27;s naming convention.</li>
-<li><strong>Preprocess and train.</strong> Shell drivers call upstream <code dir="ltr">pre_processing.py</code> and <code dir="ltr">generate_graph.py</code>, then this repository&#x27;s <code dir="ltr">train.py</code> (single process) or <code dir="ltr">train_ddp.py</code> (one process per GPU). Training can start randomly with the two-stage scoring-then-docking protocol or fine-tune released weights.</li>
+<li><strong>Preprocess and train.</strong> Shell drivers call upstream <code dir="ltr">pre_processing.py</code> and <code dir="ltr">generate_graph.py</code>, then this repository&#x27;s <code dir="ltr">train.py</code> for single-process training. The full-data Stage-2 run used the repository&#x27;s Condor job configuration to launch one process per GPU. Training can start randomly with the two-stage scoring-then-docking protocol or fine-tune released weights.</li>
 <li><strong>Infer.</strong> <code dir="ltr">run_infer.sh</code> preprocesses a test set and calls upstream <code dir="ltr">ligand_docking.py</code> to produce raw, force-field-minimized, and aligned poses.</li>
 <li><strong>Convert predictions back.</strong> <code dir="ltr">convert_karmadock_to_seminar.py</code> ranks repeats by MDN score and writes <code dir="ltr">&lt;id&gt;_pred.sdf</code> files in evaluator order.</li>
 <li><strong>Evaluate.</strong> <code dir="ltr">evaluation.py</code> computes symmetry-corrected heavy-atom RMSD and optional PoseBusters checks. <code dir="ltr">evaluate.sh</code> applies it to all prototype pipeline/pose variants.</li>
@@ -48,10 +48,10 @@
 </details>
 </li>
 <li id="quiz-how-these-files-fit-together-q2">
-<p class="quiz-question">How do <code dir="ltr">train.py</code> and <code dir="ltr">train_ddp.py</code> occupy different roles without changing the upstream KarmaDock model?</p>
+<p class="quiz-question">How do the single-process trainer and the full-data Condor job support different training roles without changing the upstream KarmaDock model?</p>
 <details>
 <summary>Show answer</summary>
-<div class="quiz-answer"><p>Both call the upstream model and losses, but <code dir="ltr">train.py</code> runs one process while <code dir="ltr">train_ddp.py</code> distributes disjoint complex stripes across one process per GPU and synchronizes gradients and metrics.</p></div>
+<div class="quiz-answer"><p><code dir="ltr">train.py</code> supplies single-process training, while <code dir="ltr">condor/full_stage2_2gpu.sub</code> records the resources and launch configuration for the distributed Stage-2 run. Both use the upstream model and losses.</p></div>
 </details>
 </li>
 <li id="quiz-how-these-files-fit-together-q3">
@@ -71,10 +71,6 @@
 <tr>
 <td><code dir="ltr">scripts/train.py</code></td>
 <td><a class="content-link" href="walkthrough-train.html">Single-process training</a></td>
-</tr>
-<tr>
-<td><code dir="ltr">scripts/train_ddp.py</code></td>
-<td><a class="content-link" href="walkthrough-train-ddp.html">Distributed training</a></td>
 </tr>
 <tr>
 <td><code dir="ltr">scripts/seminar_csv.py</code></td>
@@ -103,14 +99,6 @@
 <tr>
 <td><code dir="ltr">scripts/run_infer.sh</code></td>
 <td><a class="content-link" href="walkthrough-run-infer.html">Inference driver</a></td>
-</tr>
-<tr>
-<td><code dir="ltr">scripts/run_full_stage2_ddp.sh</code></td>
-<td><a class="content-link" href="walkthrough-run-full-stage2-ddp.html">Original Stage-2 DDP driver</a></td>
-</tr>
-<tr>
-<td><code dir="ltr">scripts/run_full_stage2_ddp_v2.sh</code></td>
-<td><a class="content-link" href="walkthrough-run-full-stage2-ddp-v2.html">Paper-faithful Stage-2 DDP driver</a></td>
 </tr>
 <tr>
 <td><code dir="ltr">scripts/evaluate.sh</code></td>
@@ -142,7 +130,7 @@
 <p class="quiz-question">Why does the index separate shell-driver walkthroughs from the Python training and evaluation walkthroughs?</p>
 <details>
 <summary>Show answer</summary>
-<div class="quiz-answer"><p>The shell drivers explain reproducible orchestration and environment setup, while the Python pages explain data interpretation, model optimization, distributed synchronization, and metric computation.</p></div>
+<div class="quiz-answer"><p>The shell drivers explain reproducible orchestration and environment setup, while the Python pages explain data interpretation, model optimization, and metric computation.</p></div>
 </details>
 </li>
 </ol>

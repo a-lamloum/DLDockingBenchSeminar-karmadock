@@ -24,7 +24,7 @@
     </div>
   </header>
   <div class="page-shell">
-    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html" aria-current="page">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp.ar.html">شرح `scripts/run_full_stage2_ddp.sh`</a></li><li><a href="walkthrough-run-full-stage2-ddp-v2.ar.html">`scripts/run_full_stage2_ddp_v2.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li><li><a href="walkthrough-train-ddp.ar.html">`scripts/train_ddp.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
+    <aside class="sidebar" id="sidebar"><nav class="course-nav" aria-label="صفحات المقرر"><p class="nav-group">المقرر</p><ul><li><a href="index.ar.html">نظرة عامة</a></li><li><a href="pipelines.ar.html">مسارات العمل</a></li><li><a href="results.ar.html">النتائج</a></li><li><a href="reproduce.ar.html">إعادة الإنتاج</a></li><li><a href="training.ar.html">التدريب</a></li></ul><p class="nav-group">شروح الشيفرة</p><ul class="walkthrough-nav"><li><a href="walkthroughs.ar.html" aria-current="page">شروح الشيفرة</a></li><li><a href="walkthrough-condor.ar.html">شرح `condor/*.sub`</a></li><li><a href="walkthrough-evaluation.ar.html">`evaluation/evaluation.py`</a></li><li><a href="walkthrough-convert-karmadock-to-seminar.ar.html">شرح `scripts/convert_karmadock_to_seminar.py`</a></li><li><a href="walkthrough-convert-seminar-to-karmadock.ar.html">شرح `scripts/convert_seminar_to_karmadock.py`</a></li><li><a href="walkthrough-evaluate.ar.html">`scripts/evaluate.sh`</a></li><li><a href="walkthrough-run-full-train.ar.html">`scripts/run_full_train.sh`</a></li><li><a href="walkthrough-run-infer.ar.html">شرح `scripts/run_infer.sh`</a></li><li><a href="walkthrough-run-train.ar.html">`scripts/run_train.sh`</a></li><li><a href="walkthrough-seminar-csv.ar.html">شرح `scripts/seminar_csv.py`</a></li><li><a href="walkthrough-train.ar.html">شرح `scripts/train.py`</a></li></ul><p class="nav-group">المرجع</p><ul><li><a href="reference.ar.html">المرجع</a></li></ul></nav></aside>
     <main id="main-content" tabindex="-1"><article><h1 id="code-walkthroughs">شروح الشيفرة</h1>
 <aside class="translation-status" role="note">مسودة ترجمة تقنية أولية للمراجعة. قد تحتاج المصطلحات والصياغة إلى تنقيح.</aside>
 <p>هذه الملاحظات رفيق تعليمي للشيفرة التنفيذية في المستودع. تفترض معرفة بـ<bdi dir="ltr">Python</bdi> وأساسيات تعلّم الآلة، لكنها تقدم مفاهيم الإرساء الجزيئي والتدريب الموزّع و<bdi dir="ltr">HTCondor</bdi> عندما تستخدمها الشيفرة. يقتبس كل شرح من المصدر ويوضح ما يفعله وكيف يعمل ولماذا وُجد.</p>
@@ -32,7 +32,7 @@
 <p>يسير التدفق الكامل كما يأتي:</p>
 <ol>
 <li><strong>تحويل تخطيط المدخلات.</strong> تطبّع <code dir="ltr">seminar_csv.py</code> مخططات <bdi dir="ltr">CSV</bdi> المدعومة. وتنسخ <code dir="ltr">convert_seminar_to_karmadock.py</code> كل زوج من الربيطة والبروتين إلى اصطلاح التسمية في <bdi dir="ltr">KarmaDock</bdi> الأصلي.</li>
-<li><strong>المعالجة المسبقة والتدريب.</strong> تستدعي أغلفة <bdi dir="ltr">Shell</bdi> البرنامجين الأصليين <code dir="ltr">pre_processing.py</code> و<code dir="ltr">generate_graph.py</code>، ثم <code dir="ltr">train.py</code> من هذا المستودع لعملية واحدة أو <code dir="ltr">train_ddp.py</code> لعملية واحدة لكل <bdi dir="ltr">GPU.</bdi> يمكن أن يبدأ التدريب عشوائيًا ببروتوكول التسجيل ثم الإرساء ذي المرحلتين، أو أن يضبط الأوزان المنشورة ضبطًا دقيقًا.</li>
+<li><strong>المعالجة المسبقة والتدريب.</strong> تستدعي أغلفة <bdi dir="ltr">Shell</bdi> البرنامجين الأصليين <code dir="ltr">pre_processing.py</code> و<code dir="ltr">generate_graph.py</code>، ثم <code dir="ltr">train.py</code> من هذا المستودع للتدريب بعملية واحدة. واستخدم تشغيل المرحلة الثانية كامل البيانات إعداد مهمة <bdi dir="ltr">Condor</bdi> في المستودع لإطلاق عملية واحدة لكل <bdi dir="ltr">GPU.</bdi> يمكن أن يبدأ التدريب عشوائيًا ببروتوكول التسجيل ثم الإرساء ذي المرحلتين، أو أن يضبط الأوزان المنشورة ضبطًا دقيقًا.</li>
 <li><strong>الاستدلال.</strong> يعالج <code dir="ltr">run_infer.sh</code> مجموعة اختبار مسبقًا ويستدعي <code dir="ltr">ligand_docking.py</code> الأصلي لإنتاج وضعيات خام ومخفّضة بحقل القوة ومحاذاة.</li>
 <li><strong>إعادة تحويل التنبؤات.</strong> ترتّب <code dir="ltr">convert_karmadock_to_seminar.py</code> التكرارات بحسب درجة <bdi dir="ltr">MDN</bdi> وتكتب ملفات <code dir="ltr">&lt;id&gt;_pred.sdf</code> بترتيب المقيّم.</li>
 <li><strong>التقييم.</strong> تحسب <code dir="ltr">evaluation.py</code> الجذر التربيعي لمتوسط مربع الانحراف (<bdi dir="ltr">RMSD</bdi>) للذرات الثقيلة بعد تصحيح التناظر، مع فحوص <bdi dir="ltr">PoseBusters</bdi> الاختيارية. وتطبّق <code dir="ltr">evaluate.sh</code> ذلك على جميع متغيرات مسارات النموذج الأولي ووضعياته.</li>
@@ -49,10 +49,10 @@
 </details>
 </li>
 <li id="quiz-how-these-files-fit-together-q2">
-<p class="quiz-question">كيف يؤدي <code dir="ltr">train.py</code> و<code dir="ltr">train_ddp.py</code> دورين مختلفين من دون تغيير نموذج <bdi dir="ltr">KarmaDock</bdi> الأصلي؟</p>
+<p class="quiz-question">كيف يدعم مدرب العملية الواحدة ومهمة <bdi dir="ltr">Condor</bdi> للبيانات الكاملة دورين مختلفين من دون تغيير نموذج <bdi dir="ltr">KarmaDock</bdi> الأصلي؟</p>
 <details>
 <summary>اعرض الإجابة</summary>
-<div class="quiz-answer"><p>يستدعي كلاهما النموذج والخسائر الأصلية، لكن <code dir="ltr">train.py</code> يشغّل عملية واحدة، بينما يوزع <code dir="ltr">train_ddp.py</code> شرائح معقّدات منفصلة على عملية لكل <bdi dir="ltr">GPU</bdi> ويزامن التدرجات والمقاييس.</p></div>
+<div class="quiz-answer"><p>يوفر <code dir="ltr">train.py</code> التدريب بعملية واحدة، بينما يسجل <code dir="ltr">condor/full_stage2_2gpu.sub</code> الموارد وإعداد التشغيل لتجربة المرحلة الثانية الموزعة. ويستخدم كلاهما النموذج والخسائر الأصليين.</p></div>
 </details>
 </li>
 <li id="quiz-how-these-files-fit-together-q3">
@@ -72,10 +72,6 @@
 <tr>
 <td><code dir="ltr">scripts/train.py</code></td>
 <td><a class="content-link" href="walkthrough-train.ar.html">التدريب بعملية واحدة</a></td>
-</tr>
-<tr>
-<td><code dir="ltr">scripts/train_ddp.py</code></td>
-<td><a class="content-link" href="walkthrough-train-ddp.ar.html">التدريب الموزّع</a></td>
 </tr>
 <tr>
 <td><code dir="ltr">scripts/seminar_csv.py</code></td>
@@ -104,14 +100,6 @@
 <tr>
 <td><code dir="ltr">scripts/run_infer.sh</code></td>
 <td><a class="content-link" href="walkthrough-run-infer.ar.html">مشغّل الاستدلال</a></td>
-</tr>
-<tr>
-<td><code dir="ltr">scripts/run_full_stage2_ddp.sh</code></td>
-<td><a class="content-link" href="walkthrough-run-full-stage2-ddp.ar.html">مشغّل <bdi dir="ltr">Stage-2</bdi> الأصلي بتقنية <bdi dir="ltr">DDP</bdi></a></td>
-</tr>
-<tr>
-<td><code dir="ltr">scripts/run_full_stage2_ddp_v2.sh</code></td>
-<td><a class="content-link" href="walkthrough-run-full-stage2-ddp-v2.ar.html">مشغّل <bdi dir="ltr">Stage-2</bdi> المطابق للورقة بتقنية <bdi dir="ltr">DDP</bdi></a></td>
 </tr>
 <tr>
 <td><code dir="ltr">scripts/evaluate.sh</code></td>
@@ -143,7 +131,7 @@
 <p class="quiz-question">لماذا يفصل الفهرس شروح مشغّلات <bdi dir="ltr">Shell</bdi> عن شروح التدريب والتقييم في <bdi dir="ltr">Python</bdi>؟</p>
 <details>
 <summary>اعرض الإجابة</summary>
-<div class="quiz-answer"><p>تشرح مشغّلات <bdi dir="ltr">Shell</bdi> التنسيق القابل لإعادة الإنتاج وإعداد البيئة، بينما تشرح صفحات <bdi dir="ltr">Python</bdi> تفسير البيانات وتحسين النموذج والمزامنة الموزعة وحساب المقاييس.</p></div>
+<div class="quiz-answer"><p>تشرح مشغّلات <bdi dir="ltr">Shell</bdi> التنسيق القابل لإعادة الإنتاج وإعداد البيئة، بينما تشرح صفحات <bdi dir="ltr">Python</bdi> تفسير البيانات وتحسين النموذج وحساب المقاييس.</p></div>
 </details>
 </li>
 </ol>

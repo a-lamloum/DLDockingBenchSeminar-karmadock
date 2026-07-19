@@ -9,10 +9,10 @@ Why does the pipeline need one converter before KarmaDock and another converter 
 The first converter changes seminar inputs into KarmaDock's naming and directory layout, while the second ranks KarmaDock repeats and restores the one-file-per-complex evaluator layout.
 
 ### Q2
-How do `train.py` and `train_ddp.py` occupy different roles without changing the upstream KarmaDock model?
+How do the single-process trainer and the full-data Condor job support different training roles without changing the upstream KarmaDock model?
 
 ### A2
-Both call the upstream model and losses, but `train.py` runs one process while `train_ddp.py` distributes disjoint complex stripes across one process per GPU and synchronizes gradients and metrics.
+`train.py` supplies single-process training, while `condor/full_stage2_2gpu.sub` records the resources and launch configuration for the distributed Stage-2 run. Both use the upstream model and losses.
 
 ### Q3
 Why are the files in `condor/` described as sitting above the `run_*.sh` wrappers?
@@ -38,4 +38,4 @@ The prediction-layout converter explains ranking and SDF export, and `evaluation
 Why does the index separate shell-driver walkthroughs from the Python training and evaluation walkthroughs?
 
 ### A3
-The shell drivers explain reproducible orchestration and environment setup, while the Python pages explain data interpretation, model optimization, distributed synchronization, and metric computation.
+The shell drivers explain reproducible orchestration and environment setup, while the Python pages explain data interpretation, model optimization, and metric computation.
