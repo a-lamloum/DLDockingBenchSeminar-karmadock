@@ -4,8 +4,8 @@ This directory contains a fully offline static explanation for the KarmaDock sem
 
 ## View the site
 
-Open `index.html` directly in a browser, or serve the repository root locally:
-
+clone and open `index.html` directly in a browser
+or from [here](https://a-lamloum.github.io/DLDockingBenchSeminar-karmadock/index.html)
 Search, navigation, workflow images, downloads, and the theme toggle work both through the local
 server and when `index.html` is opened with a `file://` URL. Links marked with ↗ are external and
 require a network connection only if followed. Every page has a complete Arabic counterpart; use the
