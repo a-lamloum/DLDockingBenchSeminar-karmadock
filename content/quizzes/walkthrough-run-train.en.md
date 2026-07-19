@@ -18,7 +18,7 @@ How do the two advertised modes correspond to the benchmark pipelines?
 Why is this wrapper described as single-process?
 
 ### A3
-It always calls `train.py` directly and does not launch one process per GPU through `torchrun`.
+It always calls `train.py` directly rather than launching one process per GPU through `torchrun` and `train_ddp.py`.
 
 ## how-it-fits-in
 

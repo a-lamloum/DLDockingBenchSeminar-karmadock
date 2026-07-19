@@ -85,83 +85,6 @@ window.KD_SEARCH_INDEX = {
       "url": "reference.html#6-repository-layout"
     },
     {
-      "excerpt": "Repository root README.md Dockerfile .gitignore scripts/ condor/ condor/logs/ data/ docs/ evaluation/ model/ notebooks/ results/…",
-      "heading": "File-by-file guide",
-      "text": "reference file-by-file guide repository root readme.md dockerfile .gitignore scripts/ condor/ condor/logs/ data/ docs/ evaluation/ model/ notebooks/ results/ plain-english explanations for every meaningful file in the karmadock team-002 submission",
-      "title": "Reference",
-      "url": "reference.html#file-by-file-guide"
-    },
-    {
-      "excerpt": "README.md is the main write-up. Dockerfile builds ahlamloum/karmadock-seminar:v6 from the authors' pre-packed environment. .gitignore keeps the repo portable.",
-      "heading": "Repository root",
-      "text": "reference file-by-file guide repository root readme.md main write-up three pipelines results evaluation reproduction training parameters layout known issues dockerfile reproducible image ahlamloum/karmadock-seminar:v6 miniconda upstream karmadock pre-packed conda environment conda-pack zenodo karmadock_env.yaml dependency solver prefetch_generator rmsd wandb scripts/ pythonpath=/app/karmadock import check .gitignore prototype data __pycache__ notebook checkpoints data/ symlinks *.csv split files",
-      "title": "Reference",
-      "url": "reference.html#guide-repository-root"
-    },
-    {
-      "excerpt": "The team's training loop, training and inference drivers, data-layout converters, CSV helper, and provenance note, with deep-dive pages linked.",
-      "heading": "scripts/ (the team's code — deep-dive pages linked)",
-      "text": "reference file-by-file guide scripts/ scripts/train.py two-stage training mdn rmsd optimizer early stopping gradient accumulation deterministic train/val split weights & biases --resume scripts/run_train.sh scratch p2 finetune p3 proto_train 712 scripts/run_full_train.sh full_train 23,483 full_val 2,609 --val_csv --val_graph_dir scripts/run_infer.sh preprocess dock uncorrected ff-relaxed align-corrected scripts/evaluate.sh evaluation.py pipeline pose variant rmsd csv scripts/convert_seminar_to_karmadock.py ligand_refined.sdf protein_refined.pdb scripts/convert_karmadock_to_seminar.py results/<ds>/<id>_pred.sdf best-pose-first scripts/seminar_csv.py csv schema mappings scripts/readme.md provenance no upstream source modified",
-      "title": "Reference",
-      "url": "reference.html#guide-scripts"
-    },
-    {
-      "excerpt": "HTCondor submit files for P1/P2/P3 inference and evaluation, prototype and full-data training, full_test inference, and PoseBusters inference.",
-      "heading": "condor/ (HTCondor submit files — deep-dive linked)",
-      "text": "reference file-by-file guide condor/ htcondor condor/p1_baseline.sub p1 released weights evaluation condor/p2_scratch_infer.sub p2 from-scratch checkpoint condor/p3_finetune_infer.sub p3 fine-tuned checkpoint condor/p2_train_scratch.sub two-stage from scratch condor/p3_finetune.sub fine-tune training condor/evaluate.sub evaluate.sh all pipelines variants condor/full_stage2_2gpu.sub full-data stage-2 2xa100 distributed hpc cluster-side scripts condor/full_train_scratch.sub full-data from-scratch condor/full_test_infer.sub full_test 6,183 condor/posebusters_infer.sub posebusters 308",
-      "title": "Reference",
-      "url": "reference.html#guide-condor"
-    },
-    {
-      "excerpt": "HPC job logs that document the completed 2xA100 Stage-2 run and the head-to-head full_test and PoseBusters inference comparisons.",
-      "heading": "condor/logs/ (HPC job logs — provenance for the reported numbers)",
-      "text": "reference file-by-file guide condor/logs/ hpc logs provenance condor/logs/s2_2gpu.169253.* stdout stderr log completed 2xa100 full-data stage-2 exit 0 condor/logs/full_test_infer.169842.* full_test_released.169868.* full_test team model authors released weights head-to-head condor/logs/posebusters_infer.169843.* posebusters_released.169869.* posebusters head-to-head",
-      "title": "Reference",
-      "url": "reference.html#guide-condor-logs"
-    },
-    {
-      "excerpt": "Evaluation-set CSV mappings for proto_test, full_test, and PoseBusters, plus the reference crystal-structure bundle.",
-      "heading": "data/ (evaluation-set mappings + reference structures)",
-      "text": "reference file-by-file guide data/ data/proto_test.csv 136 ligand protein file names year log binding affinity measurement type pdb id data/full_test.csv 6,183 same columns data/posebusters_filtered.csv 308 ligand name ligand file protein file data/prototype_model_data.zip reference crystal structures proto_test proto_train refined sdf pdb local scoring",
-      "title": "Reference",
-      "url": "reference.html#guide-data"
-    },
-    {
-      "excerpt": "Per-epoch P2 Stage-1, P2 Stage-2, and P3 fine-tune curves, plus the training and inference workflow diagrams.",
-      "heading": "docs/ (training curves + figures)",
-      "text": "reference file-by-file guide docs/ docs/p2_stage1_train_log.csv per-epoch p2 stage-1 mdn scoring epoch train/val loss rmsd mdn seconds docs/p2_stage2_train_log.csv p2 stage-2 docking scoring docs/p3_finetune_train_log.csv p3 fine-tune docs/workflow_training.png docs/workflow_inference.png training inference workflow diagrams",
-      "title": "Reference",
-      "url": "reference.html#guide-docs"
-    },
-    {
-      "excerpt": "The seminar's official, unmodified evaluator for symmetry-corrected top-1 pose RMSD and PoseBusters validity checks.",
-      "heading": "evaluation/",
-      "text": "reference file-by-file guide evaluation/ evaluation/evaluation.py official unmodified evaluator symmetry-corrected top-1 pose rmsd posebusters validity checks",
-      "title": "Reference",
-      "url": "reference.html#guide-evaluation"
-    },
-    {
-      "excerpt": "The P2 prototype checkpoint, P3 fine-tune checkpoint, and final full-data from-scratch checkpoint, about 15 MB each.",
-      "heading": "model/ (trained checkpoints, ~15 MB each)",
-      "text": "reference file-by-file guide model/ trained checkpoints 15 mb model/p2_scratch_karmadock_team002.pkl p2 from-scratch prototype 712 model/p3_finetune_karmadock_team002.pkl p3 fine-tune bonus model/full_scratch_karmadock_team002.pkl full-data final submission two-stage stage-2 2xa100 headline",
-      "title": "Reference",
-      "url": "reference.html#guide-model"
-    },
-    {
-      "excerpt": "The analysis notebook containing results tables and charts that compare pipelines and pose variants.",
-      "heading": "notebooks/",
-      "text": "reference file-by-file guide notebooks/ notebooks/results_and_comparison.ipynb analysis notebook results tables charts pipelines pose variants",
-      "title": "Reference",
-      "url": "reference.html#guide-notebooks"
-    },
-    {
-      "excerpt": "The primary P2 poses, every pipeline x pose-variant result directory, and the official per-complex RMSD CSVs, shipped unzipped.",
-      "heading": "results/ (predicted poses + scored CSVs — shipped unzipped)",
-      "text": "reference file-by-file guide results/ results/proto_test/ p2 from-scratch predicted poses evaluation.py --dataset proto_test primary result set results/{p1_baseline,p2_scratch,p3_finetune}/proto_test{,_ff,_align}/ three pipelines three variants uncorrected ff-relaxed align-corrected 136 results/*_evaluation.csv official per-complex rmsd csv pipeline variant",
-      "title": "Reference",
-      "url": "reference.html#guide-results"
-    },
-    {
       "excerpt": "Node Problem: in the idun cluster the gpu nodes are sometime during the run just return error so we had to exclude this specific node as a requirement in our sub files. Fix: exclude it — requirements = … && (Machine =!=…",
       "heading": "7. Issues & fixes",
       "text": "reference 7. issues & fixes node problem: in the idun cluster the gpu nodes are sometime during the run just return error so we had to exclude this specific node as a requirement in our sub files. fix: exclude it — requirements = ... && (machine =!= \"idun.hpc.uni-saarland.de\"). [solved]. resources limitations: requestgpus=2/4 jobs sat idle for days. the prototype runs single-gpu. we couldn't run on 2 gpus that's why we changed it to 1 gpu, we are not sure if this gonna work on the full dataset as it will take too much time. fix: change the request to 1 gpu [solved].",
@@ -213,14 +136,14 @@ window.KD_SEARCH_INDEX = {
     {
       "excerpt": "The end-to-end flow is: Convert the input layout. seminarcsv.py normalizes the supported CSV schemas. convertseminartokarmadock.py copies each ligand/protein pair into upstream KarmaDock's naming convention. Preprocess a…",
       "heading": "How these files fit together",
-      "text": "code walkthroughs how these files fit together the end-to-end flow is: convert the input layout. seminarcsv.py normalizes the supported csv schemas. convertseminartokarmadock.py copies each ligand/protein pair into upstream karmadock's naming convention. preprocess and train. shell drivers call upstream preprocessing.py and generategraph.py, then this repository's train.py for single-process training. the full-data stage-2 run used the repository's condor job configuration to launch one process per gpu. training can start randomly with the two-stage scoring-then-docking protocol or fine-tune released weights. infer. runinfer.sh preprocesses a test set and calls upstream liganddocking.py to produce raw, force-field-minimized, and aligned poses. convert predictions back. convertkarmadocktoseminar.py ranks repeats by mdn score and writes pred.sdf files in evaluator order. evaluate. evaluation.py computes symmetry-corrected heavy-atom rmsd and optional posebusters checks. evaluate.sh applies it to all prototype pipeline/pose variants. the run.sh files are reproducible orchestration layers around those python programs. the files in condor/ sit above the shell wrappers: they select the docker image, stage inputs/outputs, reserve resources, pass arguments/environment variables, and route logs. why does the pipeline need one converter before karmadock and another converter after docking? how do the single-process trainer and the full-data condor job support different training roles without changing the upstream karmadock model? why are the files in condor/ described as sitting above the run.sh wrappers?",
+      "text": "code walkthroughs how these files fit together the end-to-end flow is: convert the input layout. seminarcsv.py normalizes the supported csv schemas. convertseminartokarmadock.py copies each ligand/protein pair into upstream karmadock's naming convention. preprocess and train. shell drivers call upstream preprocessing.py and generategraph.py, then this repository's train.py (single process) or trainddp.py (one process per gpu). training can start randomly with the two-stage scoring-then-docking protocol or fine-tune released weights. infer. runinfer.sh preprocesses a test set and calls upstream liganddocking.py to produce raw, force-field-minimized, and aligned poses. convert predictions back. convertkarmadocktoseminar.py ranks repeats by mdn score and writes pred.sdf files in evaluator order. evaluate. evaluation.py computes symmetry-corrected heavy-atom rmsd and optional posebusters checks. evaluate.sh applies it to all prototype pipeline/pose variants. the run.sh files are reproducible orchestration layers around those python programs. the files in condor/ sit above the shell wrappers: they select the docker image, stage inputs/outputs, reserve resources, pass arguments/environment variables, and route logs. why does the pipeline need one converter before karmadock and another converter after docking? how do train.py and trainddp.py occupy different roles without changing the upstream karmadock model? why are the files in condor/ described as sitting above the run.sh wrappers?",
       "title": "Code walkthroughs",
       "url": "walkthroughs.html#how-these-files-fit-together"
     },
     {
-      "excerpt": "Source file Walkthrough scripts/train.py Single-process training scripts/seminarcsv.py CSV-schema normalization scripts/convertseminartokarmadock.py Input-layout conversion script…",
+      "excerpt": "Source file Walkthrough scripts/train.py Single-process training scripts/trainddp.py Distributed training scripts/seminarcsv.py CSV-schema normalization scripts/convertseminartokarmadock.py Input-layout conversion script…",
       "heading": "Walkthrough index",
-      "text": "code walkthroughs walkthrough index source file walkthrough scripts/train.py single-process training scripts/seminarcsv.py csv-schema normalization scripts/convertseminartokarmadock.py input-layout conversion scripts/convertkarmadocktoseminar.py prediction-layout conversion evaluation/evaluation.py rmsd and posebusters evaluation scripts/runtrain.sh prototype training driver scripts/runfulltrain.sh full-data training driver scripts/runinfer.sh inference driver scripts/evaluate.sh batch evaluation driver all 12 condor/.sub files htcondor submit files if a student wants to understand why graph stems must match csv-derived complex ids, which walkthrough should they read first? which pair of walkthroughs best explains the transition from predicted karmadock poses to benchmark csv metrics? why does the index separate shell-driver walkthroughs from the python training and evaluation walkthroughs?",
+      "text": "code walkthroughs walkthrough index source file walkthrough scripts/train.py single-process training scripts/trainddp.py distributed training scripts/seminarcsv.py csv-schema normalization scripts/convertseminartokarmadock.py input-layout conversion scripts/convertkarmadocktoseminar.py prediction-layout conversion evaluation/evaluation.py rmsd and posebusters evaluation scripts/runtrain.sh prototype training driver scripts/runfulltrain.sh full-data training driver scripts/runinfer.sh inference driver scripts/runfullstage2ddp.sh original stage-2 ddp driver scripts/runfullstage2ddpv2.sh paper-faithful stage-2 ddp driver scripts/evaluate.sh batch evaluation driver all 12 condor/.sub files htcondor submit files if a student wants to understand why graph stems must match csv-derived complex ids, which walkthrough should they read first? which pair of walkthroughs best explains the transition from predicted karmadock poses to benchmark csv metrics? why does the index separate shell-driver walkthroughs from the python training and evaluation walkthroughs?",
       "title": "Code walkthroughs",
       "url": "walkthroughs.html#walkthrough-index"
     },
@@ -512,6 +435,62 @@ window.KD_SEARCH_INDEX = {
       "url": "walkthrough-evaluate.html#gotchas--notes"
     },
     {
+      "excerpt": "This is an isolated full-data Stage-2 launcher for PyTorch DistributedDataParallel (DDP). It deliberately reuses read-only Stage-1 weights and prebuilt graphs while writing to a separate workspace, allowing multi-GPU exp…",
+      "heading": "Purpose",
+      "text": "scripts/runfullstage2ddp.sh purpose this is an isolated full-data stage-2 launcher for pytorch distributeddataparallel (ddp). it deliberately reuses read-only stage-1 weights and prebuilt graphs while writing to a separate workspace, allowing multi-gpu experiments without touching the main training run. why does this launcher reuse prebuilt graphs and a frozen stage-1 checkpoint? what makes the launcher's output isolated from its read-only inputs? why is ddp appropriate specifically for this full-data stage?",
+      "title": "scripts/runfullstage2ddp.sh",
+      "url": "walkthrough-run-full-stage2-ddp.html#purpose"
+    },
+    {
+      "excerpt": "condor/fullstage2mgpu.sub and condor/smoke2gpu.sub stage this script beside trainddp.py and seminarcsv.py. Inputs default to paths under the mounted home but can be overridden with FULLDATADIR, FULLGRAPHSDIR, S2WORKDIR,…",
+      "heading": "How it fits in",
+      "text": "scripts/runfullstage2ddp.sh how it fits in condor/fullstage2mgpu.sub and condor/smoke2gpu.sub stage this script beside trainddp.py and seminarcsv.py. inputs default to paths under the mounted home but can be overridden with fulldatadir, fullgraphsdir, s2workdir, stage1ckpt, s2batch, s2accum, and s2epochs. output is $s2workdir/ckpts2ddp/ plus w&b logs. how do fullstage2mgpu.sub and smoke2gpu.sub alter the same launcher for different experiments? why are the environment variables useful even though the script supplies defaults? which artifact is expected after a successful run?",
+      "title": "scripts/runfullstage2ddp.sh",
+      "url": "walkthrough-run-full-stage2-ddp.html#how-it-fits-in"
+    },
+    {
+      "excerpt": "Strict Bash behavior and trace logging are valuable for multi-process failures. The upstream installation is made importable; transferred files are expected at the job sandbox root. Defaults keep large inputs in the home…",
+      "heading": "Walkthrough",
+      "text": "scripts/runfullstage2ddp.sh walkthrough strict bash behavior and trace logging are valuable for multi-process failures. the upstream installation is made importable; transferred files are expected at the job sandbox root. defaults keep large inputs in the home mount and all outputs in the isolated stage2mgputest tree. the grouped { ...; } command produces a clear error and exit code 3 if the frozen initialization checkpoint is missing. nvidia-smi -l emits one line per visible gpu. the arithmetic expression reports global effective batch as processes × per-process physical batch × accumulation steps. the timestamp makes the human-facing w&b base name unique. the fallback to one does not create a gpu; it selects the single-process branch and lets trainddp.py decide cuda versus cpu. the array safely preserves argument boundaries. posr=1 activates combined docking/rmsd and mdn scoring training. this original version uses weight decay 1e-4 and patience 20. explicit train/validation inputs preserve the curated split. torchrun starts one python process per gpu and supplies rank, localrank, and worldsize; trainddp.py uses those to initialize nccl and ddp. --standalone --nnodes=1 sets up rendezvous locally on one machine. a one-gpu allocation avoids process-group setup and uses the script's single-process path. how is the reported global effective batch computed? why do --posr 1 and explicit validation paths matter for stage 2? what changes when only one gpu is visible?",
+      "title": "scripts/runfullstage2ddp.sh",
+      "url": "walkthrough-run-full-stage2-ddp.html#walkthrough"
+    },
+    {
+      "excerpt": "nvidia-smi is used inside a pipefail script. If the command is absent or fails rather than merely listing zero devices, the assignment pipeline may terminate the script before the fallback runs. --resume reuses $S2WORK/c…",
+      "heading": "Gotchas / notes",
+      "text": "scripts/runfullstage2ddp.sh gotchas / notes nvidia-smi is used inside a pipefail script. if the command is absent or fails rather than merely listing zero devices, the assignment pipeline may terminate the script before the fallback runs. --resume reuses $s2work/ckpts2ddp/last.pt; reuse of the same output directory can therefore continue an earlier run even though run has a new timestamp. defaults bs=8, acc=2 yield global batch 64 only with four gpus; submit-file overrides are needed for other world sizes. why might the gpu-count fallback never run if nvidia-smi itself fails? how can a new w&b run name still resume old optimizer state? why do the default batch settings reproduce effective batch 64 only on four gpus?",
+      "title": "scripts/runfullstage2ddp.sh",
+      "url": "walkthrough-run-full-stage2-ddp.html#gotchas--notes"
+    },
+    {
+      "excerpt": "This is a copy of the original DDP Stage-2 launcher with two explicitly paper-faithful hyperparameter changes: no weight decay and patience 70. Keeping a separate file preserves the historical original while making the e…",
+      "heading": "Purpose",
+      "text": "scripts/runfullstage2ddpv2.sh purpose this is a copy of the original ddp stage-2 launcher with two explicitly paper-faithful hyperparameter changes: no weight decay and patience 70. keeping a separate file preserves the historical original while making the experimental difference auditable. why was a second launcher created instead of editing the original stage-2 ddp script? which choices make the v2 launcher more paper-faithful according to its documented rationale? why is holding the remaining command line constant important?",
+      "title": "scripts/runfullstage2ddpv2.sh",
+      "url": "walkthrough-run-full-stage2-ddp-v2.html#purpose"
+    },
+    {
+      "excerpt": "condor/fullstage22gpu.sub uses this version and supplies S2BATCH=8, S2ACCUM=4, and the final Stage-1 checkpoint, producing global effective batch 64 on two GPUs. Its paths, environment variables, inputs, output location,…",
+      "heading": "How it fits in",
+      "text": "scripts/runfullstage2ddpv2.sh how it fits in condor/fullstage22gpu.sub uses this version and supplies s2batch=8, s2accum=4, and the final stage-1 checkpoint, producing global effective batch 64 on two gpus. its paths, environment variables, inputs, output location, w&b behavior, and torchrun/single-process selection are otherwise the same as runfullstage2ddp.sh. how does fullstage22gpu.sub preserve global effective batch 64 with two gpus? which operational behaviors are intentionally shared with the original launcher? why does the submit file point explicitly to the v2 launcher?",
+      "title": "scripts/runfullstage2ddpv2.sh",
+      "url": "walkthrough-run-full-stage2-ddp-v2.html#how-it-fits-in"
+    },
+    {
+      "excerpt": "The setup and path blocks are reproduced because they are executable code, even though they match the original: Strict mode, home-mounted read-only inputs, isolated output, checkpoint validation, GPU counting, and run na…",
+      "heading": "Walkthrough",
+      "text": "scripts/runfullstage2ddpv2.sh walkthrough the setup and path blocks are reproduced because they are executable code, even though they match the original: strict mode, home-mounted read-only inputs, isolated output, checkpoint validation, gpu counting, and run naming all serve the same purposes described for the original. the header also makes an important design choice explicit: no extra --jitter is passed because the dataset's on-the-fly loading already randomizes the starting ligand pose. this is the only meaningful command-line difference: --weightdecay 0 removes adam's l2-style parameter shrinkage, and --patience 70 allows a longer validation plateau. everything else, including the combined stage-2 objective, curated validation set, and resume behavior, is held constant so the comparison isolates those choices. one process per visible gpu activates ddp; one visible gpu falls back to ordinary python. the checkpoint path printed at the end is the best-validation model, not necessarily the final epoch. why is no extra --jitter argument passed by this launcher? what are the only meaningful differences in the v2 args array? why is the printed checkpoint described as the best model rather than the last epoch?",
+      "title": "scripts/runfullstage2ddpv2.sh",
+      "url": "walkthrough-run-full-stage2-ddp-v2.html#walkthrough"
+    },
+    {
+      "excerpt": "All operational caveats from the original launcher—nvidia-smi under pipefail, resume-directory reuse, and world-size-dependent effective batch—also apply. “Paper-faithful” is the rationale recorded in the script comments…",
+      "heading": "Gotchas / notes",
+      "text": "scripts/runfullstage2ddpv2.sh gotchas / notes all operational caveats from the original launcher—nvidia-smi under pipefail, resume-directory reuse, and world-size-dependent effective batch—also apply. “paper-faithful” is the rationale recorded in the script comments; the repository does not programmatically verify paper hyperparameters. this file and the original write to the same default s2work/ckpts2ddp, so launching both against defaults can make one resume the other's state. why do the original launcher's gpu-count and batch-size caveats still apply? what does the phrase “paper-faithful” guarantee programmatically? how can launching the original and v2 scripts interfere with each other?",
+      "title": "scripts/runfullstage2ddpv2.sh",
+      "url": "walkthrough-run-full-stage2-ddp-v2.html#gotchas--notes"
+    },
+    {
       "excerpt": "This is the single-GPU full-dataset analogue of runtrain.sh. Because the full structures and generated graphs are large, it reads and writes them through a home directory mounted into the Docker job rather than transferr…",
       "heading": "Purpose",
       "text": "scripts/runfulltrain.sh purpose this is the single-gpu full-dataset analogue of runtrain.sh. because the full structures and generated graphs are large, it reads and writes them through a home directory mounted into the docker job rather than transferring them with every htcondor submission. why does full-data training use home-mounted storage instead of transferring all artifacts into each job sandbox? how is this script related to runtrain.sh? what limitation remains despite supporting the full dataset?",
@@ -706,6 +685,90 @@ window.KD_SEARCH_INDEX = {
       "text": "scripts/train.py gotchas / notes the final partial accumulation window is divided by the full accumsteps, so it contributes a smaller-than-full-window gradient rather than being renormalized by its actual microbatch count. resume restores bestscore but not an explicit early-stopper “bad epoch” counter. whether patience fully survives rescheduling depends on the upstream earlystopper implementation, which is not in this repository. strict=false initialization can conceal checkpoint/model key mismatches; the script does not print missing or unexpected keys. empty or nearly empty graph sets are not explicitly rejected. splitavailable also forces one validation id, so a one-graph dataset leaves no training ids. no learning-rate scheduler or amp/autocast is used. these are omissions in the actual implementation, not implicit upstream behavior. why can resuming change the effective early-stopping schedule? what risk accompanies strict=false when loading an initialization checkpoint? why can a very small usable graph set produce invalid training behavior without a clear early error?",
       "title": "scripts/train.py",
       "url": "walkthrough-train.html#gotchas--notes"
+    },
+    {
+      "excerpt": "This file extends the single-process trainer with optional multi-GPU DistributedDataParallel (DDP). Under torchrun, one process owns each GPU, each process trains on a disjoint stripe of complex IDs, DDP averages gradien…",
+      "heading": "Purpose",
+      "text": "scripts/trainddp.py purpose this file extends the single-process trainer with optional multi-gpu distributeddataparallel (ddp). under torchrun, one process owns each gpu, each process trains on a disjoint stripe of complex ids, ddp averages gradients, and explicit reductions combine metrics; under plain python3, it follows the single-process path. how does ddp divide work differently from single-process dataparallel? why must metrics be explicitly reduced even though ddp already synchronizes gradients? what happens when the file is launched with plain python3 instead of a multi-process torchrun environment?",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#purpose"
+    },
+    {
+      "excerpt": "runfullstage2ddp.sh and its v2 launcher call it directly, using torchrun when more than one GPU is visible. It accepts essentially the same data, model, optimizer, resume, and W&B arguments as train.py (but no --jitter).…",
+      "heading": "How it fits in",
+      "text": "scripts/trainddp.py how it fits in runfullstage2ddp.sh and its v2 launcher call it directly, using torchrun when more than one gpu is visible. it accepts essentially the same data, model, optimizer, resume, and w&b arguments as train.py (but no --jitter). torchrun additionally supplies worldsize, rank, and localrank. all ranks read graphs and participate in training; only rank 0 writes trainlog.csv, last.pt, karmadockteam002.pkl, the w&b run-id file, and w&b logs. how do the stage-2 launchers decide whether to invoke this trainer with torchrun? why does only rank 0 write checkpoints, csv logs, and w&b data? why does this ddp variant omit the single-process trainer's --jitter option?",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#how-it-fits-in"
+    },
+    {
+      "excerpt": "Walkthrough",
+      "heading": "Walkthrough",
+      "text": "scripts/trainddp.py walkthrough how does manual id striping give ranks disjoint data, and what property does it not provide? why are validation sums and counts all-reduced instead of averaging each rank's mean? why must findunusedparameters=true be enabled for stage 1? how are checkpoint key prefixes handled across bare models, dataparallel, and ddp? why can every rank break early stopping at the same epoch even though only rank 0 saves files?",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#walkthrough"
+    },
+    {
+      "excerpt": "DDP runs a separate Python process/model replica per GPU. During backward, replicas collectively sum/average corresponding parameter gradients so every optimizer performs the same update. This generally scales better tha…",
+      "heading": "Imports and DDP model",
+      "text": "scripts/trainddp.py imports and ddp model ddp runs a separate python process/model replica per gpu. during backward, replicas collectively sum/average corresponding parameter gradients so every optimizer performs the same update. this generally scales better than single-process dataparallel. torch.distributed exposes process-group collectives; contextlib supplies a no-op context for code shared between ddp and non-ddp modes. sys is imported but not used in this file.",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#imports-and-ddp-model"
+    },
+    {
+      "excerpt": "WORLDSIZE is the total process count, RANK is a process's global identity, and LOCALRANK chooses its GPU on the current node. Presence of a multi-process world activates DDP; otherwise deterministic zeros simplify later…",
+      "heading": "Distributed helpers",
+      "text": "scripts/trainddp.py distributed helpers worldsize is the total process count, rank is a process's global identity, and localrank chooses its gpu on the current node. presence of a multi-process world activates ddp; otherwise deterministic zeros simplify later branching. python's extended slice takes every world-th id starting at rank: with two ranks, one gets indices 0,2,4... and the other 1,3,5.... this replaces pytorch's usual distributedsampler, a sampler that partitions a dataset and reshuffles consistently per epoch. the custom striping works around karmadock's custom loader but fixes membership of each rank's subset for the run. an all-reduce is a collective operation: every rank contributes a tensor, the tensors are reduced elementwise, and every rank receives the result. summing loss totals and counts lets each rank compute identical global means and therefore make the same early-stop decision. float64 reduces numerical error in metric aggregation; these tensors do not participate in gradients.",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#distributed-helpers"
+    },
+    {
+      "excerpt": "The meanings match train.py: physical batch is per process/GPU, so the intended complete global effective batch is batchsize × accumsteps × worldsize. posr weights the coordinate/RMSD term against the MDN distance/scorin…",
+      "heading": "CLI and graph selection",
+      "text": "scripts/trainddp.py cli and graph selection the meanings match train.py: physical batch is per process/gpu, so the intended complete global effective batch is batchsize × accumsteps × worldsize. posr weights the coordinate/rmsd term against the mdn distance/scoring loss. there is no coordinate-jitter option in this ddp variant. these are identical to the single-process helpers: failed graphs are skipped, random splitting is seed-stable, and explicit validation is never mixed with training. this happens before sharding, so every rank independently derives the same global id lists.",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#cli-and-graph-selection"
+    },
+    {
+      "excerpt": "eval() switches inference-time layer behavior, and nograd() prevents autograd graph construction, reducing memory and computation. Returning sums plus count is essential: averaging each shard first and then averaging sha…",
+      "heading": "DDP-friendly validation and synchronization context",
+      "text": "scripts/trainddp.py ddp-friendly validation and synchronization context eval() switches inference-time layer behavior, and nograd() prevents autograd graph construction, reducing memory and computation. returning sums plus count is essential: averaging each shard first and then averaging shards would bias the result when shard sizes differ. ddp normally synchronizes gradients after every backward. nosync() is intended to suppress that communication for intermediate accumulation microsteps, synchronizing only at an optimizer boundary. nullcontext() lets the caller use one with statement when suppression is not active. this matches train.py: each rank's already-sharded ids feed an independent custom loader, and on-the-fly loading re-randomizes starting poses. a standard distributedsampler is not used.",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#ddp-friendly-validation-and-synchronization-context"
+    },
+    {
+      "excerpt": "NCCL is NVIDIA's GPU collective-communication backend. Each process selects its local GPU before constructing CUDA tensors. A barrier blocks every rank until all arrive, ensuring rank 0 created the output directory. All…",
+      "heading": "Process-group startup and W&B",
+      "text": "scripts/trainddp.py process-group startup and w&b nccl is nvidia's gpu collective-communication backend. each process selects its local gpu before constructing cuda tensors. a barrier blocks every rank until all arrive, ensuring rank 0 created the output directory. all ranks receive the same base seed; because they hold different ids, they process different samples even if shuffle/random streams begin alike. rank 0 alone owns experiment tracking, preventing duplicate runs. the configuration records world size and global effective batch. compared with train.py, the displayed suffix is the pid component of the id rather than a formatted start timestamp; identity is still persisted and reused only with both --resume and existing resume files.",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#process-group-startup-and-wb"
+    },
+    {
+      "excerpt": "Every process first computes the identical global split, then selects its stripe. This guarantees disjoint coverage without rank-to-rank coordination. Shards can differ in size by at most one complex, although the number…",
+      "heading": "Global data lists, rank shards, and model wrapping",
+      "text": "scripts/trainddp.py global data lists, rank shards, and model wrapping every process first computes the identical global split, then selects its stripe. this guarantees disjoint coverage without rank-to-rank coordination. shards can differ in size by at most one complex, although the number of valid batches can differ further if samples become none. ddp initialization loads onto cpu before gpu replication and strips one leading module. because the bare model has unprefixed keys; ddp adds the prefix again after wrapping. findunusedparameters=true is necessary because stage 1 (posr=0) can skip the docking branch, leaving some parameters without gradients; without detection ddp can wait for reductions that never arrive. the non-ddp path preserves dataparallel-prefixed checkpoint compatibility. single-process mode keeps the upstream stopper. ddp uses manual state so every rank can update the same patience counter while only rank 0 touches files, avoiding write races. all ranks read the same rank-0-written resume checkpoint, including badepochs in ddp mode. only rank 0 initializes the shared csv.",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#global-data-lists-rank-shards-and-model-wrapping"
+    },
+    {
+      "excerpt": "Each rank trains on its local shard. The intent is to skip inter-GPU gradient communication until an accumulation boundary. The source places only backward() inside nosync; the significance of that exact placement is not…",
+      "heading": "Training, accumulation, and reductions",
+      "text": "scripts/trainddp.py training, accumulation, and reductions each rank trains on its local shard. the intent is to skip inter-gpu gradient communication until an accumulation boundary. the source places only backward() inside nosync; the significance of that exact placement is noted under gotchas. as in train.py, no amp/autocast is used. complete windows update after clipping; the final partial window also updates. local metric sums are retained until validation so they can be globally reduced. ddp validation produces local sums, then one packed all-reduce combines eight numbers efficiently. every rank obtains identical global metrics. non-ddp delegates to the upstream evaluator, keeping compatibility with the original loop. rank gating prevents duplicate console lines and file/w&b writes. the logged seconds come from rank 0, but the preceding collective means it includes waiting for other ranks to reach metric reduction.",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#training-accumulation-and-reductions"
+    },
+    {
+      "excerpt": "Because valloss was all-reduced, every rank updates identical bestval/badepochs and breaks together. Strictly smaller is improvement; equality consumes patience. Only rank 0 serializes, but DDP gradient synchronization k…",
+      "heading": "Lockstep early stopping and teardown",
+      "text": "scripts/trainddp.py lockstep early stopping and teardown because valloss was all-reduced, every rank updates identical bestval/badepochs and breaks together. strictly smaller is improvement; equality consumes patience. only rank 0 serializes, but ddp gradient synchronization keeps replicas equivalent. plain python preserves the upstream stopper behavior and single-process resume format. rank 0 finishes w&b while other ranks proceed to the final barrier; they all wait before dismantling nccl. destroying the process group releases distributed resources cleanly.",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#lockstep-early-stopping-and-teardown"
+    },
+    {
+      "excerpt": "PyTorch documents that a DDP nosync() context should include the forward pass; here model(...) occurs before the context and only backward() is inside. Consequently the intended communication-saving behavior may not take…",
+      "heading": "Gotchas / notes",
+      "text": "scripts/trainddp.py gotchas / notes pytorch documents that a ddp nosync() context should include the forward pass; here model(...) occurs before the context and only backward() is inside. consequently the intended communication-saving behavior may not take effect. moving the forward inside would also require handling the final partial accumulation window so its gradients are synchronized before stepping. like train.py, a partial accumulation window is divided by the full accumsteps, reducing its magnitude. manual id striping is not a distributedsampler: each rank's membership is fixed, and shuffle=true only permutes within that stripe. all ranks use the same seed. that is deterministic, but any rank-independent augmentation stream can be correlated across ranks. ddp manual patience state is resumable; non-ddp still has the upstream stopper-counter ambiguity described in the single-process walkthrough. the ddp path assumes cuda/nccl. worldsize>1 on a cpu-only machine still selects nccl and cuda and will fail. why may the current nosync() block fail to suppress intermediate gradient communication? how can fixed striping and identical seeds reduce augmentation diversity across ranks? why does setting worldsize>1 on a cpu-only machine fail rather than using a cpu distributed backend?",
+      "title": "scripts/trainddp.py",
+      "url": "walkthrough-train-ddp.html#gotchas--notes"
     }
   ],
   "lang": "en"

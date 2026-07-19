@@ -41,13 +41,16 @@ ARABIC_WALKTHROUGH_STEMS = [
     "walkthrough-train",
     "walkthrough-convert-karmadock-to-seminar",
     "walkthrough-convert-seminar-to-karmadock",
+    "walkthrough-run-full-stage2-ddp",
     "walkthrough-run-infer",
     "walkthrough-seminar-csv",
     "walkthroughs",
     "walkthrough-evaluation",
     "walkthrough-evaluate",
+    "walkthrough-run-full-stage2-ddp-v2",
     "walkthrough-run-full-train",
     "walkthrough-run-train",
+    "walkthrough-train-ddp",
 ]
 ARABIC_PAGE_STEMS = set(CORE_STEMS + ARABIC_WALKTHROUGH_STEMS)
 
@@ -818,12 +821,15 @@ class Resolver:
 
         self.source_routes = {
             "scripts/train.py": "walkthrough-train.html",
+            "scripts/train_ddp.py": "walkthrough-train-ddp.html",
             "scripts/seminar_csv.py": "walkthrough-seminar-csv.html",
             "scripts/convert_seminar_to_karmadock.py": "walkthrough-convert-seminar-to-karmadock.html",
             "scripts/convert_karmadock_to_seminar.py": "walkthrough-convert-karmadock-to-seminar.html",
             "scripts/run_train.sh": "walkthrough-run-train.html",
             "scripts/run_full_train.sh": "walkthrough-run-full-train.html",
             "scripts/run_infer.sh": "walkthrough-run-infer.html",
+            "scripts/run_full_stage2_ddp.sh": "walkthrough-run-full-stage2-ddp.html",
+            "scripts/run_full_stage2_ddp_v2.sh": "walkthrough-run-full-stage2-ddp-v2.html",
             "scripts/evaluate.sh": "walkthrough-evaluate.html",
             "evaluation/evaluation.py": "walkthrough-evaluation.html",
         }
