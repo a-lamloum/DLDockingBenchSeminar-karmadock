@@ -169,7 +169,7 @@ def read_text(path: Path) -> str:
 EN_UI = {
     "skip_link": "Skip to content",
     "menu_label": "Toggle course navigation",
-    "site_subtitle": "Course Site",
+    "site_subtitle": "· KarmaDock",
     "search_button": "Search",
     "open_search": "Open search",
     "theme_light": "Switch to light theme",
@@ -1423,7 +1423,7 @@ def render_page(page: Page, pages: list[Page], resolver: Resolver) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>{html.escape(page.title)} | KarmaDock {html.escape(ui["site_subtitle"])}</title>
+  <title>{html.escape(page.title)} | Docking Bench {html.escape(ui["site_subtitle"])}</title>
 {alternate.rstrip()}
   <link rel="stylesheet" href="assets/styles.css">
   <script defer src="assets/search-normalization-fixtures.js"></script>
@@ -1435,7 +1435,7 @@ def render_page(page: Page, pages: list[Page], resolver: Resolver) -> str:
   <a class="skip-link" href="#main-content">{html.escape(ui["skip_link"])}</a>
   <header class="site-header">
     <button class="icon-button menu-button" id="menu-toggle" type="button" aria-label="{html.escape(ui["menu_label"], quote=True)}" aria-expanded="false" aria-controls="sidebar">☰</button>
-    <a class="site-title" href="{home}"><bdi dir="ltr">KarmaDock</bdi> <span>{html.escape(ui["site_subtitle"])}</span></a>
+    <a class="site-title" href="{home}"><bdi dir="ltr">Docking Bench</bdi> <span dir="ltr">{html.escape(ui["site_subtitle"])}</span></a>
     <div class="header-actions">
       {language_toggle}
       <button class="text-button" id="search-trigger" type="button" aria-label="{html.escape(ui["open_search"], quote=True)}">{html.escape(ui["search_button"])} <kbd dir="ltr">/</kbd></button>

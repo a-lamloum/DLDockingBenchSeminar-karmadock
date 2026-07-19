@@ -1,14 +1,14 @@
 :root {
   color-scheme: light;
-  --hue: 203;
+  --hue: 276;
   --bg: oklch(97.5% 0.012 var(--hue));
   --surface: oklch(94.5% 0.018 var(--hue));
   --surface-strong: oklch(90% 0.025 var(--hue));
   --text: oklch(25% 0.035 var(--hue));
   --muted: oklch(48% 0.035 var(--hue));
   --line: oklch(82% 0.035 var(--hue));
-  --accent: oklch(52% 0.15 214);
-  --accent-strong: oklch(42% 0.16 214);
+  --accent: oklch(52% 0.18 274);
+  --accent-strong: oklch(44% 0.19 274);
   --code-bg: oklch(22% 0.035 var(--hue));
   --code-text: oklch(91% 0.025 var(--hue));
   --focus: oklch(67% 0.18 55);
@@ -26,8 +26,8 @@
     --text: oklch(90% 0.025 var(--hue));
     --muted: oklch(70% 0.035 var(--hue));
     --line: oklch(38% 0.04 var(--hue));
-    --accent: oklch(72% 0.13 210);
-    --accent-strong: oklch(80% 0.11 210);
+    --accent: oklch(76% 0.14 276);
+    --accent-strong: oklch(83% 0.12 276);
   }
 }
 
@@ -39,8 +39,8 @@
   --text: oklch(90% 0.025 var(--hue));
   --muted: oklch(70% 0.035 var(--hue));
   --line: oklch(38% 0.04 var(--hue));
-  --accent: oklch(72% 0.13 210);
-  --accent-strong: oklch(80% 0.11 210);
+  --accent: oklch(76% 0.14 276);
+  --accent-strong: oklch(83% 0.12 276);
 }
 
 * { box-sizing: border-box; }
