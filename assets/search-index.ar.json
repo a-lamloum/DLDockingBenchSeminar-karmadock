@@ -85,6 +85,83 @@
       "url": "reference.ar.html#6-repository-layout"
     },
     {
+      "excerpt": "جذر المستودع README.md Dockerfile .gitignore scripts/ condor/ condor/logs/ data/ docs/ evaluation/ model/ notebooks/ results/…",
+      "heading": "دليل الملفات ملفًا بملف",
+      "text": "المرجع دليل الملفات ملفا بملف جذر المستودع readme.md dockerfile .gitignore scripts/ condor/ condor/logs/ data/ docs/ evaluation/ model/ notebooks/ results/ شرح موجز لكل ملف ذي معنى في تسليم karmadock للفريق team-002",
+      "title": "المرجع",
+      "url": "reference.ar.html#file-by-file-guide"
+    },
+    {
+      "excerpt": "README.md هو الشرح الرئيس، ويبني Dockerfile الصورة ahlamloum/karmadock-seminar:v6 من بيئة المؤلفين المعبأة مسبقًا، ويحافظ .gitignore على قابلية نقل المستودع.",
+      "heading": "جذر المستودع",
+      "text": "المرجع دليل الملفات ملفا بملف جذر المستودع readme.md الشرح الرييس المسارات الثلاثة النتايج التقييم اعادة الانتاج معاملات التدريب التخطيط المشكلات المعروفة dockerfile صورة قابلة لاعادة الانتاج ahlamloum/karmadock-seminar:v6 miniconda karmadock الاصلي بيية conda معباة مسبقا conda-pack zenodo karmadock_env.yaml محلل الاعتماديات prefetch_generator rmsd wandb scripts/ pythonpath=/app/karmadock فحص الاستيراد .gitignore بيانات النموذج الاولي __pycache__ نقاط تحقق الدفاتر روابط data/ الرمزية ملفات تقسيم *.csv",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-repository-root"
+    },
+    {
+      "excerpt": "حلقة تدريب الفريق، ومشغلات التدريب والاستدلال، ومحولات تخطيط البيانات، وأداة CSV المساعدة، وملاحظة مصدر الشيفرة، مع روابط الشرح التفصيلي.",
+      "heading": "scripts/ (شيفرة الفريق — صفحات الشرح التفصيلي مرتبطة)",
+      "text": "المرجع دليل الملفات ملفا بملف scripts/ scripts/train.py تدريب مرحلتان mdn rmsd المحسن الايقاف المبكر تجميع التدرجات تقسيم التدريب التحقق الحتمي weights & biases --resume scripts/run_train.sh scratch p2 finetune p3 proto_train 712 scripts/run_full_train.sh full_train 23,483 full_val 2,609 --val_csv --val_graph_dir scripts/run_infer.sh معالجة مسبقة ارساء غير مصححة ff مرخاة مصححة بالمحاذاة scripts/evaluate.sh evaluation.py مسار متغير وضعية rmsd csv scripts/convert_seminar_to_karmadock.py ligand_refined.sdf protein_refined.pdb scripts/convert_karmadock_to_seminar.py results/<ds>/<id>_pred.sdf افضل وضعية اولا scripts/seminar_csv.py مخطط csv تعيينات scripts/readme.md مصدر الشيفرة لم يعدل مصدر اصلي",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-scripts"
+    },
+    {
+      "excerpt": "ملفات إرسال HTCondor لاستدلال P1/P2/P3 وتقييمه، وتدريب النموذج الأولي والبيانات الكاملة، واستدلال full_test وPoseBusters.",
+      "heading": "condor/ (ملفات إرسال HTCondor — الشرح التفصيلي مرتبط)",
+      "text": "المرجع دليل الملفات ملفا بملف condor/ htcondor condor/p1_baseline.sub p1 اوزان منشورة تقييم condor/p2_scratch_infer.sub p2 نقطة تحقق من الصفر condor/p3_finetune_infer.sub p3 نقطة تحقق مضبوطة دقيقا condor/p2_train_scratch.sub مرحلتان من الصفر condor/p3_finetune.sub تدريب الضبط الدقيق condor/evaluate.sub evaluate.sh كل المسارات المتغيرات condor/full_stage2_2gpu.sub بيانات كاملة مرحلة 2 2xa100 موزع hpc برامج على جانب العنقود condor/full_train_scratch.sub بيانات كاملة من الصفر condor/full_test_infer.sub full_test 6,183 condor/posebusters_infer.sub posebusters 308",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-condor"
+    },
+    {
+      "excerpt": "سجلات مهام HPC التي توثق تشغيل المرحلة 2 المكتمل على 2xA100 ومقارنتي استدلال full_test وPoseBusters المباشرتين.",
+      "heading": "condor/logs/ (سجلات مهام HPC — توثيق مصدر الأرقام المبلّغ عنها)",
+      "text": "المرجع دليل الملفات ملفا بملف condor/logs/ سجلات hpc مصدر الارقام condor/logs/s2_2gpu.169253.* stdout stderr log تدريب بيانات كاملة مرحلة 2 مكتمل 2xa100 رمز خروج 0 condor/logs/full_test_infer.169842.* full_test_released.169868.* full_test نموذج الفريق اوزان المؤلفين المنشورة مقارنة مباشرة condor/logs/posebusters_infer.169843.* posebusters_released.169869.* posebusters مقارنة مباشرة",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-condor-logs"
+    },
+    {
+      "excerpt": "تعيينات CSV لمجموعات تقييم proto_test وfull_test وPoseBusters، إضافة إلى حزمة البنى البلورية المرجعية.",
+      "heading": "data/ (تعيينات مجموعات التقييم + البنى المرجعية)",
+      "text": "المرجع دليل الملفات ملفا بملف data/ data/proto_test.csv 136 اسماء ملفات الربيطة البروتين السنة لوغاريتم الفة الارتباط نوع القياس معرف pdb data/full_test.csv 6,183 الاعمدة نفسها data/posebusters_filtered.csv 308 اسم الربيطة ملف الربيطة ملف البروتين data/prototype_model_data.zip بنى بلورية مرجعية proto_test proto_train sdf pdb منقحة احتساب درجات محليا",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-data"
+    },
+    {
+      "excerpt": "منحنيات كل حقبة للمرحلة 1 والمرحلة 2 من P2 ولضبط P3 الدقيق، إضافة إلى مخططي سير عمل التدريب والاستدلال.",
+      "heading": "docs/ (منحنيات التدريب + الأشكال)",
+      "text": "المرجع دليل الملفات ملفا بملف docs/ docs/p2_stage1_train_log.csv كل حقبة p2 مرحلة 1 احتساب درجات mdn الحقبة خسارة التدريب التحقق rmsd mdn الثواني docs/p2_stage2_train_log.csv p2 مرحلة 2 ارساء احتساب درجات docs/p3_finetune_train_log.csv p3 ضبط دقيق docs/workflow_training.png docs/workflow_inference.png مخططات سير التدريب الاستدلال",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-docs"
+    },
+    {
+      "excerpt": "مقيّم الندوة الرسمي غير المعدّل لحساب RMSD لأفضل وضعية مع تصحيح التناظر وإجراء فحوص صلاحية PoseBusters.",
+      "heading": "evaluation/",
+      "text": "المرجع دليل الملفات ملفا بملف evaluation/ evaluation/evaluation.py مقيم الندوة الرسمي غير المعدل rmsd افضل وضعية تصحيح التناظر فحوص صلاحية posebusters",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-evaluation"
+    },
+    {
+      "excerpt": "نقطة تحقق P2 للنموذج الأولي، ونقطة تحقق ضبط P3 الدقيق، ونقطة تحقق البيانات الكاملة النهائية المدرّبة من الصفر، بحجم يقارب 15 MB لكل منها.",
+      "heading": "model/ (نقاط تحقق مدرّبة، بحجم ~15 MB لكل منها)",
+      "text": "المرجع دليل الملفات ملفا بملف model/ نقاط تحقق مدربة 15 mb model/p2_scratch_karmadock_team002.pkl p2 من الصفر نموذج اولي 712 model/p3_finetune_karmadock_team002.pkl p3 ضبط دقيق اضافي model/full_scratch_karmadock_team002.pkl بيانات كاملة تسليم نهايي مرحلتان مرحلة 2 2xa100 النتيجة الرييسة",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-model"
+    },
+    {
+      "excerpt": "دفتر التحليل الذي يحتوي جداول النتائج والرسوم المقارنة بين المسارات ومتغيرات الوضعية.",
+      "heading": "notebooks/",
+      "text": "المرجع دليل الملفات ملفا بملف notebooks/ notebooks/results_and_comparison.ipynb دفتر التحليل جداول النتايج الرسوم مقارنة المسارات متغيرات الوضعية",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-notebooks"
+    },
+    {
+      "excerpt": "وضعيات P2 الرئيسة، ودلائل نتائج كل مسار x متغير وضعية، وملفات RMSD CSV الرسمية لكل مركّب، مشحونة بعد فكها.",
+      "heading": "results/ (الوضعيات المتنبأ بها + ملفات CSV المحتسبة — مشحونة بعد فكها)",
+      "text": "المرجع دليل الملفات ملفا بملف results/ results/proto_test/ p2 من الصفر وضعيات متنبأ بها evaluation.py --dataset proto_test مجموعة النتايج الرييسة results/{p1_baseline,p2_scratch,p3_finetune}/proto_test{,_ff,_align}/ ثلاثة مسارات ثلاثة متغيرات غير مصححة ff مرخاة مصححة بالمحاذاة 136 results/*_evaluation.csv ملفات rmsd csv رسمية لكل مركب مسار متغير",
+      "title": "المرجع",
+      "url": "reference.ar.html#guide-results"
+    },
+    {
       "excerpt": "مشكلة العقدة: كانت عقد GPU في عنقود idun تعيد خطأ أحيانًا أثناء التشغيل، لذلك استُبعدت العقدة المحددة في متطلبات ملفات الإرسال. الإصلاح: requirements = … && (Machine =!= \"idun.hpc.uni-saarland.de\"). [solved]. قيود الموار…",
       "heading": "7. المشكلات والإصلاحات",
       "text": "المرجع 7. المشكلات والاصلاحات مشكلة العقدة: كانت عقد gpu في عنقود idun تعيد خطا احيانا اثناء التشغيل، لذلك استبعدت العقدة المحددة في متطلبات ملفات الارسال. الاصلاح: requirements = ... && (machine =!= \"idun.hpc.uni-saarland.de\"). [solved]. قيود الموارد: بقيت مهام requestgpus=2/4 خاملة اياما. يعمل النموذج الاولي على gpu واحد؛ تعذر تشغيله على 2 gpu، لذلك غير الطلب الى 1 gpu. لم يحسم ما اذا كان ذلك ملايما للبيانات الكاملة بسبب طول زمن التشغيل. الاصلاح: طلب 1 gpu. [solved].",

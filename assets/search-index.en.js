@@ -85,6 +85,83 @@ window.KD_SEARCH_INDEX = {
       "url": "reference.html#6-repository-layout"
     },
     {
+      "excerpt": "Repository root README.md Dockerfile .gitignore scripts/ condor/ condor/logs/ data/ docs/ evaluation/ model/ notebooks/ results/…",
+      "heading": "File-by-file guide",
+      "text": "reference file-by-file guide repository root readme.md dockerfile .gitignore scripts/ condor/ condor/logs/ data/ docs/ evaluation/ model/ notebooks/ results/ plain-english explanations for every meaningful file in the karmadock team-002 submission",
+      "title": "Reference",
+      "url": "reference.html#file-by-file-guide"
+    },
+    {
+      "excerpt": "README.md is the main write-up. Dockerfile builds ahlamloum/karmadock-seminar:v6 from the authors' pre-packed environment. .gitignore keeps the repo portable.",
+      "heading": "Repository root",
+      "text": "reference file-by-file guide repository root readme.md main write-up three pipelines results evaluation reproduction training parameters layout known issues dockerfile reproducible image ahlamloum/karmadock-seminar:v6 miniconda upstream karmadock pre-packed conda environment conda-pack zenodo karmadock_env.yaml dependency solver prefetch_generator rmsd wandb scripts/ pythonpath=/app/karmadock import check .gitignore prototype data __pycache__ notebook checkpoints data/ symlinks *.csv split files",
+      "title": "Reference",
+      "url": "reference.html#guide-repository-root"
+    },
+    {
+      "excerpt": "The team's training loop, training and inference drivers, data-layout converters, CSV helper, and provenance note, with deep-dive pages linked.",
+      "heading": "scripts/ (the team's code — deep-dive pages linked)",
+      "text": "reference file-by-file guide scripts/ scripts/train.py two-stage training mdn rmsd optimizer early stopping gradient accumulation deterministic train/val split weights & biases --resume scripts/run_train.sh scratch p2 finetune p3 proto_train 712 scripts/run_full_train.sh full_train 23,483 full_val 2,609 --val_csv --val_graph_dir scripts/run_infer.sh preprocess dock uncorrected ff-relaxed align-corrected scripts/evaluate.sh evaluation.py pipeline pose variant rmsd csv scripts/convert_seminar_to_karmadock.py ligand_refined.sdf protein_refined.pdb scripts/convert_karmadock_to_seminar.py results/<ds>/<id>_pred.sdf best-pose-first scripts/seminar_csv.py csv schema mappings scripts/readme.md provenance no upstream source modified",
+      "title": "Reference",
+      "url": "reference.html#guide-scripts"
+    },
+    {
+      "excerpt": "HTCondor submit files for P1/P2/P3 inference and evaluation, prototype and full-data training, full_test inference, and PoseBusters inference.",
+      "heading": "condor/ (HTCondor submit files — deep-dive linked)",
+      "text": "reference file-by-file guide condor/ htcondor condor/p1_baseline.sub p1 released weights evaluation condor/p2_scratch_infer.sub p2 from-scratch checkpoint condor/p3_finetune_infer.sub p3 fine-tuned checkpoint condor/p2_train_scratch.sub two-stage from scratch condor/p3_finetune.sub fine-tune training condor/evaluate.sub evaluate.sh all pipelines variants condor/full_stage2_2gpu.sub full-data stage-2 2xa100 distributed hpc cluster-side scripts condor/full_train_scratch.sub full-data from-scratch condor/full_test_infer.sub full_test 6,183 condor/posebusters_infer.sub posebusters 308",
+      "title": "Reference",
+      "url": "reference.html#guide-condor"
+    },
+    {
+      "excerpt": "HPC job logs that document the completed 2xA100 Stage-2 run and the head-to-head full_test and PoseBusters inference comparisons.",
+      "heading": "condor/logs/ (HPC job logs — provenance for the reported numbers)",
+      "text": "reference file-by-file guide condor/logs/ hpc logs provenance condor/logs/s2_2gpu.169253.* stdout stderr log completed 2xa100 full-data stage-2 exit 0 condor/logs/full_test_infer.169842.* full_test_released.169868.* full_test team model authors released weights head-to-head condor/logs/posebusters_infer.169843.* posebusters_released.169869.* posebusters head-to-head",
+      "title": "Reference",
+      "url": "reference.html#guide-condor-logs"
+    },
+    {
+      "excerpt": "Evaluation-set CSV mappings for proto_test, full_test, and PoseBusters, plus the reference crystal-structure bundle.",
+      "heading": "data/ (evaluation-set mappings + reference structures)",
+      "text": "reference file-by-file guide data/ data/proto_test.csv 136 ligand protein file names year log binding affinity measurement type pdb id data/full_test.csv 6,183 same columns data/posebusters_filtered.csv 308 ligand name ligand file protein file data/prototype_model_data.zip reference crystal structures proto_test proto_train refined sdf pdb local scoring",
+      "title": "Reference",
+      "url": "reference.html#guide-data"
+    },
+    {
+      "excerpt": "Per-epoch P2 Stage-1, P2 Stage-2, and P3 fine-tune curves, plus the training and inference workflow diagrams.",
+      "heading": "docs/ (training curves + figures)",
+      "text": "reference file-by-file guide docs/ docs/p2_stage1_train_log.csv per-epoch p2 stage-1 mdn scoring epoch train/val loss rmsd mdn seconds docs/p2_stage2_train_log.csv p2 stage-2 docking scoring docs/p3_finetune_train_log.csv p3 fine-tune docs/workflow_training.png docs/workflow_inference.png training inference workflow diagrams",
+      "title": "Reference",
+      "url": "reference.html#guide-docs"
+    },
+    {
+      "excerpt": "The seminar's official, unmodified evaluator for symmetry-corrected top-1 pose RMSD and PoseBusters validity checks.",
+      "heading": "evaluation/",
+      "text": "reference file-by-file guide evaluation/ evaluation/evaluation.py official unmodified evaluator symmetry-corrected top-1 pose rmsd posebusters validity checks",
+      "title": "Reference",
+      "url": "reference.html#guide-evaluation"
+    },
+    {
+      "excerpt": "The P2 prototype checkpoint, P3 fine-tune checkpoint, and final full-data from-scratch checkpoint, about 15 MB each.",
+      "heading": "model/ (trained checkpoints, ~15 MB each)",
+      "text": "reference file-by-file guide model/ trained checkpoints 15 mb model/p2_scratch_karmadock_team002.pkl p2 from-scratch prototype 712 model/p3_finetune_karmadock_team002.pkl p3 fine-tune bonus model/full_scratch_karmadock_team002.pkl full-data final submission two-stage stage-2 2xa100 headline",
+      "title": "Reference",
+      "url": "reference.html#guide-model"
+    },
+    {
+      "excerpt": "The analysis notebook containing results tables and charts that compare pipelines and pose variants.",
+      "heading": "notebooks/",
+      "text": "reference file-by-file guide notebooks/ notebooks/results_and_comparison.ipynb analysis notebook results tables charts pipelines pose variants",
+      "title": "Reference",
+      "url": "reference.html#guide-notebooks"
+    },
+    {
+      "excerpt": "The primary P2 poses, every pipeline x pose-variant result directory, and the official per-complex RMSD CSVs, shipped unzipped.",
+      "heading": "results/ (predicted poses + scored CSVs — shipped unzipped)",
+      "text": "reference file-by-file guide results/ results/proto_test/ p2 from-scratch predicted poses evaluation.py --dataset proto_test primary result set results/{p1_baseline,p2_scratch,p3_finetune}/proto_test{,_ff,_align}/ three pipelines three variants uncorrected ff-relaxed align-corrected 136 results/*_evaluation.csv official per-complex rmsd csv pipeline variant",
+      "title": "Reference",
+      "url": "reference.html#guide-results"
+    },
+    {
       "excerpt": "Node Problem: in the idun cluster the gpu nodes are sometime during the run just return error so we had to exclude this specific node as a requirement in our sub files. Fix: exclude it — requirements = … && (Machine =!=…",
       "heading": "7. Issues & fixes",
       "text": "reference 7. issues & fixes node problem: in the idun cluster the gpu nodes are sometime during the run just return error so we had to exclude this specific node as a requirement in our sub files. fix: exclude it — requirements = ... && (machine =!= \"idun.hpc.uni-saarland.de\"). [solved]. resources limitations: requestgpus=2/4 jobs sat idle for days. the prototype runs single-gpu. we couldn't run on 2 gpus that's why we changed it to 1 gpu, we are not sure if this gonna work on the full dataset as it will take too much time. fix: change the request to 1 gpu [solved].",

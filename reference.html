@@ -81,6 +81,231 @@
 </tr>
 </tbody></table></div>
 <p><strong>Docker image:</strong> <code dir="ltr">ahlamloum/karmadock-seminar:v6</code> (Docker Hub).</p>
+<h2 id="file-by-file-guide">File-by-file guide</h2>
+<h3 id="guide-repository-root">Repository root</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">README.md</code></td>
+<td>The submission&#x27;s main write-up: what the team built and why, the three pipelines, results tables, how to evaluate/reproduce, the paper training parameters, repository layout, and known issues.</td>
+</tr>
+<tr>
+<td><code dir="ltr">Dockerfile</code></td>
+<td>Builds the reproducible image <code dir="ltr">ahlamloum/karmadock-seminar:v6</code>. Starts from miniconda, clones upstream KarmaDock, and unpacks the authors&#x27; PRE-PACKED conda environment (a conda-pack tarball from Zenodo) instead of solving <code dir="ltr">karmadock_env.yaml</code> — this sidesteps conda&#x27;s dependency solver. It then pip-installs a few extras (<code dir="ltr">prefetch_generator</code>, <code dir="ltr">rmsd</code>, <code dir="ltr">wandb</code>), copies the team&#x27;s <code dir="ltr">scripts/</code>, sets <code dir="ltr">PYTHONPATH=/app/KarmaDock</code>, and runs a build-time import check so a broken environment fails the build early.</td>
+</tr>
+<tr>
+<td><code dir="ltr">.gitignore</code></td>
+<td>Keeps the repo portable: ignores the large prototype data bundle, <code dir="ltr">__pycache__</code>, notebook checkpoints, and the non-portable local <code dir="ltr">data/</code> symlinks, while keeping the tracked <code dir="ltr">*.csv</code> split files.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-scripts"><code dir="ltr">scripts/</code> (the team&#x27;s code — deep-dive pages linked)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="content-link" href="walkthrough-train.html"><code dir="ltr">scripts/train.py</code></a></td>
+<td>The team&#x27;s main artifact: a complete, checkpointed two-stage training loop (KarmaDock ships none). Handles the MDN and RMSD losses, optimizer, early stopping, gradient accumulation, deterministic train/val split, Weights &amp; Biases logging, and <code dir="ltr">--resume</code>.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-train.html"><code dir="ltr">scripts/run_train.sh</code></a></td>
+<td>Prototype training driver: <code dir="ltr">scratch</code> runs the paper&#x27;s 2-stage protocol (pipeline P2), <code dir="ltr">finetune</code> continues from the released weights (pipeline P3); it preprocesses the 712-complex <code dir="ltr">proto_train</code> first.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-full-train.html"><code dir="ltr">scripts/run_full_train.sh</code></a></td>
+<td>Full-dataset training driver (<code dir="ltr">full_train</code> 23,483 / <code dir="ltr">full_val</code> 2,609). Unlike the prototype driver it reads the curated train/val split via <code dir="ltr">--val_csv</code> / <code dir="ltr">--val_graph_dir</code> rather than a random carve-out.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-infer.html"><code dir="ltr">scripts/run_infer.sh</code></a></td>
+<td>Portable docking driver: preprocess -&gt; dock -&gt; export the three pose variants (uncorrected / FF-relaxed / align-corrected).</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-evaluate.html"><code dir="ltr">scripts/evaluate.sh</code></a></td>
+<td>The separate scoring step: runs the official <code dir="ltr">evaluation.py</code> over every pipeline x pose-variant and writes the RMSD CSVs.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-convert-seminar-to-karmadock.html"><code dir="ltr">scripts/convert_seminar_to_karmadock.py</code></a></td>
+<td>Re-lays-out the seminar data (<code dir="ltr">&lt;id&gt;_ligand_refined.sdf</code> / <code dir="ltr">&lt;id&gt;_protein_refined.pdb</code>) into the directory shape KarmaDock&#x27;s preprocessing expects.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-convert-karmadock-to-seminar.html"><code dir="ltr">scripts/convert_karmadock_to_seminar.py</code></a></td>
+<td>Converts KarmaDock&#x27;s docked poses into the seminar&#x27;s <code dir="ltr">results/&lt;ds&gt;/&lt;id&gt;_pred.sdf</code> format, best-pose-first, which is what <code dir="ltr">evaluation.py</code> reads.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-seminar-csv.html"><code dir="ltr">scripts/seminar_csv.py</code></a></td>
+<td>Small CSV-schema helper used by the training/preprocess steps to read the seminar and full-split CSV mappings.</td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/README.md</code></td>
+<td>Provenance note: exactly what the team wrote versus the upstream KarmaDock authors&#x27; code, stating that no upstream source file was modified.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-condor"><a class="content-link" href="walkthrough-condor.html"><code dir="ltr">condor/</code></a> (HTCondor submit files — deep-dive linked)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">condor/p1_baseline.sub</code></td>
+<td>P1 inference with the released weights, then evaluation.</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/p2_scratch_infer.sub</code></td>
+<td>P2 inference with the from-scratch checkpoint, then evaluation.</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/p3_finetune_infer.sub</code></td>
+<td>P3 inference with the fine-tuned checkpoint, then evaluation.</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/p2_train_scratch.sub</code></td>
+<td>P2 training (2-stage, from scratch).</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/p3_finetune.sub</code></td>
+<td>P3 fine-tune training.</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/evaluate.sub</code></td>
+<td>runs <code dir="ltr">evaluate.sh</code> (scoring over all pipelines x variants).</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/full_stage2_2gpu.sub</code></td>
+<td>The full-data Stage-2 training job on 2xA100 (distributed). It transfers in cluster-side training scripts that live on the HPC, not in this repo.</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/full_train_scratch.sub</code></td>
+<td>Full-data from-scratch training job.</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/full_test_infer.sub</code></td>
+<td>Inference over the full 6,183-complex <code dir="ltr">full_test</code> set.</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/posebusters_infer.sub</code></td>
+<td>Inference over the 308-complex PoseBusters subset.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-condor-logs"><code dir="ltr">condor/logs/</code> (HPC job logs — provenance for the reported numbers)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">condor/logs/s2_2gpu.169253.*</code></td>
+<td>stdout / stderr / log of the completed 2xA100 full-data Stage-2 training run (finished cleanly, exit 0).</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/logs/full_test_infer.169842.*</code> and <code dir="ltr">full_test_released.169868.*</code></td>
+<td><code dir="ltr">full_test</code> inference logs for the team&#x27;s model and for the authors&#x27; released weights (the head-to-head comparison).</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/logs/posebusters_infer.169843.*</code> and <code dir="ltr">posebusters_released.169869.*</code></td>
+<td>The same head-to-head on the PoseBusters subset.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-data"><code dir="ltr">data/</code> (evaluation-set mappings + reference structures)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">data/proto_test.csv</code></td>
+<td>136-complex prototype test set: ligand/protein file names, year, log binding affinity, measurement type, PDB ID.</td>
+</tr>
+<tr>
+<td><code dir="ltr">data/full_test.csv</code></td>
+<td>6,183-complex full-split test set (same columns).</td>
+</tr>
+<tr>
+<td><code dir="ltr">data/posebusters_filtered.csv</code></td>
+<td>308-complex PoseBusters benchmark subset (ligand name, ligand file, protein file).</td>
+</tr>
+<tr>
+<td><code dir="ltr">data/prototype_model_data.zip</code></td>
+<td>The reference crystal structures (<code dir="ltr">proto_test</code> + <code dir="ltr">proto_train</code>, refined SDF/PDB) needed to score predicted poses locally.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-docs"><code dir="ltr">docs/</code> (training curves + figures)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">docs/p2_stage1_train_log.csv</code></td>
+<td>Per-epoch curves for P2 Stage-1 (MDN scoring): epoch, train/val loss, RMSD, MDN, seconds.</td>
+</tr>
+<tr>
+<td><code dir="ltr">docs/p2_stage2_train_log.csv</code></td>
+<td>Per-epoch curves for P2 Stage-2 (docking + scoring).</td>
+</tr>
+<tr>
+<td><code dir="ltr">docs/p3_finetune_train_log.csv</code></td>
+<td>Per-epoch curves for the P3 fine-tune run.</td>
+</tr>
+<tr>
+<td><code dir="ltr">docs/workflow_training.png</code> / <code dir="ltr">docs/workflow_inference.png</code></td>
+<td>The training and inference workflow diagrams (also shown elsewhere on this site).</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-evaluation"><code dir="ltr">evaluation/</code></h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="content-link" href="walkthrough-evaluation.html"><code dir="ltr">evaluation/evaluation.py</code></a></td>
+<td>The seminar&#x27;s official, unmodified evaluator: symmetry-corrected top-1 pose RMSD and PoseBusters validity checks.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-model"><code dir="ltr">model/</code> (trained checkpoints, ~15 MB each)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">model/p2_scratch_karmadock_team002.pkl</code></td>
+<td>The P2 from-scratch checkpoint (prototype, 712 complexes).</td>
+</tr>
+<tr>
+<td><code dir="ltr">model/p3_finetune_karmadock_team002.pkl</code></td>
+<td>The P3 fine-tune checkpoint (bonus).</td>
+</tr>
+<tr>
+<td><code dir="ltr">model/full_scratch_karmadock_team002.pkl</code></td>
+<td>The full-data from-scratch model: the final submission model (2-stage protocol, Stage-2 trained on 2xA100) behind the full-data headline.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-notebooks"><code dir="ltr">notebooks/</code></h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">notebooks/results_and_comparison.ipynb</code></td>
+<td>The analysis notebook: the results tables and charts comparing the pipelines and pose variants.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-results"><code dir="ltr">results/</code> (predicted poses + scored CSVs — shipped unzipped)</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>File</th>
+<th>What it is</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">results/proto_test/</code></td>
+<td>The P2 (from-scratch) predicted poses that <code dir="ltr">evaluation.py --dataset proto_test</code> scores; this is the submission&#x27;s primary result set.</td>
+</tr>
+<tr>
+<td><code dir="ltr">results/{p1_baseline,p2_scratch,p3_finetune}/proto_test{,_ff,_align}/</code></td>
+<td>all three pipelines x three pose variants (uncorrected / FF-relaxed / align-corrected), 136 complexes each.</td>
+</tr>
+<tr>
+<td><code dir="ltr">results/*_evaluation.csv</code></td>
+<td>The official per-complex RMSD CSVs for each pipeline x variant.</td>
+</tr>
+</tbody></table></div>
 <h2 id="7-issues--fixes">7. Issues &amp; fixes</h2>
 <ul>
 <li><strong>Node Problem</strong>: in the idun cluster the gpu nodes are sometime during the run just return error so we had to exclude this specific node as a requirement in our sub files.</li>
@@ -197,7 +422,7 @@
 </li>
 </ol>
 </section></article></main>
-    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#6-repository-layout">6. Repository layout</a></li><li class="toc-level-2"><a href="#7-issues--fixes">7. Issues &amp; fixes</a></li><li class="toc-level-2"><a href="#authorship--provenance">Authorship &amp; provenance</a></li><li class="toc-level-3"><a href="#files-we-created">Files we created</a></li><li class="toc-level-3"><a href="#scripts">scripts/</a></li><li class="toc-level-3"><a href="#condor-our-work">condor/ (our work)</a></li><li class="toc-level-3"><a href="#other-ours">Other ours</a></li><li class="toc-level-2"><a href="#summary">Summary</a></li></ol></aside>
+    <aside class="page-toc" aria-label="On this page"><p class="toc-title">On this page</p><ol><li class="toc-level-2"><a href="#6-repository-layout">6. Repository layout</a></li><li class="toc-level-2"><a href="#file-by-file-guide">File-by-file guide</a></li><li class="toc-level-3"><a href="#guide-repository-root">Repository root</a></li><li class="toc-level-3"><a href="#guide-scripts">scripts/</a></li><li class="toc-level-3"><a href="#guide-condor">condor/</a></li><li class="toc-level-3"><a href="#guide-condor-logs">condor/logs/</a></li><li class="toc-level-3"><a href="#guide-data">data/</a></li><li class="toc-level-3"><a href="#guide-docs">docs/</a></li><li class="toc-level-3"><a href="#guide-evaluation">evaluation/</a></li><li class="toc-level-3"><a href="#guide-model">model/</a></li><li class="toc-level-3"><a href="#guide-notebooks">notebooks/</a></li><li class="toc-level-3"><a href="#guide-results">results/</a></li><li class="toc-level-2"><a href="#7-issues--fixes">7. Issues &amp; fixes</a></li><li class="toc-level-2"><a href="#authorship--provenance">Authorship &amp; provenance</a></li><li class="toc-level-3"><a href="#files-we-created">Files we created</a></li><li class="toc-level-3"><a href="#scripts">scripts/</a></li><li class="toc-level-3"><a href="#condor-our-work">condor/ (our work)</a></li><li class="toc-level-3"><a href="#other-ours">Other ours</a></li><li class="toc-level-2"><a href="#summary">Summary</a></li></ol></aside>
   </div>
   <footer class="site-footer"><p>KarmaDock seminar project · Saarland University · Offline course companion</p></footer>
   <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="Type to search across the course site." data-none="No matching sections." data-result-singular="result" data-result-plural="results">
