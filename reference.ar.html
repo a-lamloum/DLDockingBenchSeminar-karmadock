@@ -82,6 +82,248 @@
 </tr>
 </tbody></table></div>
 <p><strong>صورة <bdi dir="ltr">Docker:</bdi></strong> ‏<code dir="ltr">ahlamloum/karmadock-seminar:v6</code> على <bdi dir="ltr">Docker</bdi> <bdi dir="ltr">Hub.</bdi></p>
+<h2 id="file-by-file-guide">دليل الملفات واحدًا واحدًا</h2>
+<p>يغطي هذا الدليل الملفات المهمة في التسليم النهائي ذي البيانات الكاملة. تميّز علامة <small class="annotation">(البيانات الكاملة)</small> الملفات الخاصة بالعمل النهائي على البيانات الكاملة من ملفات النموذج الأولي والبنية المشتركة.</p>
+<h3 id="guide-repository-root">جذر المستودع</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">README.md</code></td>
+<td>تقرير التسليم النهائي: النتيجة الرئيسة للبيانات الكاملة (<bdi dir="ltr">82.2 %</bdi> مقابل <bdi dir="ltr">88.3 %</bdi> للأوزان المنشورة)، والمسارات الثلاثة، والنتائج (البيانات الكاملة أولًا مع سياق النموذج الأولي)، وطريقة إعادة الإنتاج، ومعاملات التدريب، وتخطيط المستودع، والمشكلات.</td>
+</tr>
+<tr>
+<td><code dir="ltr">Dockerfile</code></td>
+<td>يبني الصورة القابلة لإعادة الإنتاج <code dir="ltr">ahlamloum/karmadock-seminar:v6</code>: يبدأ من <bdi dir="ltr">miniconda</bdi>، ويستنسخ <bdi dir="ltr">KarmaDock</bdi> الأصلي، ويفك بيئة <bdi dir="ltr">conda</bdi> التي جهّزها المؤلفون مسبقًا (حزمة <bdi dir="ltr">Zenodo</bdi> لتجنب محلّل <bdi dir="ltr">conda</bdi>)، ويثبّت <code dir="ltr">prefetch_generator</code>/<code dir="ltr">rmsd</code>/<code dir="ltr">wandb</code> عبر <bdi dir="ltr">pip</bdi>، وينسخ <code dir="ltr">scripts/</code>، ويضبط <code dir="ltr">PYTHONPATH</code>، ويشغّل فحص استيراد أثناء البناء.</td>
+</tr>
+<tr>
+<td><code dir="ltr">.gitignore</code></td>
+<td>يحافظ على قابلية نقل المستودع: يتجاهل حزمة بيانات النموذج الأولي، و<code dir="ltr">__pycache__</code>، ونقاط تحقق دفاتر الملاحظات، وروابط <code dir="ltr">data/</code> المحلية غير القابلة للنقل؛ ويُبقي ملفات التقسيم <code dir="ltr">*.csv</code> المتعقبة.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-scripts"><code dir="ltr">scripts/</code> — شيفرة الفريق</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="content-link" href="walkthrough-train.ar.html"><code dir="ltr">scripts/train.py</code></a></td>
+<td>الأثر الرئيس: حلقة تدريب كاملة بمرحلتين ونقاط تحقق (لا يوفّر <bdi dir="ltr">KarmaDock</bdi> واحدة): خسارتا <bdi dir="ltr">MDN</bdi> و<bdi dir="ltr">RMSD</bdi>، والمُحسّن، والإيقاف المبكر، وتجميع التدرجات، وتقسيم تحقق حتمي، و<bdi dir="ltr">W&amp;B</bdi>، و<code dir="ltr">--resume</code>.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-train-ddp.ar.html"><code dir="ltr">scripts/train_ddp.py</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>مدرّب المرحلة الثانية متعدد وحدات <bdi dir="ltr">GPU</bdi> باستخدام <bdi dir="ltr">DDP</bdi>؛ كانت المرحلة الثانية للبيانات الكاملة بطيئة جدًا على وحدة واحدة، لذلك شُغّلت على <bdi dir="ltr">2× A100</bdi> (<code dir="ltr">torchrun</code> + <bdi dir="ltr">NCCL</bdi>، وتقسيم المعرّفات، ومقاييس مخفّضة عبر جميع الرتب، وحفظ نقاط التحقق في الرتبة <bdi dir="ltr">0</bdi>).</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-train.ar.html"><code dir="ltr">scripts/run_train.sh</code></a></td>
+<td>مشغّل تدريب النموذج الأولي: <code dir="ltr">scratch</code> = مرحلتا الورقة (<bdi dir="ltr">P2</bdi>)، و<code dir="ltr">finetune</code> = البدء من الأوزان المنشورة (<bdi dir="ltr">P3</bdi>)؛ ويعالج <code dir="ltr">proto_train</code> (<bdi dir="ltr">712</bdi>) مسبقًا.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-full-train.ar.html"><code dir="ltr">scripts/run_full_train.sh</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>مشغّل تدريب مجموعة البيانات الكاملة (<code dir="ltr">full_train</code> <bdi dir="ltr">23,483</bdi> / <code dir="ltr">full_val</code> <bdi dir="ltr">2,609</bdi>)، ويقرأ التقسيم المنقّح عبر <code dir="ltr">--val_csv</code>/<code dir="ltr">--val_graph_dir</code>.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-full-stage2-ddp.ar.html"><code dir="ltr">scripts/run_full_stage2_ddp.sh</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>مشغّل تشغيل المرحلة الثانية بـ<bdi dir="ltr">DDP</bdi> (غلاف <code dir="ltr">torchrun</code> حول <code dir="ltr">train_ddp.py</code>).</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-full-stage2-ddp-v2.ar.html"><code dir="ltr">scripts/run_full_stage2_ddp_v2.sh</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>مراجعة لمشغّل المرحلة الثانية بـ<bdi dir="ltr">DDP</bdi> أمينة للورقة (<code dir="ltr">weight_decay 0</code>، والصبر <bdi dir="ltr">70</bdi>)؛ وهي النسخة التي استخدمتها مهمة <bdi dir="ltr">2× A100</bdi> النهائية.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-run-infer.ar.html"><code dir="ltr">scripts/run_infer.sh</code></a></td>
+<td>مشغّل إرساء قابل للنقل: معالجة مسبقة ← إرساء ← تصدير متغيرات الوضعية الثلاثة (من دون تصحيح / <bdi dir="ltr">FF</bdi> / محاذاة).</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-evaluate.ar.html"><code dir="ltr">scripts/evaluate.sh</code></a></td>
+<td>خطوة التقييم: تشغّل <code dir="ltr">evaluation.py</code> على كل مسار × متغير وضعية وتكتب ملفات <bdi dir="ltr">RMSD CSV</bdi>.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-convert-seminar-to-karmadock.ar.html"><code dir="ltr">scripts/convert_seminar_to_karmadock.py</code></a></td>
+<td>يعيد ترتيب بيانات الندوة وفق التخطيط الذي يتوقعه <bdi dir="ltr">KarmaDock</bdi>.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-convert-karmadock-to-seminar.ar.html"><code dir="ltr">scripts/convert_karmadock_to_seminar.py</code></a></td>
+<td>يحوّل الوضعيات المرساة إلى تنسيق الندوة <code dir="ltr">&lt;id&gt;_pred.sdf</code>، بدءًا من أفضل وضعية، من أجل <code dir="ltr">evaluation.py</code>.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-seminar-csv.ar.html"><code dir="ltr">scripts/seminar_csv.py</code></a></td>
+<td>مساعد مخطط <bdi dir="ltr">CSV</bdi> لقراءة تعيينات <bdi dir="ltr">CSV</bdi> للندوة والتقسيم الكامل.</td>
+</tr>
+<tr>
+<td><code dir="ltr">scripts/README.md</code></td>
+<td>ملاحظة المصدر: ما كتبه الفريق مقابل <bdi dir="ltr">KarmaDock</bdi> الأصلي (لم يُعدّل أي ملف أصلي).</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-condor"><code dir="ltr">condor/</code> — ملفات إرسال <bdi dir="ltr">HTCondor</bdi></h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/p1_baseline.sub</code></a><br><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/p2_scratch_infer.sub</code></a><br><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/p3_finetune_infer.sub</code></a></td>
+<td>مهام الاستدلال والتقييم للنموذج الأولي.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/p2_train_scratch.sub</code></a><br><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/p3_finetune.sub</code></a></td>
+<td>مهام تدريب النموذج الأولي.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/evaluate.sub</code></a></td>
+<td>مهمة تقييم النموذج الأولي.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/full_train_scratch.sub</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>تدريب المرحلة الأولى.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/full_stage2_2gpu.sub</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>المرحلة الثانية على <bdi dir="ltr">2× A100</bdi> بـ<bdi dir="ltr">DDP</bdi> — نموذج التسليم.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/full_stage2_mgpu.sub</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>اختبار المرحلة الثانية متعدد وحدات <bdi dir="ltr">GPU</bdi>.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/smoke_2gpu.sub</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>اختبار دخان <bdi dir="ltr">DDP</bdi>.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/full_test_infer.sub</code></a> <small class="annotation">(البيانات الكاملة)</small><br><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/posebusters_infer.sub</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>استدلال البيانات الكاملة.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/full_eval_batch.sub</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>تقييم البيانات الكاملة المجزأ إلى <bdi dir="ltr">42</bdi> مهمة متوازية.</td>
+</tr>
+<tr>
+<td><a class="content-link" href="walkthrough-condor.ar.html"><code dir="ltr">condor/full_eval_jobs/</code></a> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>ملف <code dir="ltr">run.sh</code> واحد لكل مهمة تقييم للبيانات الكاملة (استدعاء <code dir="ltr">evaluation.py</code> الدقيق مع <code dir="ltr">--shard_idx</code>/<code dir="ltr">--num_shards</code>).</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-condor-logs"><code dir="ltr">condor/logs/</code> — سجلات مهام الحوسبة عالية الأداء</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">condor/logs/s2_2gpu.169253.*</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>تشغيل تدريب المرحلة الثانية المكتمل على <bdi dir="ltr">2× A100</bdi> (رمز الخروج <bdi dir="ltr">0</bdi>، الحقبة <bdi dir="ltr">469</bdi>).</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/logs/full_test_infer.*</code> / <code dir="ltr">posebusters_infer.*</code> (ونظائر <code dir="ltr">released_baseline</code>) <small class="annotation">(البيانات الكاملة)</small></td>
+<td>سجلات استدلال البيانات الكاملة لنموذج الفريق وللأوزان المنشورة.</td>
+</tr>
+<tr>
+<td><code dir="ltr">condor/logs/full_data_eval/</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>ملفات <code dir="ltr">.log</code>/<code dir="ltr">.err</code>/<code dir="ltr">.out</code> لمهام تقييم البيانات الكاملة البالغ عددها <bdi dir="ltr">42</bdi>.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-data"><code dir="ltr">data/</code> — تعيينات مجموعات التقييم والبنى المرجعية</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">data/proto_test.csv</code></td>
+<td>تعيين مجموعة اختبار النموذج الأولي المؤلفة من <bdi dir="ltr">136</bdi> مركّبًا.</td>
+</tr>
+<tr>
+<td><code dir="ltr">data/full_test.csv</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>تعيين مجموعة اختبار التقسيم الكامل المؤلفة من <bdi dir="ltr">6,183</bdi> مركّبًا.</td>
+</tr>
+<tr>
+<td><code dir="ltr">data/posebusters_filtered.csv</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>مجموعة <bdi dir="ltr">PoseBusters</bdi> المرجعية الفرعية المؤلفة من <bdi dir="ltr">308</bdi> مركّبات.</td>
+</tr>
+<tr>
+<td><code dir="ltr">data/prototype_model_data.zip</code></td>
+<td>البنى البلورية المرجعية (<code dir="ltr">proto_test</code> + <code dir="ltr">proto_train</code>) للتقييم المحلي.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-docs"><code dir="ltr">docs/</code> — منحنيات التدريب والأشكال</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">docs/p2_stage1_train_log.csv</code><br><code dir="ltr">docs/p2_stage2_train_log.csv</code><br><code dir="ltr">docs/p3_finetune_train_log.csv</code></td>
+<td>منحنيات تدريب النموذج الأولي لكل حقبة.</td>
+</tr>
+<tr>
+<td><code dir="ltr">docs/full_stage2_train_log.csv</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>منحنى تشغيل المرحلة الثانية بـ<bdi dir="ltr">DDP</bdi> على البيانات الكاملة لكل حقبة.</td>
+</tr>
+<tr>
+<td><code dir="ltr">docs/full_stage2_training_curve.png</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>شكل منحنى التدريب لذلك التشغيل.</td>
+</tr>
+<tr>
+<td><code dir="ltr">docs/workflow_training.png</code><br><code dir="ltr">docs/workflow_inference.png</code></td>
+<td>مخططا سير العمل المعروضان على الموقع.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-evaluation"><code dir="ltr">evaluation/</code></h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><a class="content-link" href="walkthrough-evaluation.ar.html"><code dir="ltr">evaluation/evaluation.py</code></a></td>
+<td>مقيّم الندوة (منطق المصدر من دون تعديل) مع فحص صلاحية <bdi dir="ltr">PoseBusters</bdi> الذي أضافه الفريق والتجزئة <code dir="ltr">--shard_idx</code>/<code dir="ltr">--num_shards</code> (لا تفعل شيئًا افتراضيًا) المستخدمة لتوزيع تقييم البيانات الكاملة على <bdi dir="ltr">42</bdi> مهمة.</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-model"><code dir="ltr">model/</code> — نقاط تحقق مدرّبة، نحو <bdi dir="ltr">15 MB</bdi> لكل منها</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">model/full_scratch_karmadock_team002.pkl</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td><strong>نموذج التسليم النهائي:</strong> أُعيد تدريب <bdi dir="ltr">KarmaDock</bdi> من الصفر على التقسيم الكامل (وهو وراء النتيجة الرئيسة <bdi dir="ltr">82.2 %</bdi>).</td>
+</tr>
+<tr>
+<td><code dir="ltr">model/p2_scratch_karmadock_team002.pkl</code></td>
+<td>نقطة تحقق <bdi dir="ltr">P2</bdi> للنموذج الأولي مدرّبة من الصفر (<code dir="ltr">proto_train</code> <bdi dir="ltr">712</bdi>).</td>
+</tr>
+<tr>
+<td><code dir="ltr">model/p3_finetune_karmadock_team002.pkl</code></td>
+<td>نقطة تحقق <bdi dir="ltr">P3</bdi> مضبوطة بدقة للنموذج الأولي (إضافية).</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-notebooks"><code dir="ltr">notebooks/</code></h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">notebooks/full_data_results_and_comparison.ipynb</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>دفتر التسليم النهائي: جداول البيانات الكاملة، و<bdi dir="ltr">ECDF</bdi>، وأنماط فشل <bdi dir="ltr">PoseBusters</bdi>، والمقارنة بالورقة.</td>
+</tr>
+<tr>
+<td><code dir="ltr">notebooks/prototype_results_and_comparison.ipynb</code></td>
+<td>دفتر مرحلة النموذج الأولي (<code dir="ltr">proto_test</code> <bdi dir="ltr">136</bdi>).</td>
+</tr>
+</tbody></table></div>
+<h3 id="guide-results"><code dir="ltr">results/</code> — الوضعيات المتنبأ بها وملفات <bdi dir="ltr">CSV</bdi> المقيّمة</h3>
+<div class="table-scroll"><table><thead><tr>
+<th>الملف</th>
+<th>ما هو</th>
+</tr></thead><tbody>
+<tr>
+<td><code dir="ltr">results/full_data_evaluation/</code> <small class="annotation">(البيانات الكاملة)</small></td>
+<td>ملفات <bdi dir="ltr">CSV</bdi> لكل مركّب (<bdi dir="ltr">RMSD</bdi> + <bdi dir="ltr">PoseBusters</bdi>) لكلا النموذجين (<code dir="ltr">full_scratch</code>، <code dir="ltr">released_baseline</code>) × كلتا المجموعتين (<code dir="ltr">full_test</code>، <bdi dir="ltr">PoseBusters</bdi>) × <bdi dir="ltr">3</bdi> متغيرات، مع شكل <bdi dir="ltr">ECDF</bdi>‏ <code dir="ltr">ecdf_full_data.png</code>. وهذا ما يقرأه دفتر البيانات الكاملة.</td>
+</tr>
+<tr>
+<td><code dir="ltr">results/proto_test/</code><br><code dir="ltr">results/{p1_baseline,p2_scratch,p3_finetune}/proto_test{,_ff,_align}/</code></td>
+<td>وضعيات النموذج الأولي المتنبأ بها (كل المسارات <bdi dir="ltr">3</bdi> × المتغيرات <bdi dir="ltr">3</bdi>، وعددها <bdi dir="ltr">136</bdi> مركّبًا).</td>
+</tr>
+<tr>
+<td><code dir="ltr">results/*_evaluation.csv</code><br><code dir="ltr">results/README.md</code></td>
+<td>ملفات <bdi dir="ltr">RMSD CSV</bdi> لكل مركّب في النموذج الأولي وملف تمهيدي للنتائج.</td>
+</tr>
+</tbody></table></div>
 <h2 id="7-issues--fixes"><bdi dir="ltr">7.</bdi> المشكلات والإصلاحات</h2>
 <ul>
 <li><strong>مشكلة العقدة:</strong> كانت عقد <bdi dir="ltr">GPU</bdi> في عنقود <bdi dir="ltr">idun</bdi> تعيد خطأ أحيانًا أثناء التشغيل، لذلك استُبعدت</li>
@@ -201,7 +443,7 @@
 </li>
 </ol>
 </section></article></main>
-    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#6-repository-layout"><bdi dir="ltr">6.</bdi> تخطيط المستودع</a></li><li class="toc-level-2"><a href="#7-issues--fixes"><bdi dir="ltr">7.</bdi> المشكلات والإصلاحات</a></li><li class="toc-level-2"><a href="#authorship--provenance">التأليف ومصدر الشيفرة</a></li><li class="toc-level-3"><a href="#files-we-created">الملفات التي أنشأناها</a></li><li class="toc-level-3"><a href="#scripts"><bdi dir="ltr">scripts/</bdi></a></li><li class="toc-level-3"><a href="#condor-our-work"><bdi dir="ltr">condor/</bdi> (عملنا)</a></li><li class="toc-level-3"><a href="#other-ours">أعمال أخرى لنا</a></li><li class="toc-level-2"><a href="#summary">الخلاصة</a></li></ol></aside>
+    <aside class="page-toc" aria-label="في هذه الصفحة"><p class="toc-title">في هذه الصفحة</p><ol><li class="toc-level-2"><a href="#6-repository-layout"><bdi dir="ltr">6.</bdi> تخطيط المستودع</a></li><li class="toc-level-2"><a href="#file-by-file-guide">دليل الملفات واحدًا واحدًا</a></li><li class="toc-level-3"><a href="#guide-repository-root">جذر المستودع</a></li><li class="toc-level-3"><a href="#guide-scripts"><bdi dir="ltr">scripts/</bdi></a></li><li class="toc-level-3"><a href="#guide-condor"><bdi dir="ltr">condor/</bdi></a></li><li class="toc-level-3"><a href="#guide-condor-logs"><bdi dir="ltr">condor/logs/</bdi></a></li><li class="toc-level-3"><a href="#guide-data"><bdi dir="ltr">data/</bdi></a></li><li class="toc-level-3"><a href="#guide-docs"><bdi dir="ltr">docs/</bdi></a></li><li class="toc-level-3"><a href="#guide-evaluation"><bdi dir="ltr">evaluation/</bdi></a></li><li class="toc-level-3"><a href="#guide-model"><bdi dir="ltr">model/</bdi></a></li><li class="toc-level-3"><a href="#guide-notebooks"><bdi dir="ltr">notebooks/</bdi></a></li><li class="toc-level-3"><a href="#guide-results"><bdi dir="ltr">results/</bdi></a></li><li class="toc-level-2"><a href="#7-issues--fixes"><bdi dir="ltr">7.</bdi> المشكلات والإصلاحات</a></li><li class="toc-level-2"><a href="#authorship--provenance">التأليف ومصدر الشيفرة</a></li><li class="toc-level-3"><a href="#files-we-created">الملفات التي أنشأناها</a></li><li class="toc-level-3"><a href="#scripts"><bdi dir="ltr">scripts/</bdi></a></li><li class="toc-level-3"><a href="#condor-our-work"><bdi dir="ltr">condor/</bdi> (عملنا)</a></li><li class="toc-level-3"><a href="#other-ours">أعمال أخرى لنا</a></li><li class="toc-level-2"><a href="#summary">الخلاصة</a></li></ol></aside>
   </div>
   <footer class="site-footer"><p>مشروع ندوة <bdi dir="ltr">KarmaDock</bdi> · جامعة سارلاند · رفيق دراسي يعمل دون اتصال</p></footer>
   <dialog class="search-dialog" id="search-dialog" aria-labelledby="search-title" data-empty="اكتب للبحث في محتوى موقع المقرر." data-none="لا توجد أقسام مطابقة." data-result-singular="نتيجة" data-result-plural="نتائج">
